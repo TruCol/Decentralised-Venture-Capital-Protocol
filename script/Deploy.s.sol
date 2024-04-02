@@ -15,6 +15,4 @@ contract Deploy is BaseScript {
   function runTier() public broadcast returns (Tier tier) {
     tier = new Tier(0, 10000, 10);
   }
-
-
 }
