@@ -117,6 +117,7 @@ This is a list of the most frequently needed commands.
 Build the contracts:
 
 ```sh
+bun install # run this once.
 forge build
 ```
 
