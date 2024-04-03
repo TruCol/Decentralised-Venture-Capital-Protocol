@@ -15,7 +15,9 @@ contract Tier {
     string memory errorMessage = string(
       abi.encodePacked("A tier minimum amount should always be 0 or greater. Provided value:")
     );
+    // This is a redundant assertion, uint (unsigned) cannot be negative.
     require(_minVal >= 0, errorMessage);
+
     require(_maxVal > _minVal, "The maximum amount should be larger than the minimum.");
     require(_multiple > 1, "A ROI multiple should be at larger than 1.");
 
