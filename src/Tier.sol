@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
-contract Tier {
+interface ITier {
+  function minVal() external view returns (uint256);
+
+  function maxVal() external view returns (uint256);
+
+  function multiple() external view returns (uint256);
+}
+
+contract Tier is ITier {
   uint256 public minVal;
   uint256 public maxVal;
   uint256 public multiple;

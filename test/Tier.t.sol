@@ -27,7 +27,7 @@ contract TierTest is PRBTest, StdCheats {
    * available.
    *
    */
-  function testMinVal() public {
+  function testAttributes() public {
     assertEq(validTier.minVal(), 0, "The minVal was not as expected");
     assertEq(validTier.maxVal(), 10000, "The maxVal was not as expected");
     assertEq(validTier.multiple(), 10, "The multiple was not as expected.");
