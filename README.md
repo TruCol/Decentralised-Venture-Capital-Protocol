@@ -215,8 +215,11 @@ bun run lint
 Run the tests:
 
 ```sh
-forge test
+forge test -vvv
 ```
+
+The `-vvv` is necessary to display the error messages that you wrote with the
+assertions, in the CLI. Otherwise it just says: "test failed".
 
 Generate test coverage and output result to the terminal:
 

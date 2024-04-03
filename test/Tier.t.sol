@@ -26,7 +26,7 @@ contract TierTest is PRBTest, StdCheats {
   function testMinVal() public {
     assertEq(validTier.minVal(), 0);
     assertEq(validTier.maxVal(), 10000);
-    assertEq(validTier.multiple(), 10);
+    assertEq(validTier.multiple(), 10, "The multiple was not as expected.");
   }
   /**
    * Test the tier object throws an error if the minimum is smaller than 0.
