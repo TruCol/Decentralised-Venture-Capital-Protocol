@@ -43,7 +43,7 @@ contract TierTest is PRBTest, StdCheats {
     // Actual expected address.
     address expectedAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
-    assert(tierInvestment.investorWallet() == expectedAddress);
+    assert(tierInvestment.investor() == expectedAddress);
     assertEq(tierInvestment.newInvestmentAmount(), 43, "The maxVal was not as expected");
   }
 }
