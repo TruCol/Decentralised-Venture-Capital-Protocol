@@ -9,6 +9,8 @@ import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 
 contract DecentralisedInvestmentManager {
   event PaymentReceived(address from, uint256 amount);
+  event InvestmentReceived(address from, uint256 amount);
+
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   address private saas;
@@ -24,6 +26,7 @@ contract DecentralisedInvestmentManager {
   // Custom attributes of the contract.
   Tier[] private _tiers;
 
+  DecentralisedInvestmentHelper private _helper;
   TierInvestment[] private _tierInvestments;
 
   /**
@@ -41,6 +44,9 @@ contract DecentralisedInvestmentManager {
     _cumReceivedInvestments = 0;
     _paymentSplitter = initialiseCustomPaymentSplitter(_projectLead);
 
+    // Initialise contract helper.
+    _helper = new DecentralisedInvestmentHelper();
+
     // Specify the different investment tiers in DAI.
     Tier tier_0 = new Tier(0, 10000, 10);
     _tiers.push(tier_0);
@@ -56,49 +62,66 @@ contract DecentralisedInvestmentManager {
     return new CustomPaymentSplitter(_withdrawers, _owedDai);
   }
 
-  function distributeSaasPaymentFractionToInvestors() private {
-    uint256 cumulativePayout = 0;
-    for (uint256 i = 0; i < _tierInvestments.length; i++) {
-      uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn();
-    }
-  }
-
   function receiveSaasPayment() external payable {
     require(msg.value > 0, "The amount paid was not larger than 0.");
 
-    emit PaymentReceived(msg.sender, msg.value);
-
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
-    uint256 amountForProjectLead = 0;
-    uint256 amountForInvestors = 0;
+    uint256 saasRevenueForProjectLead = 0;
+    uint256 saasRevenueForInvestors = 0;
 
-    // Initialise the helper contract, and compute how much the investors can
-    // receive together as total ROI.
-    DecentralisedInvestmentHelper helper = new DecentralisedInvestmentHelper();
-    uint256 cumRemainingInvestorReturn = helper.computeCumRemainingInvestorReturn(_tierInvestments);
+    // Compute how much the investors can receive together as total ROI.
+    uint256 cumRemainingInvestorReturn = _helper.computeCumRemainingInvestorReturn(_tierInvestments);
 
     if (cumRemainingInvestorReturn == 0) {
-      amountForProjectLead = paidAmount;
+      saasRevenueForProjectLead = paidAmount;
     } else if (
       cumRemainingInvestorReturn <=
-      helper.aTimes1MinusBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator)
+      _helper.aTimes1MinusBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator)
     ) {
-      amountForInvestors = cumRemainingInvestorReturn;
-      amountForProjectLead = paidAmount - cumRemainingInvestorReturn;
+      saasRevenueForInvestors = cumRemainingInvestorReturn;
+      saasRevenueForProjectLead = paidAmount - cumRemainingInvestorReturn;
     } else {
-      amountForProjectLead =
+      saasRevenueForProjectLead =
         paidAmount *
-        helper.aTimesBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator);
-      amountForInvestors = paidAmount - amountForProjectLead;
+        _helper.aTimesBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator);
+      saasRevenueForInvestors = paidAmount - saasRevenueForProjectLead;
     }
 
-    require(amountForInvestors + amountForProjectLead != paidAmount, "Error: SAAS revenue distribution mismatch.");
+    require(
+      saasRevenueForInvestors + saasRevenueForProjectLead != paidAmount,
+      "Error: SAAS revenue distribution mismatch."
+    );
 
     // Perform transaction and administration for project lead (if applicable)
-    performSaasRevenueAllocation(amountForProjectLead, _projectLead);
+    performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
     // Distribute remaining amount to investors (if applicable)Store
-    if (amountForInvestors > 0) {}
+    if (saasRevenueForInvestors > 0) {
+      distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
+    }
+    emit PaymentReceived(msg.sender, msg.value);
+  }
+
+  function distributeSaasPaymentFractionToInvestors(
+    uint256 saasRevenueForInvestors,
+    uint256 cumRemainingInvestorReturn
+  ) private {
+    uint256 cumulativePayout = 0;
+    for (uint256 i = 0; i < _tierInvestments.length; i++) {
+      // TODO: Determine if paymentSplitter can be used to compute remaining
+      // investment shares instead.
+      // Compute how much an investor receives for its investment in this tier.
+      uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn() / cumRemainingInvestorReturn;
+      uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
+
+      // Allocate that amount to the investor.
+      performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].investor());
+
+      // Track the payout in the tierInvestment.
+      _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].investor(), investmentReturn);
+      cumulativePayout += investmentReturn;
+    }
+    require(cumulativePayout == saasRevenueForInvestors);
   }
 
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
@@ -111,4 +134,36 @@ contract DecentralisedInvestmentManager {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
   }
+
+  function receiveInvestment() external payable {
+    require(msg.value > 0, "The amount invested was not larger than 0.");
+    require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers));
+
+    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+    uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
+    emit InvestmentReceived(msg.sender, msg.value);
+  }
+
+  // function allocateInvestment(
+  //   uint256 investmentAmount,
+  //   uint256 remainingAmountInTier,
+  //   address investorWallet,
+  //   Tier currentTier
+  // ) private {
+  //   TierInvestment tierInvestment;
+
+  //   if (investmentAmount > remainingAmountInTier) {
+  //     // Invest remaining amount in current tier
+  //     tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+  //     tierInvestments[investorWallet].push(tierInvestment);
+
+  //     // Invest remaining amount from user
+  //     uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
+  //     receiveInvestment(investorWallet, remainingInvestmentAmount);
+  //   } else {
+  //     // Invest full amount in current tier
+  //     tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, investmentAmount);
+  //     tierInvestments[investorWallet].push(tierInvestment);
+  //   }
+  // }
 }
