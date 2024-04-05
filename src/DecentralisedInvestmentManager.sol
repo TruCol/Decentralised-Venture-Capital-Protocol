@@ -32,8 +32,8 @@ contract DecentralisedInvestmentManager {
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
-   *  */
-
+   *
+   */
   constructor(uint256 projectLeadFracNumerator, uint256 projectLeadFracDenominator, address projectLead) {
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
@@ -48,11 +48,11 @@ contract DecentralisedInvestmentManager {
     _helper = new DecentralisedInvestmentHelper();
 
     // Specify the different investment tiers in DAI.
-    Tier tier_0 = new Tier(0, 10000, 10);
+    Tier tier_0 = new Tier(0, 10_000, 10);
     _tiers.push(tier_0);
-    Tier tier_1 = new Tier(10000, 50000, 5);
+    Tier tier_1 = new Tier(10_000, 50_000, 5);
     _tiers.push(tier_1);
-    Tier tier_2 = new Tier(50000, 100000, 2);
+    Tier tier_2 = new Tier(50_000, 100_000, 2);
     _tiers.push(tier_2);
   }
 

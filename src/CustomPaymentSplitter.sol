@@ -28,7 +28,7 @@ contract CustomPaymentSplitter {
   /**
    * @dev Constructor
    */
-  constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
+  constructor(address[] memory payees, uint256[] memory amountsOwed) payable {
     require(payees.length == amountsOwed.length);
     require(payees.length > 0);
 
@@ -43,8 +43,8 @@ contract CustomPaymentSplitter {
 
   /**
    * @dev payable fallback
-   TODO: determine why this throws an error.
-  */
+   *    TODO: determine why this throws an error.
+   */
   // function () external payable {
   //   emit PaymentReceived(msg.sender, msg.value);
   // }
@@ -132,8 +132,9 @@ contract CustomPaymentSplitter {
   }
 
   /**
-  Public counterpart of the _addPayee function, to add users that can withdraw
-  funds after constructor initialisation. */
+   * Public counterpart of the _addPayee function, to add users that can withdraw
+   *   funds after constructor initialisation.
+   */
   function publicAddPayee(address account, uint256 dai_) public onlyOwner {
     require(account != address(0));
     require(dai_ > 0);
@@ -146,8 +147,9 @@ contract CustomPaymentSplitter {
   }
 
   /**
-  Public counterpart of the _addPayee function, to add users that can withdraw
-  funds after constructor initialisation. */
+   * Public counterpart of the _addPayee function, to add users that can withdraw
+   *   funds after constructor initialisation.
+   */
   function publicAddSharesToPayee(address account, uint256 dai_) public onlyOwner {
     require(account != address(0));
     require(dai_ > 0);
@@ -169,8 +171,8 @@ contract CustomPaymentSplitter {
   }
 
   /**
-  Used to ensure only the owner/creator of the constructor of this contract is
-  able to call/use functions that use this function (modifier).
+   * Used to ensure only the owner/creator of the constructor of this contract is
+   *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
     require(msg.sender == _owner);

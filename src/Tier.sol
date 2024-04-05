@@ -17,7 +17,8 @@ contract Tier is ITier {
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
-   *  */
+   *
+   */
   constructor(uint256 _minVal, uint256 _maxVal, uint256 _multiple) {
     // Improved error message using string concatenation
     string memory errorMessage = string(
