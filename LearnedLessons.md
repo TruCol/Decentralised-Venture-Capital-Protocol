@@ -107,6 +107,22 @@ argument `_payees`.
 
 ## Forge Testtokens
 
+Use:
+
+```sol
+deal(address(1), 43 ether);
+assertEq(address(1).balance, 43 ether);
+```
+
+or:
+
+```sol
+deal(address(1), 43 wei);
+assertEq(address(1).balance, 43 wei);
+```
+
+in your testfunction. The balances below were not found to be 1000 but 0 when checked.
+
 ```txt
 Available Accounts
 
@@ -134,3 +150,20 @@ Available Accounts
 (8) 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
 (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 ```
+
+## Debugging
+
+If you need to do manual debugging, you can use console2 print statements like:
+
+```sol
+import { console2 } from "forge-std/src/console2.sol";
+console2.log("Hello World, a={0}, b={1}", a, b);
+```
+
+and run:
+
+```sh
+forge test --vv
+```
+
+to show check up to where the print statements were printed.

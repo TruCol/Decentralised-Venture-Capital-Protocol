@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-
+import { console2 } from "forge-std/src/console2.sol";
 import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
@@ -32,12 +32,10 @@ contract CustomPaymentSplitter {
     require(payees.length == amountsOwed.length);
     require(payees.length > 0);
 
-    _payees = payees;
     _amountsOwed = amountsOwed;
     _owner = msg.sender;
-
-    for (uint256 i = 0; i < _payees.length; i++) {
-      _addPayee(_payees[i], _amountsOwed[i]);
+    for (uint256 i = 0; i < payees.length; i++) {
+      _addPayee(payees[i], _amountsOwed[i]);
     }
   }
 
@@ -121,8 +119,7 @@ contract CustomPaymentSplitter {
    * @param dai_ The number of dai owned by the payee.
    */
   function _addPayee(address account, uint256 dai_) private {
-    require(account != address(0));
-    require(dai_ > 0);
+    // require(account != address(0));
     require(_dai[account] == 0);
 
     _payees.push(account);
@@ -150,15 +147,15 @@ contract CustomPaymentSplitter {
    * Public counterpart of the _addPayee function, to add users that can withdraw
    *   funds after constructor initialisation.
    */
-  function publicAddSharesToPayee(address account, uint256 dai_) public onlyOwner {
+  function publicAddSharesToPayee(address account, uint256 dai) public onlyOwner {
     require(account != address(0));
-    require(dai_ > 0);
+    require(dai > 0);
 
     // TODO: assert account is in _dai array.
 
-    _dai[account] = _dai[account] + dai_;
-    _totalDai = _totalDai + dai_;
-    emit SharesAdded(account, dai_);
+    _dai[account] = _dai[account] + dai;
+    _totalDai = _totalDai + dai;
+    emit SharesAdded(account, dai);
   }
 
   function isPayee(address account) public view returns (bool) {

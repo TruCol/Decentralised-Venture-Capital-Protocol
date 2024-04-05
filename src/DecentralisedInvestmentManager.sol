@@ -6,6 +6,7 @@ import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 contract DecentralisedInvestmentManager {
   event PaymentReceived(address from, uint256 amount);
@@ -35,11 +36,11 @@ contract DecentralisedInvestmentManager {
    *
    */
   constructor(uint256 projectLeadFracNumerator, uint256 projectLeadFracDenominator, address projectLead) {
+    console2.log("Hello World, a={0}, b={1}", 0, 1);
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
     _projectLead = projectLead;
-
     // Initialise default values.
     _cumReceivedInvestments = 0;
     _paymentSplitter = initialiseCustomPaymentSplitter(_projectLead);
