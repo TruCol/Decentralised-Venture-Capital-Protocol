@@ -138,32 +138,47 @@ contract DecentralisedInvestmentManager {
   function receiveInvestment() external payable {
     require(msg.value > 0, "The amount invested was not larger than 0.");
     require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers));
+    allocateInvestment(msg.value, msg.sender);
 
-    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-    uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
     emit InvestmentReceived(msg.sender, msg.value);
   }
 
-  // function allocateInvestment(
-  //   uint256 investmentAmount,
-  //   uint256 remainingAmountInTier,
-  //   address investorWallet,
-  //   Tier currentTier
-  // ) private {
-  //   TierInvestment tierInvestment;
+  function allocateInvestment(
+    uint256 investmentAmount,
+    // uint256 remainingAmountInTier,
+    address investorWallet // Tier currentTier
+  ) private {
+    require(investmentAmount > 0, "The amount invested was not larger than 0.");
+    // TODO: ensure the remaining funds are returned to the investor.
+    require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers));
 
-  //   if (investmentAmount > remainingAmountInTier) {
-  //     // Invest remaining amount in current tier
-  //     tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-  //     tierInvestments[investorWallet].push(tierInvestment);
+    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+    uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
 
-  //     // Invest remaining amount from user
-  //     uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
-  //     receiveInvestment(investorWallet, remainingInvestmentAmount);
-  //   } else {
-  //     // Invest full amount in current tier
-  //     tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, investmentAmount);
-  //     tierInvestments[investorWallet].push(tierInvestment);
-  //   }
-  // }
+    TierInvestment tierInvestment;
+
+    if (investmentAmount > remainingAmountInTier) {
+      // Invest remaining amount in current tier
+      tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+      _tierInvestments.push(tierInvestment);
+
+      // Invest remaining amount from user
+      uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
+      allocateInvestment(remainingInvestmentAmount, investorWallet);
+    } else {
+      // Invest full amount in current tier
+      tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, investmentAmount);
+      _tierInvestments.push(tierInvestment);
+    }
+  }
+
+  function createAnInvestmentInCurrentTier(
+    address investorWallet,
+    Tier currentTier,
+    uint256 newInvestmentAmount
+  ) private returns (TierInvestment) {
+    TierInvestment newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+    _cumReceivedInvestments += newInvestmentAmount;
+    return newTierInvestment;
+  }
 }

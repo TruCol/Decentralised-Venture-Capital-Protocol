@@ -2,11 +2,12 @@
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
 import { ITier } from "../src/ITier.sol";
+import { Tier } from "../src/Tier.sol";
 
 contract TierInvestment {
   address public investor;
   uint256 public newInvestmentAmount;
-  ITier private _tier;
+  Tier private _tier;
 
   /** The amount of DAI that is still to be returned for this investment. */
   uint256 public remainingReturn;
@@ -20,7 +21,7 @@ contract TierInvestment {
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
    *  */
-  constructor(address someInvestor, uint256 _newInvestmentAmount, ITier tier) {
+  constructor(address someInvestor, uint256 _newInvestmentAmount, Tier tier) {
     require(_newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;
 

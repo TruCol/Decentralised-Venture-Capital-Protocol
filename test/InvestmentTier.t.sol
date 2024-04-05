@@ -7,8 +7,6 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { Tier } from "../src/Tier.sol";
 import { ITier } from "../src/Tier.sol";
 
-import { MockTier } from "../test/MockTier.sol";
-
 import { TierInvestment } from "../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
@@ -17,18 +15,19 @@ contract TierTest is PRBTest, StdCheats {
   Tier internal validTier;
   ITier internal some;
   address internal testAddress;
-  MockTier internal mockTierInterface;
+  Tier internal tierInterface;
 
   TierInvestment internal tierInvestment;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
-    mockTierInterface = new MockTier(0, 10000, 10); // Set expected values
+    tierInterface = new Tier(0, 10000, 10); // Set expected values
     testAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
     // Instantiate the object that is tested.
-    tierInvestment = new TierInvestment(testAddress, 43, mockTierInterface);
+    // tierInvestment = new TierInvestment(testAddress, 43, mockTierInterface);
+    tierInvestment = new TierInvestment(testAddress, 43, tierInterface);
   }
 
   /**
