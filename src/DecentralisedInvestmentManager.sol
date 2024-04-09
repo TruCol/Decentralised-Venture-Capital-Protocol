@@ -36,7 +36,6 @@ contract DecentralisedInvestmentManager {
    *
    */
   constructor(uint256 projectLeadFracNumerator, uint256 projectLeadFracDenominator, address projectLead) {
-    console2.log("Hello World, a={0}, b={1}", 0, 1);
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
@@ -138,7 +137,11 @@ contract DecentralisedInvestmentManager {
 
   function receiveInvestment() external payable {
     require(msg.value > 0, "The amount invested was not larger than 0.");
+
+    require(msg.sender == 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
+
     require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers));
+
     allocateInvestment(msg.value, msg.sender);
 
     emit InvestmentReceived(msg.sender, msg.value);
@@ -150,26 +153,31 @@ contract DecentralisedInvestmentManager {
     address investorWallet // Tier currentTier
   ) private {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
+
     // TODO: ensure the remaining funds are returned to the investor.
-    require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers));
+    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
 
-    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-    uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
+      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
 
-    TierInvestment tierInvestment;
+      TierInvestment tierInvestment;
 
-    if (investmentAmount > remainingAmountInTier) {
-      // Invest remaining amount in current tier
-      tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-      _tierInvestments.push(tierInvestment);
+      if (investmentAmount > remainingAmountInTier) {
+        // Invest remaining amount in current tier
+        tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
 
-      // Invest remaining amount from user
-      uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
-      allocateInvestment(remainingInvestmentAmount, investorWallet);
-    } else {
-      // Invest full amount in current tier
-      tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, investmentAmount);
-      _tierInvestments.push(tierInvestment);
+        _tierInvestments.push(tierInvestment);
+
+        // Invest remaining amount from user
+        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
+
+        allocateInvestment(remainingInvestmentAmount, investorWallet);
+      } else {
+        // Invest full amount in current tier
+        tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, investmentAmount);
+
+        _tierInvestments.push(tierInvestment);
+      }
     }
   }
 
@@ -181,5 +189,10 @@ contract DecentralisedInvestmentManager {
     TierInvestment newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
     _cumReceivedInvestments += newInvestmentAmount;
     return newTierInvestment;
+  }
+
+  // Assuming there's an internal function to get tier investment length
+  function getTierInvestmentLength() public view returns (uint256) {
+    return _tierInvestments.length;
   }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
+import { console2 } from "forge-std/src/console2.sol";
 import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
@@ -34,8 +35,11 @@ contract DecentralisedInvestmentHelper {
 
   function getInvestmentCeiling(Tier[] memory tiers) public view returns (uint256) {
     // Access the last tier in the array
+
     uint256 lastIndex = tiers.length - 1;
+
     uint256 investmentCeiling = tiers[lastIndex].maxVal();
+
     return investmentCeiling;
   }
 
@@ -48,6 +52,7 @@ contract DecentralisedInvestmentHelper {
     Tier[] memory tiers
   ) public view returns (Tier) {
     // Check for exceeding investment ceiling.
+
     require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers));
 
     // Validate positive investment amount.

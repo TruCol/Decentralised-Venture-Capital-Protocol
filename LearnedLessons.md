@@ -110,8 +110,10 @@ argument `_payees`.
 Use:
 
 ```sol
-deal(address(1), 43 ether);
-assertEq(address(1).balance, 43 ether);
+// Generate deterministic address.
+address someAddress = address(uint160(uint256(keccak256(bytes("1")))));
+deal(someAddress, 43 ether);
+assertEq(someAddress.balance, 43 ether);
 ```
 
 or:
