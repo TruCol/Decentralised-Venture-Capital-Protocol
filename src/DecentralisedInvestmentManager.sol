@@ -136,6 +136,7 @@ contract DecentralisedInvestmentManager {
   }
 
   function receiveInvestment() external payable {
+    console2.log("Hello world.");
     require(msg.value > 0, "The amount invested was not larger than 0.");
 
     require(msg.sender == 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
@@ -156,6 +157,7 @@ contract DecentralisedInvestmentManager {
 
     // TODO: ensure the remaining funds are returned to the investor.
     if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+      console2.log("Did not reach investment ceiling");
       Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
 
       uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
@@ -178,6 +180,8 @@ contract DecentralisedInvestmentManager {
 
         _tierInvestments.push(tierInvestment);
       }
+    } else {
+      console2.log("REACHED investment ceiling");
     }
   }
 

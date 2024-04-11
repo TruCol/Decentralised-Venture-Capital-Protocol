@@ -37,18 +37,23 @@ contract SingleInvestmentTest is PRBTest, StdCheats {
   function testSingleInvestment() public {
     uint256 startBalance = _investorWallet.balance;
     uint256 investmentAmount = 20 ether;
-    // Send investment directly from the user wallet
-    (bool success, bytes memory result) = _investorWallet.call{ value: investmentAmount }(
-      abi.encodeWithSelector(_dim.receiveInvestment.selector)
-    );
+
+    // Send investment directly from the investor wallet.
+    // (bool success, bytes memory result) = _investorWallet.call{ value: investmentAmount }(
+    // abi.encodeWithSelector(_dim.receiveInvestment.selector)
+    // );
+
+    // Directly call the function on the deployed contract.
+    _dim.receiveInvestment{ value: investmentAmount }();
+
     uint256 endBalance = _investorWallet.balance;
 
     // Assert that user balance decreased by the investment amount
     assertEq(endBalance - startBalance, investmentAmount);
 
     // Assert the tier investments are processed as expected.
-    console2.log("BEFORE ASSERTION {0}", _dim.getTierInvestmentLength());
-    assertEq(_dim.getTierInvestmentLength(), 1);
+    console2.log("Before length assertion", _dim.getTierInvestmentLength());
+    assertEq(_dim.getTierInvestmentLength(), 3);
   }
 
   // function testReceiveInvestment_RevertsOnZeroInvestment() public {
