@@ -16,18 +16,22 @@ A Foundry-based template for developing Solidity smart contracts, with sensible 
 
 ## Getting Started
 
-Click the
-[`Use this template`](https://github.com/PaulRBerg/foundry-template/generate)
-button at the top of the page to create a new repository with this repo as the
-initial state.
-
-Or, if you prefer to install the template manually:
+Run this inside the repository you cloned and downloaded:
 
 ```sh
-mkdir my-project
-cd my-project
-forge init --template PaulRBerg/foundry-template
+# Install repository configuration.
+sudo snap install bun-js
 bun install # install Solhint, Prettier, and other Node.js deps
+pre-commit install
+
+# Install foundry
+sudo apt install curl -y
+curl -L https://foundry.paradigm.xyz | bash
+source ~/.bashrc
+foundryup
+forge build
+pre-commit install
+git add -A && pre-commit run --all
 ```
 
 If this is your first time with Foundry, check out the
