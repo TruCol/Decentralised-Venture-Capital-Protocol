@@ -64,7 +64,7 @@ contract CustomPaymentSplitter {
   /**
    * @return the dai of an account.
    */
-  function dai(address account) public view returns (uint256) {
+  function getDai(address account) public view returns (uint256) {
     return _dai[account];
   }
 
@@ -148,8 +148,9 @@ contract CustomPaymentSplitter {
    *   funds after constructor initialisation.
    */
   function publicAddSharesToPayee(address account, uint256 dai) public onlyOwner {
-    require(account != address(0));
-    require(dai > 0);
+    console2.log("account={0}, dai={1}", account, dai);
+    require(account != address(0), "The incoming account was the address(0).");
+    require(dai > 0, "There was 0 dai incoming.");
 
     // TODO: assert account is in _dai array.
 

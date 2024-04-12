@@ -7,7 +7,7 @@ import { Tier } from "../src/Tier.sol";
 contract TierInvestment {
   address public investor;
   uint256 public newInvestmentAmount;
-  Tier private _tier;
+  Tier private tier;
 
   /**
    * The amount of DAI that is still to be returned for this investment.
@@ -26,13 +26,13 @@ contract TierInvestment {
    * after creation.
    *
    */
-  constructor(address someInvestor, uint256 _newInvestmentAmount, Tier tier) {
+  constructor(address someInvestor, uint256 _newInvestmentAmount, Tier _tier) {
     require(_newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;
 
     investor = someInvestor;
     newInvestmentAmount = _newInvestmentAmount;
-    _tier = tier;
+    tier = _tier;
 
     // Initialise default value.
     remainingReturn = 0;
@@ -54,5 +54,15 @@ contract TierInvestment {
   modifier onlyOwner() {
     require(msg.sender == _owner);
     _;
+  }
+
+  /**
+  Used for testing, returns the amount that is invested in this TierInvestment. */
+  function getAmountInvestedInThisTierInvestment() public view returns (uint256) {
+    return newInvestmentAmount;
+  }
+
+  function getTier() public view returns (Tier) {
+    return tier;
   }
 }

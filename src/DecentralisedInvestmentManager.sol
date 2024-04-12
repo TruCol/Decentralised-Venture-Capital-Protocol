@@ -64,14 +64,13 @@ contract DecentralisedInvestmentManager {
 
   function receiveSaasPayment() external payable {
     require(msg.value > 0, "The amount paid was not larger than 0.");
-
+    console2.log("HELLOOOO");
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
     uint256 saasRevenueForProjectLead = 0;
     uint256 saasRevenueForInvestors = 0;
 
     // Compute how much the investors can receive together as total ROI.
     uint256 cumRemainingInvestorReturn = _helper.computeCumRemainingInvestorReturn(_tierInvestments);
-
     if (cumRemainingInvestorReturn == 0) {
       saasRevenueForProjectLead = paidAmount;
     } else if (
@@ -87,18 +86,31 @@ contract DecentralisedInvestmentManager {
       saasRevenueForInvestors = paidAmount - saasRevenueForProjectLead;
     }
 
-    require(
-      saasRevenueForInvestors + saasRevenueForProjectLead != paidAmount,
-      "Error: SAAS revenue distribution mismatch."
+    string memory errorMessage = "Error: SAAS revenue distribution mismatch.\n";
+    errorMessage = string(
+      abi.encodePacked(
+        errorMessage,
+        "In error saasRevenueForInvestors=",
+        abi.encodePacked(saasRevenueForInvestors),
+        ", saasRevenueForProjectLead=",
+        saasRevenueForProjectLead,
+        ", paidAmount=",
+        paidAmount
+      )
     );
+    require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
+
+    // Distribute remaining amount to investors (if applicable)Store
+    if (saasRevenueForInvestors > 0) {
+      console2.log("Investors can has money.");
+      distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
+    } else {
+      console2.log("No money for investors.");
+    }
 
     // Perform transaction and administration for project lead (if applicable)
     performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
-    // Distribute remaining amount to investors (if applicable)Store
-    if (saasRevenueForInvestors > 0) {
-      distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
-    }
     emit PaymentReceived(msg.sender, msg.value);
   }
 
@@ -107,13 +119,14 @@ contract DecentralisedInvestmentManager {
     uint256 cumRemainingInvestorReturn
   ) private {
     uint256 cumulativePayout = 0;
+
     for (uint256 i = 0; i < _tierInvestments.length; i++) {
       // TODO: Determine if paymentSplitter can be used to compute remaining
       // investment shares instead.
       // Compute how much an investor receives for its investment in this tier.
       uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn() / cumRemainingInvestorReturn;
       uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
-
+      console2.log("i={0}, investmentReturn={1}", investmentReturn);
       // Allocate that amount to the investor.
       performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].investor());
 
@@ -121,7 +134,10 @@ contract DecentralisedInvestmentManager {
       _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].investor(), investmentReturn);
       cumulativePayout += investmentReturn;
     }
-    require(cumulativePayout == saasRevenueForInvestors);
+    require(
+      cumulativePayout == saasRevenueForInvestors,
+      "The cumulativePayout is not equal to the saasRevenueForInvestors."
+    );
   }
 
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
@@ -132,16 +148,19 @@ contract DecentralisedInvestmentManager {
       _paymentSplitter.publicAddPayee(receivingWallet, amount);
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
+      console2.log("Adding shares to payee.");
     }
   }
 
   function receiveInvestment() external payable {
-    console2.log("Hello world.");
     require(msg.value > 0, "The amount invested was not larger than 0.");
 
-    require(msg.sender == 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496);
+    require(msg.sender == 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496, "The sender was unexpected.");
 
-    require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers));
+    require(
+      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
+      "The investor ceiling is not reached."
+    );
 
     allocateInvestment(msg.value, msg.sender);
 
@@ -155,9 +174,8 @@ contract DecentralisedInvestmentManager {
   ) private {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
 
-    // TODO: ensure the remaining funds are returned to the investor.
+    console2.log("investmentAmount={0}, investorWallet={1}", investmentAmount, investorWallet);
     if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
-      console2.log("Did not reach investment ceiling");
       Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
 
       uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
@@ -182,6 +200,7 @@ contract DecentralisedInvestmentManager {
       }
     } else {
       console2.log("REACHED investment ceiling");
+      // TODO: ensure the remaining funds are returned to the investor.
     }
   }
 
@@ -198,5 +217,14 @@ contract DecentralisedInvestmentManager {
   // Assuming there's an internal function to get tier investment length
   function getTierInvestmentLength() public view returns (uint256) {
     return _tierInvestments.length;
+  }
+
+  // Used to test the content of the _tierInvestments.
+  function getTierInvestments() public view returns (TierInvestment[] memory) {
+    return _tierInvestments;
+  }
+
+  function getContractAddress() public view returns (address) {
+    return address(this);
   }
 }
