@@ -108,7 +108,7 @@ test contract. PRBTest comes with a pre-instantiated
 environment accessible via the `vm` property. If you would like to view the
 logs in the terminal output you can add the
 `-vvv` flag and use
-[console.log](https://book.getfoundry.sh/faq?highlight=console.log#how-do-i-use-consolelog).
+[console2.log](https://book.getfoundry.sh/faq?highlight=console2.log#how-do-i-use-consolelog).
 
 This template comes with an example test contract [Foo.t.sol](./test/Foo.t.sol)
 
@@ -220,6 +220,12 @@ Run the tests:
 
 ```sh
 forge test -vvv
+```
+
+Or to run a single test (function):
+
+```sh
+clear && forge test --vvv --match-test testInvestorGetsSaasRevenue
 ```
 
 The `-vvv` is necessary to display the error messages that you wrote with the

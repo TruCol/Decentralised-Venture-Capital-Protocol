@@ -4,6 +4,7 @@ import { console2 } from "forge-std/src/console2.sol";
 import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
+import { console } from "forge-std/src/console.sol";
 
 /**
  * @title PaymentSplitter
@@ -35,6 +36,7 @@ contract CustomPaymentSplitter {
     _amountsOwed = amountsOwed;
     _owner = msg.sender;
     for (uint256 i = 0; i < payees.length; i++) {
+      console2.log("PAYEE ADDED:", payees[i]);
       _addPayee(payees[i], _amountsOwed[i]);
     }
   }
@@ -88,7 +90,7 @@ contract CustomPaymentSplitter {
    */
   function release(address payable account) public {
     require(_dai[account] > 0);
-
+    console2.log("The release account = ", account);
     // Compute how much can be distributed.
     uint256 totalReceived = address(this).balance + (_totalReleased);
 
@@ -160,6 +162,7 @@ contract CustomPaymentSplitter {
   }
 
   function isPayee(address account) public view returns (bool) {
+    console2.log("IN PAYEEE");
     for (uint256 i = 0; i < _payees.length; i++) {
       if (_payees[i] == account) {
         return true;

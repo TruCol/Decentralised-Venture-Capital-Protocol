@@ -64,13 +64,19 @@ contract DecentralisedInvestmentManager {
 
   function receiveSaasPayment() external payable {
     require(msg.value > 0, "The amount paid was not larger than 0.");
-    console2.log("HELLOOOO");
+
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
     uint256 saasRevenueForProjectLead = 0;
     uint256 saasRevenueForInvestors = 0;
 
     // Compute how much the investors can receive together as total ROI.
     uint256 cumRemainingInvestorReturn = _helper.computeCumRemainingInvestorReturn(_tierInvestments);
+    console2.log(
+      "BEFORE paidAmount=%s,cumRemainingInvestorReturn=%s, saasRevenueForInvestors=%s",
+      paidAmount,
+      cumRemainingInvestorReturn,
+      saasRevenueForInvestors
+    );
     if (cumRemainingInvestorReturn == 0) {
       saasRevenueForProjectLead = paidAmount;
     } else if (
@@ -85,7 +91,12 @@ contract DecentralisedInvestmentManager {
         _helper.aTimesBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator);
       saasRevenueForInvestors = paidAmount - saasRevenueForProjectLead;
     }
-
+    console2.log(
+      "paidAmount=%s,cumRemainingInvestorReturn=%s, saasRevenueForInvestors=%s",
+      paidAmount,
+      cumRemainingInvestorReturn,
+      saasRevenueForInvestors
+    );
     string memory errorMessage = "Error: SAAS revenue distribution mismatch.\n";
     errorMessage = string(
       abi.encodePacked(
@@ -185,7 +196,7 @@ contract DecentralisedInvestmentManager {
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
         tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-
+        console2.log("ADDED tierInvestment");
         _tierInvestments.push(tierInvestment);
 
         // Invest remaining amount from user
@@ -226,5 +237,9 @@ contract DecentralisedInvestmentManager {
 
   function getContractAddress() public view returns (address) {
     return address(this);
+  }
+
+  function getPaymentSplitter() public view returns (CustomPaymentSplitter) {
+    return _paymentSplitter;
   }
 }
