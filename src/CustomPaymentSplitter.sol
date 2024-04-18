@@ -152,7 +152,7 @@ contract CustomPaymentSplitter {
     require(dai > 0, "There was 0 dai incoming.");
 
     // TODO: assert account is in _dai array.
-
+    console2.log("Adding %s dai to account:%s", dai, account);
     _dai[account] = _dai[account] + dai;
     _totalDai = _totalDai + dai;
     emit SharesAdded(account, dai);

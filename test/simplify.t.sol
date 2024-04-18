@@ -101,8 +101,8 @@ contract SimplifiedTest is PRBTest, StdCheats {
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      //5_000* 10 - 3000*0.6=32_000
-      32_000, // Tier 0 has a multiple of 10.
+      //5_000* 10 - 3000*0.6=48_200
+      48200, // Tier 0 has a multiple of 10.
       "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
     );
 

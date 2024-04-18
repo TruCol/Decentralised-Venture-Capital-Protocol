@@ -114,7 +114,7 @@ contract DecentralisedInvestmentManager {
 
     // Distribute remaining amount to investors (if applicable)Store
     if (saasRevenueForInvestors > 0) {
-      console2.log("Investors receives money.");
+      console2.log("Investors receive money.");
       distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
     } else {
       console2.log("Investor does not receive money.");
@@ -137,7 +137,13 @@ contract DecentralisedInvestmentManager {
       // investment shares instead.
       // Compute how much an investor receives for its investment in this tier.
       uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn() / cumRemainingInvestorReturn;
+      console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
+      console2.log("_tierInvestments[i].remainingReturn()=", _tierInvestments[i].remainingReturn());
+      console2.log("tierInvestmentReturnFraction=", tierInvestmentReturnFraction);
+
       uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
+      console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
+      console2.log("investmentReturn=", investmentReturn);
       // Allocate that amount to the investor.
       performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].investor());
 
