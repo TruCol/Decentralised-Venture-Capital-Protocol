@@ -11,9 +11,8 @@ contract DecentralisedInvestmentHelper {
 
   function computeCumRemainingInvestorReturn(TierInvestment[] memory tierInvestments) public view returns (uint256) {
     uint256 cumRemainingInvestorReturn = 0;
-    console2.log("tierInvestments.length=", tierInvestments.length);
+
     for (uint256 i = 0; i < tierInvestments.length; i++) {
-      console2.log("i=%s, Invested in Tier=%s", i, tierInvestments[i].getAmountInvestedInThisTierInvestment());
       // TODO: assert tierInvestments[i].remainingReturn() >= 0.
       cumRemainingInvestorReturn += tierInvestments[i].remainingReturn();
     }

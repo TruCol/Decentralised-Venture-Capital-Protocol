@@ -113,10 +113,10 @@ contract DecentralisedInvestmentManager {
 
     // Distribute remaining amount to investors (if applicable)Store
     if (saasRevenueForInvestors > 0) {
-      console2.log("Investors can has money.");
+      console2.log("Investors receives money.");
       distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
     } else {
-      console2.log("No money for investors.");
+      console2.log("Investor does not receive money.");
     }
 
     // Perform transaction and administration for project lead (if applicable)
@@ -137,7 +137,6 @@ contract DecentralisedInvestmentManager {
       // Compute how much an investor receives for its investment in this tier.
       uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn() / cumRemainingInvestorReturn;
       uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
-      console2.log("i={0}, investmentReturn={1}", investmentReturn);
       // Allocate that amount to the investor.
       performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].investor());
 
@@ -159,14 +158,14 @@ contract DecentralisedInvestmentManager {
       _paymentSplitter.publicAddPayee(receivingWallet, amount);
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
-      console2.log("Adding shares to payee.");
     }
   }
 
   function receiveInvestment() external payable {
     require(msg.value > 0, "The amount invested was not larger than 0.");
 
-    require(msg.sender == 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496, "The sender was unexpected.");
+    // TODO: remove, used for debugging only.
+    require(msg.sender == 0x82Df0950F5A951637E0307CdCB4c672F298B8Bc6, "The investor address was unexpected.");
 
     require(
       !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
@@ -185,7 +184,6 @@ contract DecentralisedInvestmentManager {
   ) private {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
 
-    console2.log("investmentAmount={0}, investorWallet={1}", investmentAmount, investorWallet);
     if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
       Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
 
@@ -196,7 +194,6 @@ contract DecentralisedInvestmentManager {
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
         tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-        console2.log("ADDED tierInvestment");
         _tierInvestments.push(tierInvestment);
 
         // Invest remaining amount from user

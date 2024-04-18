@@ -36,7 +36,6 @@ contract CustomPaymentSplitter {
     _amountsOwed = amountsOwed;
     _owner = msg.sender;
     for (uint256 i = 0; i < payees.length; i++) {
-      console2.log("PAYEE ADDED:", payees[i]);
       _addPayee(payees[i], _amountsOwed[i]);
     }
   }
@@ -90,7 +89,7 @@ contract CustomPaymentSplitter {
    */
   function release(address payable account) public {
     require(_dai[account] > 0);
-    console2.log("The release account = ", account);
+
     // Compute how much can be distributed.
     uint256 totalReceived = address(this).balance + (_totalReleased);
 
@@ -150,8 +149,6 @@ contract CustomPaymentSplitter {
    *   funds after constructor initialisation.
    */
   function publicAddSharesToPayee(address account, uint256 dai) public onlyOwner {
-    console2.log("account={0}, dai={1}", account, dai);
-    require(account != address(0), "The incoming account was the address(0).");
     require(dai > 0, "There was 0 dai incoming.");
 
     // TODO: assert account is in _dai array.
@@ -162,7 +159,6 @@ contract CustomPaymentSplitter {
   }
 
   function isPayee(address account) public view returns (bool) {
-    console2.log("IN PAYEEE");
     for (uint256 i = 0; i < _payees.length; i++) {
       if (_payees[i] == account) {
         return true;
