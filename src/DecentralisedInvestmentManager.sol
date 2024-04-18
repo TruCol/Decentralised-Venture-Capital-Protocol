@@ -22,7 +22,7 @@ contract DecentralisedInvestmentManager {
   uint256[] private _owedDai;
 
   CustomPaymentSplitter private _paymentSplitter;
-  uint256 _cumReceivedInvestments;
+  uint256 private _cumReceivedInvestments;
 
   // Custom attributes of the contract.
   Tier[] private _tiers;
@@ -161,6 +161,25 @@ contract DecentralisedInvestmentManager {
     }
   }
 
+  /**
+  @notice when an investor makes an investment with its investmentWallet, this
+  contract checks whether the contract is full, or whether it still takes in
+  new investments. If the investment ceiling is reached it reverts the
+  investment back to the investor. Otherwise it takes it in, and fills up the
+  investment tiers that are still open until the whole investment amount is
+  allocated or until the investment ceiling is reached. The remaining
+  investment amount is then reverted.
+
+  To allocate the investment over the investment tiers, first the
+  allocateInvestment function finds the lowest tier that is still open/not
+  full. The lowest tier has the highest multiple. The allocateInvestment
+  function then distributes the investment over the first tier, and then
+  recursively calls itself until the whole investment is distributed, or the
+  investment ceiling is reached. In case of the latter, the remaining
+  investment amount is returned.
+
+
+   */
   function receiveInvestment() external payable {
     require(msg.value > 0, "The amount invested was not larger than 0.");
 
@@ -177,6 +196,19 @@ contract DecentralisedInvestmentManager {
     emit InvestmentReceived(msg.sender, msg.value);
   }
 
+  /**
+  @notice If the investment ceiling is not reached, it finds the lowest open
+  investment tier, and then computes how much can still be invested in that
+  investment tier. If the investment amount is larger than the amount remaining
+  in that tier, it fills that tier up with a part of the investment using the
+  addInvestmentToCurrentTier function, and recursively calls itself until the
+  investment amount is fully allocated, or the investment ceiling is reached.
+  If the investment amount is equal to- or smaller than the amount remaining in
+  that tier, it adds that amount to the current investment tier using the
+  addInvestmentToCurrentTier. That's it.
+
+
+  */
   function allocateInvestment(
     uint256 investmentAmount,
     // uint256 remainingAmountInTier,
@@ -193,7 +225,7 @@ contract DecentralisedInvestmentManager {
 
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
-        tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+        tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
         _tierInvestments.push(tierInvestment);
 
         // Invest remaining amount from user
@@ -202,7 +234,7 @@ contract DecentralisedInvestmentManager {
         allocateInvestment(remainingInvestmentAmount, investorWallet);
       } else {
         // Invest full amount in current tier
-        tierInvestment = createAnInvestmentInCurrentTier(investorWallet, currentTier, investmentAmount);
+        tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
 
         _tierInvestments.push(tierInvestment);
       }
@@ -212,7 +244,14 @@ contract DecentralisedInvestmentManager {
     }
   }
 
-  function createAnInvestmentInCurrentTier(
+  /**
+  @notice This creates a tierInvestment object/contract for the current tier.
+  Since it takes in the current tier, it stores the multiple used for that tier
+  to specify how much the investor may retrieve. Furthermore, it tracks how
+  much investment this contract has received in total using
+  _cumReceivedInvestments.
+   */
+  function addInvestmentToCurrentTier(
     address investorWallet,
     Tier currentTier,
     uint256 newInvestmentAmount
@@ -238,5 +277,9 @@ contract DecentralisedInvestmentManager {
 
   function getPaymentSplitter() public view returns (CustomPaymentSplitter) {
     return _paymentSplitter;
+  }
+
+  function getCumReceivedInvestments() public view returns (uint256) {
+    return _cumReceivedInvestments;
   }
 }

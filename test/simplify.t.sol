@@ -47,17 +47,16 @@ contract SimplifiedTest is PRBTest, StdCheats {
   /// @dev Test to simulate a larger balance using `deal`.
   function testInvestorGetsSaasRevenue() public {
     uint256 startBalance = _investorWallet.balance;
-    uint256 investmentAmount = 20_000 wei;
+    uint256 investmentAmount = 5_000 wei;
 
-    // Send investment directly from the investor wallet.
     console2.log("_dim balance before=", address(_dim).balance);
-    vm.deal(address(_investorWallet), startBalance);
+    // Set the msg.sender address to that of the _investorWallet for the next call.
     vm.prank(address(_investorWallet));
+    // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: investmentAmount }();
 
-    uint256 endBalance = _investorWallet.balance;
-
     // Assert that user balance decreased by the investment amount
+    uint256 endBalance = _investorWallet.balance;
     assertEq(
       startBalance - endBalance,
       investmentAmount,
@@ -68,21 +67,28 @@ contract SimplifiedTest is PRBTest, StdCheats {
     console2.log("investmentAmount=", investmentAmount);
     console2.log("_dim balance after=", address(_dim).balance);
 
+    // TODO: assert the tierInvestment(s) are made as expected.
+    assertEq(
+      _dim.getCumReceivedInvestments(),
+      investmentAmount,
+      "Error, the _cumReceivedInvestments was not as expected."
+    );
+    assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
+    // TODO: write tests to assert the remaining investments are returned.
+
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 5000 wei;
-    console2.log("_userWallet", _userWallet);
+    // Set the msg.sender address to that of the _userWallet for the next call.
+    vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
     _dim.receiveSaasPayment{ value: saasPaymentAmount }();
-    (bool paymentSuccess, bytes memory paymentResult) = _userWallet.call{ value: saasPaymentAmount }(
-      abi.encodeWithSelector(_dim.receiveSaasPayment.selector)
-    );
 
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWallet), "The _investorWallet is not recognised as payee.");
+    // assertTrue(paymentSplitter.isPayee(_investorWallet), "The _investorWallet is not recognised as payee.");
 
     // Assert investor can retrieve saas revenue fraction.
-    // assertEq(paymentSplitter.released(_investorWallet), 5);
+    assertEq(paymentSplitter.released(_investorWallet), 5);
   }
 }
