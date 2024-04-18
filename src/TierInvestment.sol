@@ -35,7 +35,7 @@ contract TierInvestment {
     tier = _tier;
 
     // Initialise default value.
-    remainingReturn = 0;
+    remainingReturn = _newInvestmentAmount * tier.multiple();
   }
 
   /**

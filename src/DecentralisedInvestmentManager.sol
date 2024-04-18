@@ -62,8 +62,11 @@ contract DecentralisedInvestmentManager {
     return new CustomPaymentSplitter(_withdrawers, _owedDai);
   }
 
+  /**
+  @notice When a saaspayment is received, the total amount the investors may
+  still receive, is calculated and stored in cumRemainingInvestorReturn. */
   function receiveSaasPayment() external payable {
-    require(msg.value > 0, "The amount paid was not larger than 0.");
+    require(msg.value > 0, "The SAAS payment was not larger than 0.");
 
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
     uint256 saasRevenueForProjectLead = 0;
@@ -77,20 +80,18 @@ contract DecentralisedInvestmentManager {
       cumRemainingInvestorReturn,
       saasRevenueForInvestors
     );
-    if (cumRemainingInvestorReturn == 0) {
-      saasRevenueForProjectLead = paidAmount;
-    } else if (
-      cumRemainingInvestorReturn <=
-      _helper.aTimes1MinusBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator)
-    ) {
-      saasRevenueForInvestors = cumRemainingInvestorReturn;
-      saasRevenueForProjectLead = paidAmount - cumRemainingInvestorReturn;
-    } else {
-      saasRevenueForProjectLead =
-        paidAmount *
-        _helper.aTimesBOverC(paidAmount, _projectLeadFracNumerator, _projectLeadFracDenominator);
-      saasRevenueForInvestors = paidAmount - saasRevenueForProjectLead;
-    }
+
+    // Compute the saasRevenue for the investors.
+    uint256 investorFracNumerator = _projectLeadFracDenominator - _projectLeadFracNumerator;
+
+    saasRevenueForInvestors = _helper.computeRemainingInvestorPayout(
+      cumRemainingInvestorReturn,
+      investorFracNumerator,
+      _projectLeadFracDenominator,
+      paidAmount
+    );
+    saasRevenueForProjectLead = paidAmount - saasRevenueForInvestors;
+
     console2.log(
       "paidAmount=%s,cumRemainingInvestorReturn=%s, saasRevenueForInvestors=%s",
       paidAmount,
@@ -281,5 +282,9 @@ contract DecentralisedInvestmentManager {
 
   function getCumReceivedInvestments() public view returns (uint256) {
     return _cumReceivedInvestments;
+  }
+
+  function getCumRemainingInvestorReturn() public view returns (uint256) {
+    return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
   }
 }

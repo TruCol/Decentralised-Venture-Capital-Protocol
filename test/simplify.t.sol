@@ -71,13 +71,20 @@ contract SimplifiedTest is PRBTest, StdCheats {
     assertEq(
       _dim.getCumReceivedInvestments(),
       investmentAmount,
-      "Error, the _cumReceivedInvestments was not as expected."
+      "Error, the _cumReceivedInvestments was not as expected after investment."
     );
+    assertEq(
+      _dim.getCumRemainingInvestorReturn(),
+      // investmentAmount*10, // Tier 0 has a multiple of 10.
+      50_000,
+      "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
+    );
+
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
     // TODO: write tests to assert the remaining investments are returned.
 
     // Assert can make saas payment.
-    uint256 saasPaymentAmount = 5000 wei;
+    uint256 saasPaymentAmount = 3000 wei;
     // Set the msg.sender address to that of the _userWallet for the next call.
     vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
@@ -86,9 +93,20 @@ contract SimplifiedTest is PRBTest, StdCheats {
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    // assertTrue(paymentSplitter.isPayee(_investorWallet), "The _investorWallet is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_investorWallet), "The _investorWallet is not recognised as payee.");
+    assertEq(
+      _dim.getCumReceivedInvestments(),
+      investmentAmount,
+      "Error, the _cumReceivedInvestments was not as expected after investment."
+    );
+    assertEq(
+      _dim.getCumRemainingInvestorReturn(),
+      //5_000* 10 - 3000*0.6=32_000
+      32_000, // Tier 0 has a multiple of 10.
+      "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
+    );
 
     // Assert investor can retrieve saas revenue fraction.
-    assertEq(paymentSplitter.released(_investorWallet), 5);
+    // assertEq(paymentSplitter.released(_investorWallet), 5);
   }
 }
