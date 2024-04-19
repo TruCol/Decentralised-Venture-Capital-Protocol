@@ -1,4 +1,4 @@
-# Decentralised Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+# Decentralised SAAS Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
 This is a decentralised investment protocol for SAAS applications. Investors
 can see what the project lead proposes to do with the investment, along with
