@@ -147,12 +147,12 @@ contract DecentralisedInvestmentManager {
       // Compute how much an investor receives for its investment in this tier.
       uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn() / cumRemainingInvestorReturn;
       console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
-      console2.log("_tierInvestments[i].remainingReturn()=", _tierInvestments[i].remainingReturn());
+      console2.log("_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
       console2.log("tierInvestmentReturnFraction=", tierInvestmentReturnFraction);
 
       uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
       console2.log("investmentReturn=", investmentReturn);
-      console2.log("_tierInvestments[i].getInvestor()=", _tierInvestments[i].getInvestor());
+      console2.log("_tierInvestments[%s].getInvestor()=", i, _tierInvestments[i].getInvestor());
       // Allocate that amount to the investor.
       performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
 
@@ -206,9 +206,6 @@ contract DecentralisedInvestmentManager {
    */
   function receiveInvestment() external payable {
     require(msg.value > 0, "The amount invested was not larger than 0.");
-
-    // TODO: remove, used for debugging only.
-    require(msg.sender == 0x82Df0950F5A951637E0307CdCB4c672F298B8Bc6, "The investor address was unexpected.");
 
     require(
       !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),

@@ -17,7 +17,7 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract SingleInvestmentTest is PRBTest, StdCheats {
+contract PartialReturnTest is PRBTest, StdCheats {
   address internal projectLeadAddress;
   address payable _investorWallet;
   address private _userWallet;

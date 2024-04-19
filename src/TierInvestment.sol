@@ -36,6 +36,12 @@ contract TierInvestment {
 
     // Initialise default value.
     remainingReturn = _newInvestmentAmount * tier.multiple();
+    console2.log(
+      "Initial remaining return initialised at:%s, with multiple=%s and investmentamount=",
+      remainingReturn,
+      tier.multiple(),
+      _newInvestmentAmount
+    );
   }
 
   /**
