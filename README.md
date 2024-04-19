@@ -1,5 +1,8 @@
 # Decentralised SAAS Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
+<img src="Images/laser_eyes_3.jpg" alt="A description of the image content"
+style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
+
 This is a decentralised investment protocol for SAAS applications. Investors
 can see what the project lead proposes to do with the investment, along with
 the proposed multiple ROI (e.g. `20` times the initial investment amount).
