@@ -105,6 +105,7 @@ contract CustomPaymentSplitter {
 
     // Track the total amount of DAI that has been released.
     _totalReleased = _totalReleased + (payment);
+    console2.log("_totalReleased=", _totalReleased);
 
     // Perform the transfer. This is because when this function is triggered,
     // it computes how much that address is owed, and immediately pays it. If

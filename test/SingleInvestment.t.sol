@@ -17,94 +17,97 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract SingleInvestmentTest is PRBTest, StdCheats {
-  address internal firstFoundryAddress;
-  address private _investorWallet;
+contract SimplifiedTest is PRBTest, StdCheats {
+  address internal projectLeadAddress;
+  address payable _investorWallet;
   address private _userWallet;
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
-    firstFoundryAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
     uint256 projectLeadFracNumerator = 4;
     uint256 projectLeadFracDenominator = 10;
-    // assertEq(address(firstFoundryAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(projectLeadFracNumerator, projectLeadFracDenominator, address(0));
+    // assertEq(address(projectLeadAddress).balance, 43);
+    _dim = new DecentralisedInvestmentManager(projectLeadFracNumerator, projectLeadFracDenominator, projectLeadAddress);
 
-    _investorWallet = address(uint160(uint256(keccak256(bytes("1")))));
-    deal(_investorWallet, 80000 wei);
+    _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
+    deal(_investorWallet, 8000000 wei);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100002 wei);
+
+    // Print the addresses to console.
+    console2.log("projectLeadAddress=    ", projectLeadAddress);
+    console2.log("_investorWallet=       ", _investorWallet);
+    console2.log("_userWallet=           ", _userWallet, "\n");
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
-  function testSingleInvestmentOnInvestorExceedingCeiling() public {
+  function testInvestorGetsSaasRevenue() public {
     uint256 startBalance = _investorWallet.balance;
-    uint256 investmentAmount = 200_000 wei;
-    console2.log("Within test, investorWallet = ", _investorWallet);
-    // Send investment directly from the investor wallet.
-    (bool investmentSuccess, bytes memory investmentResult) = _investorWallet.call{ value: investmentAmount }(
-      abi.encodeWithSelector(_dim.receiveInvestment.selector)
-    );
+    uint256 investmentAmount = 5_000 wei;
 
-    uint256 endBalance = _investorWallet.balance;
+    console2.log("_dim balance before=", address(_dim).balance);
+    // Set the msg.sender address to that of the _investorWallet for the next call.
+    vm.prank(address(_investorWallet));
+    // Send investment directly from the investor wallet into the receiveInvestment function.
+    _dim.receiveInvestment{ value: investmentAmount }();
 
     // Assert that user balance decreased by the investment amount
-    assertEq(endBalance - startBalance, investmentAmount);
+    uint256 endBalance = _investorWallet.balance;
+    assertEq(
+      startBalance - endBalance,
+      investmentAmount,
+      "investmentAmount not equal to difference in investorWalletBalance"
+    );
+    console2.log("startBalance=", startBalance);
+    console2.log("endBalance=", endBalance);
+    console2.log("investmentAmount=", investmentAmount);
+    console2.log("_dim balance after=", address(_dim).balance);
+
+    // TODO: assert the tierInvestment(s) are made as expected.
+    assertEq(
+      _dim.getCumReceivedInvestments(),
+      investmentAmount,
+      "Error, the _cumReceivedInvestments was not as expected after investment."
+    );
+    assertEq(
+      _dim.getCumRemainingInvestorReturn(),
+      // investmentAmount*10, // Tier 0 has a multiple of 10.
+      50_000,
+      "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
+    );
+
+    assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
+    // TODO: write tests to assert the remaining investments are returned.
+
+    // Assert can make saas payment.
+    uint256 saasPaymentAmount = 30000 wei;
+    // Set the msg.sender address to that of the _userWallet for the next call.
+    vm.prank(address(_userWallet));
+    // Directly call the function on the deployed contract.
+    _dim.receiveSaasPayment{ value: saasPaymentAmount }();
 
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    // assertTrue(paymentSplitter.isPayee(_investorWallet));
-
-    // Assert can make saas payment.
-    uint256 saasPaymentAmount = 5000 wei;
-    console2.log("_userWallet", _userWallet);
-    // Directly call the function on the deployed contract.
-    // _dim.receiveSaasPayment{ value: saasPaymentAmount }();
-    (bool paymentSuccess, bytes memory paymentResult) = _userWallet.call{ value: saasPaymentAmount }(
-      abi.encodeWithSelector(_dim.receiveSaasPayment.selector)
+    assertTrue(paymentSplitter.isPayee(_investorWallet), "The _investorWallet is not recognised as payee.");
+    assertEq(
+      _dim.getCumReceivedInvestments(),
+      investmentAmount,
+      "Error, the _cumReceivedInvestments was not as expected after investment."
+    );
+    assertEq(
+      _dim.getCumRemainingInvestorReturn(),
+      //5_000* 10 - 3000*0.6=48_200
+      32000, // Tier 0 has a multiple of 10.
+      "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
     );
 
     // Assert investor can retrieve saas revenue fraction.
+    paymentSplitter.release(_investorWallet);
     // assertEq(paymentSplitter.released(_investorWallet), 5);
-  }
-
-  /// @dev Test to simulate a larger balance using `deal`.
-  function testSingleInvestmentOnContractExceedingCeiling() public {
-    uint256 investmentAmount = 200_000 wei;
-    // console2.log("Within test, _dim contract address = ",_dim);
-    console2.log("Within test, dim contract address = ", _dim.getContractAddress());
-
-    // Directly call the function on the deployed contract.
-    _dim.receiveInvestment{ value: investmentAmount }();
-
-    // Assert the tier investments are processed as expected.
-    console2.log("Before length assertion", _dim.getTierInvestmentLength());
-    assertEq(_dim.getTierInvestmentLength(), 3);
-
-    TierInvestment[] memory tierInvestments = _dim.getTierInvestments();
-
-    // Assert the first tier has an amount of 10000 wei.
-    TierInvestment firstTierInvestment = tierInvestments[0];
-    assertEq(firstTierInvestment.getAmountInvestedInThisTierInvestment(), 10_000);
-    assertEq(firstTierInvestment.getTier().multiple(), 10);
-    assertEq(tierInvestments[1].getAmountInvestedInThisTierInvestment(), 40_000);
-    assertEq(tierInvestments[1].getTier().multiple(), 5);
-    assertEq(tierInvestments[2].getAmountInvestedInThisTierInvestment(), 50_000);
-    assertEq(tierInvestments[2].getTier().multiple(), 2);
-
-    // Assert can make saas payment.
-    uint256 saasPaymentAmount = 5000 wei;
-    console2.log("_userWallet", _userWallet);
-    // Directly call the function on the deployed contract.
-    // _dim.receiveSaasPayment{ value: saasPaymentAmount }();
-    (bool paymentSuccess, bytes memory paymentResult) = _userWallet.call{ value: saasPaymentAmount }(
-      abi.encodeWithSelector(_dim.receiveSaasPayment.selector)
-    );
-
-    // TODO: assert user wallet balance is diminished with saas payment.
   }
 }
