@@ -24,6 +24,9 @@ sudo snap install bun-js
 bun install # install Solhint, Prettier, and other Node.js deps
 pre-commit install
 
+# Facilitate branch coverage checks.
+sudo apt install lcov
+
 # Install foundry
 sudo apt install curl -y
 curl -L https://foundry.paradigm.xyz | bash
@@ -151,7 +154,8 @@ forge build
 Get a test coverage report:
 
 ```sh
-forge coverage
+forge coverage --report lcov
+genhtml -o report --branch-coverage lcov.info
 ```
 
 ### Deploy
