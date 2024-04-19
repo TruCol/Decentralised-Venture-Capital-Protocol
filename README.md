@@ -2,16 +2,19 @@
 
 This is a decentralised investment protocol for SAAS applications. Investors
 can see what the project lead proposes to do with the investment, along with
-the proposed multiple ROI (e.g. 20 times the initial investment amount).
+the proposed multiple ROI (e.g. `20` times the initial investment amount).
 The investor can then evaluate the project and estimate whether the project
-has a probability of more than `1/20 = 5 [%]` of returning the whole multiple
-they may receive for their investment.
+has a high enough probability of (e.g. more than `1/20 = 5 [%]` of) returning
+the whole multiple they may receive for their investment.
 
-Three investment tiers are supported, each with different ROI multiples. E.g.
+Three investment tiers are supported, each with different ROI multiples, e.g.:
 
 - Tier 0: 0 to 4 ether, multiple ROI: 10x.
 - Tier 0: 4 to 15 ether, multiple ROI: 5x.
 - Tier 15: 4 to 30 ether, multiple ROI: 2x.
+
+*Note: Investing 5 Bitcoin with an ROI of 6 can lead to a maximum return of 30 Bitcoin
+yielding a maximum profit of 25 bitcoin.*
 
 The idea is that in later stages of investment, the risk becomes lower as more
 data is available on whether the project will succeed or not, hence a lower ROI
@@ -31,11 +34,13 @@ fraction.
 ## Risks
 
 Primary risk is the project lead using a different SAAS payment address to gain
-its income. This requires trust in the project lead. Otherwise, all
+its income. This requires trust in the project lead. Besides that, all
 transactions are automated. An ideal application of this protocol would
-include a method to verify the SAAS service is developed as expected, e.g. a
-streaming service that provides access to all songs in spotify, through
-(randomized) file hashes. This verification is considered out of scope.
+include a method to verify the SAAS service is developed as expected, e.g. if
+a SAAS streaming service is developed, the protocol verifies the service
+provides access to all songs in spotify, through (randomized) file hashes, and
+makes the project lead automatically liable (through stake) for not living up
+to the promise. This verification is considered out of scope.
 
 Secondary risk is that this contract is hacked:
 
