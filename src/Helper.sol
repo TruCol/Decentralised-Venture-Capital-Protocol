@@ -13,7 +13,7 @@ contract DecentralisedInvestmentHelper {
     uint256 cumRemainingInvestorReturn = 0;
 
     for (uint256 i = 0; i < tierInvestments.length; i++) {
-      console2.log("tierInvestments[i]=%s", tierInvestments[i].remainingReturn());
+      console2.log("tierInvestments[i].remainingReturn()=%s", tierInvestments[i].remainingReturn());
 
       // TODO: assert tierInvestments[i].remainingReturn() >= 0.
       cumRemainingInvestorReturn += tierInvestments[i].remainingReturn();

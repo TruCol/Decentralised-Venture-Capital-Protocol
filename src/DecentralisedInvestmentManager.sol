@@ -35,7 +35,14 @@ contract DecentralisedInvestmentManager {
    * after creation.
    *
    */
-  constructor(uint256 projectLeadFracNumerator, uint256 projectLeadFracDenominator, address projectLead) {
+  constructor(
+    uint256 firstTierCeiling,
+    uint256 secondTierCeiling,
+    uint256 thirdTierCeiling,
+    uint256 projectLeadFracNumerator,
+    uint256 projectLeadFracDenominator,
+    address projectLead
+  ) {
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
@@ -49,11 +56,11 @@ contract DecentralisedInvestmentManager {
     _helper = new DecentralisedInvestmentHelper();
 
     // Specify the different investment tiers in DAI.
-    Tier tier_0 = new Tier(0, 10_000, 10);
+    Tier tier_0 = new Tier(0, firstTierCeiling, 10);
     _tiers.push(tier_0);
-    Tier tier_1 = new Tier(10_000, 50_000, 5);
+    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
     _tiers.push(tier_1);
-    Tier tier_2 = new Tier(50_000, 100_000, 2);
+    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier_2);
   }
 

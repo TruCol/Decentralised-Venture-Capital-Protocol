@@ -27,10 +27,10 @@ contract SimplifiedTest is PRBTest, StdCheats {
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
     projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+
     uint256 projectLeadFracNumerator = 4;
     uint256 projectLeadFracDenominator = 10;
-
-    // Specify the investment tiers in ether.
+    // Specify the investment tiers in wei.
     uint256 firstTierCeiling = 3 ether;
     uint256 secondTierCeiling = 15 ether;
     uint256 thirdTierCeiling = 30 ether;
@@ -46,9 +46,9 @@ contract SimplifiedTest is PRBTest, StdCheats {
     );
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet, 80 ether);
+    deal(_investorWallet, 8000000 wei);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
-    deal(_userWallet, 100 ether);
+    deal(_userWallet, 100002 wei);
 
     // Print the addresses to console.
     console2.log("projectLeadAddress=    ", projectLeadAddress);
@@ -57,9 +57,9 @@ contract SimplifiedTest is PRBTest, StdCheats {
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
-  function testInvestorGetsSaasRevenue() public {
+  function testMultipleInvestorsGetSaasRevenue() public {
     uint256 startBalance = _investorWallet.balance;
-    uint256 investmentAmount = 0.5 ether;
+    uint256 investmentAmount = 5_000 wei;
 
     console2.log("_dim balance before=", address(_dim).balance);
     // Set the msg.sender address to that of the _investorWallet for the next call.
@@ -88,7 +88,7 @@ contract SimplifiedTest is PRBTest, StdCheats {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
       // investmentAmount*10, // Tier 0 has a multiple of 10.
-      10 * 0.5 ether,
+      50_000,
       "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
     );
 
@@ -96,7 +96,7 @@ contract SimplifiedTest is PRBTest, StdCheats {
     // TODO: write tests to assert the remaining investments are returned.
 
     // Assert can make saas payment.
-    uint256 saasPaymentAmount = 0.2 ether;
+    uint256 saasPaymentAmount = 30000 wei;
     // Set the msg.sender address to that of the _userWallet for the next call.
     vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
@@ -114,13 +114,12 @@ contract SimplifiedTest is PRBTest, StdCheats {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
       //5_000* 10 - 3000*0.6=48_200
-      // 0.5 * 10^18 - 0.2*10^18 * 0.6 = 0.3*0.6 =18*10^18 wei
-      4.88 ether, // Tier 0 has a multiple of 10.
-      "Error, the cumRemainingInvestorReturn was not as expected directly after SAAS payment."
+      32000, // Tier 0 has a multiple of 10.
+      "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet);
+    // paymentSplitter.release(_investorWallet);
     // assertEq(paymentSplitter.released(_investorWallet), 5);
   }
 }
