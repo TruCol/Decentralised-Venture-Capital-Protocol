@@ -298,15 +298,6 @@ contract DecentralisedInvestmentManager {
     return _tierInvestments.length;
   }
 
-  // Used to test the content of the _tierInvestments.
-  function getTierInvestments() public view returns (TierInvestment[] memory) {
-    return _tierInvestments;
-  }
-
-  function getContractAddress() public view returns (address) {
-    return address(this);
-  }
-
   function getPaymentSplitter() public view returns (CustomPaymentSplitter) {
     return _paymentSplitter;
   }

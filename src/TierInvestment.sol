@@ -62,10 +62,6 @@ contract TierInvestment {
     return newInvestmentAmount;
   }
 
-  function getTier() public view returns (Tier) {
-    return tier;
-  }
-
   function getInvestor() public view returns (address) {
     return investor;
   }

@@ -40,16 +40,6 @@ contract CustomPaymentSplitter {
     }
   }
 
-  /**
-   * @dev payable fallback
-   *    TODO: determine why this throws an error.
-   */
-  // function () external payable {
-  // emit PaymentReceived(msg.sender, msg.value);
-  // }
-  // fallback() external payable {
-  // emit PaymentReceived(msg.sender, msg.value);
-  // }
   // This function can receive Ether from other accounts
   function deposit() public payable {
     // Event to log deposits
@@ -57,38 +47,10 @@ contract CustomPaymentSplitter {
   }
 
   /**
-   * @return the total dai of the contract.
-   */
-  function totalDai() public view returns (uint256) {
-    return _totalDai;
-  }
-
-  /**
-   * @return the total amount already released.
-   */
-  function totalReleased() public view returns (uint256) {
-    return _totalReleased;
-  }
-
-  /**
-   * @return the dai of an account.
-   */
-  function getDai(address account) public view returns (uint256) {
-    return _dai[account];
-  }
-
-  /**
    * @return the amount already released to an account.
    */
   function released(address account) public view returns (uint256) {
     return _released[account];
-  }
-
-  /**
-   * @return the address of a payee.
-   */
-  function payee(uint256 index) public view returns (address) {
-    return _payees[index];
   }
 
   /**
