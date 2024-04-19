@@ -31,7 +31,7 @@ contract SimplifiedTest is PRBTest, StdCheats {
     uint256 projectLeadFracNumerator = 4;
     uint256 projectLeadFracDenominator = 10;
     // assertEq(address(projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(projectLeadFracNumerator, projectLeadFracDenominator, address(0));
+    _dim = new DecentralisedInvestmentManager(projectLeadFracNumerator, projectLeadFracDenominator, projectLeadAddress);
 
     _investorWallet = address(uint160(uint256(keccak256(bytes("1")))));
     deal(_investorWallet, 8000000 wei);

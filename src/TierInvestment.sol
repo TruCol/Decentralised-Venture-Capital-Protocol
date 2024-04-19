@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-
 import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 contract TierInvestment {
   address public investor;
@@ -42,9 +42,9 @@ contract TierInvestment {
    * Public counterpart of the _addPayee function, to add users that can withdraw
    *   funds after constructor initialisation.
    */
-  function publicSetRemainingReturn(address someInvestor, uint256 newRemainingReturn) public onlyOwner {
+  function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public onlyOwner {
     require(someInvestor != address(0));
-    remainingReturn = newRemainingReturn;
+    remainingReturn = remainingReturn - newlyReturnedAmount;
   }
 
   /**
@@ -64,5 +64,9 @@ contract TierInvestment {
 
   function getTier() public view returns (Tier) {
     return tier;
+  }
+
+  function getInvestor() public view returns (address) {
+    return investor;
   }
 }

@@ -40,6 +40,7 @@ contract DecentralisedInvestmentManager {
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
     _projectLead = projectLead;
+
     // Initialise default values.
     _cumReceivedInvestments = 0;
     _paymentSplitter = initialiseCustomPaymentSplitter(_projectLead);
@@ -113,8 +114,9 @@ contract DecentralisedInvestmentManager {
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
 
     // Distribute remaining amount to investors (if applicable)Store
+    console2.log("saasRevenueForProjectLead=", saasRevenueForProjectLead);
+    console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
     if (saasRevenueForInvestors > 0) {
-      console2.log("Investors receive money.");
       distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
     } else {
       console2.log("Investor does not receive money.");
@@ -142,13 +144,13 @@ contract DecentralisedInvestmentManager {
       console2.log("tierInvestmentReturnFraction=", tierInvestmentReturnFraction);
 
       uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
-      console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
       console2.log("investmentReturn=", investmentReturn);
+      console2.log("_tierInvestments[i].getInvestor()=", _tierInvestments[i].getInvestor());
       // Allocate that amount to the investor.
-      performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].investor());
+      performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
 
       // Track the payout in the tierInvestment.
-      _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].investor(), investmentReturn);
+      _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
       cumulativePayout += investmentReturn;
     }
     require(
@@ -160,7 +162,6 @@ contract DecentralisedInvestmentManager {
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
     // TODO: include safe handling of gas costs.
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
-
     if (!(_paymentSplitter.isPayee(receivingWallet))) {
       _paymentSplitter.publicAddPayee(receivingWallet, amount);
     } else {
@@ -229,7 +230,6 @@ contract DecentralisedInvestmentManager {
       uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
 
       TierInvestment tierInvestment;
-
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
         tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
