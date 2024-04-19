@@ -45,8 +45,16 @@ contract CustomPaymentSplitter {
    *    TODO: determine why this throws an error.
    */
   // function () external payable {
-  //   emit PaymentReceived(msg.sender, msg.value);
+  // emit PaymentReceived(msg.sender, msg.value);
   // }
+  // fallback() external payable {
+  // emit PaymentReceived(msg.sender, msg.value);
+  // }
+  // This function can receive Ether from other accounts
+  function deposit() public payable {
+    // Event to log deposits
+    emit PaymentReceived(msg.sender, msg.value);
+  }
 
   /**
    * @return the total dai of the contract.
@@ -88,24 +96,25 @@ contract CustomPaymentSplitter {
    * @param account Whose payments will be released.
    */
   function release(address payable account) public {
-    require(_dai[account] > 0);
+    require(_dai[account] > 0, "The dai for account, was not larger than 0.");
+
+    console2.log("_totalReleased=", _totalReleased);
 
     // Compute how much can be distributed.
     uint256 totalReceived = address(this).balance + (_totalReleased);
+    console2.log("totalReceived=", totalReceived);
 
     // The amount the payee may receive is equal to the amount of outstanding
     // DAI, subtracted by the amount that has been released to that account.
     uint256 payment = _dai[account] - _released[account];
 
-    require(payment >= totalReceived);
-    require(payment > 0);
+    require(payment > 0, "The amount to be paid was not larger than 0.");
     // Track the amount of DAI the payee has received through the release
     // process.
     _released[account] = _released[account] + (payment);
 
     // Track the total amount of DAI that has been released.
     _totalReleased = _totalReleased + (payment);
-    console2.log("_totalReleased=", _totalReleased);
 
     // Perform the transfer. This is because when this function is triggered,
     // it computes how much that address is owed, and immediately pays it. If

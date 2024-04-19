@@ -113,14 +113,13 @@ contract SimplifiedTest is PRBTest, StdCheats {
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      //5_000* 10 - 3000*0.6=48_200
-      // 0.5 * 10^18 - 0.2*10^18 * 0.6 = 0.3*0.6 =18*10^18 wei
+      // 0.5 * 10^18 - 0.2*10^18 * 0.6 = (0.5 - 0.12)*10 =0.38 *10 = 3.8 *10^18 wei
       4.88 ether, // Tier 0 has a multiple of 10.
       "Error, the cumRemainingInvestorReturn was not as expected directly after SAAS payment."
     );
 
     // Assert investor can retrieve saas revenue fraction.
     paymentSplitter.release(_investorWallet);
-    // assertEq(paymentSplitter.released(_investorWallet), 5);
+    assertEq(paymentSplitter.released(_investorWallet), 0.12 ether);
   }
 }

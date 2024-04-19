@@ -166,9 +166,18 @@ contract DecentralisedInvestmentManager {
     );
   }
 
+  // TODO: include safe handling of gas costs.
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
-    // TODO: include safe handling of gas costs.
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
+
+    // Transfer the amount to the PaymentSplitter contract
+    (bool success, ) = address(_paymentSplitter).call{ value: amount }(
+      abi.encodeWithSignature("deposit()", receivingWallet)
+    );
+    // Check for successful transfer
+    require(success, "Error: Transfer to PaymentSplitter failed.");
+
+    // TODO: transfer this to the _paymentSplitter contract.
     if (!(_paymentSplitter.isPayee(receivingWallet))) {
       _paymentSplitter.publicAddPayee(receivingWallet, amount);
     } else {
