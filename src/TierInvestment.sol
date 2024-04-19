@@ -43,7 +43,7 @@ contract TierInvestment {
    *   funds after constructor initialisation.
    */
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public onlyOwner {
-    require(someInvestor != address(0));
+    require(someInvestor != address(0), "The investor address is equal to the address of this contract.");
     remainingReturn = remainingReturn - newlyReturnedAmount;
   }
 
@@ -52,7 +52,7 @@ contract TierInvestment {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner);
+    require(msg.sender == _owner, "The message is sent by someone other than the owner of this contract.");
     _;
   }
 

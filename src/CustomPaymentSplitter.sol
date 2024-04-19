@@ -30,8 +30,8 @@ contract CustomPaymentSplitter {
    * @dev Constructor
    */
   constructor(address[] memory payees, uint256[] memory amountsOwed) payable {
-    require(payees.length == amountsOwed.length);
-    require(payees.length > 0);
+    require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
+    require(payees.length > 0, "There are not more than 0 payees.");
 
     _amountsOwed = amountsOwed;
     _owner = msg.sender;
@@ -133,8 +133,7 @@ contract CustomPaymentSplitter {
    * @param dai_ The number of dai owned by the payee.
    */
   function _addPayee(address account, uint256 dai_) private {
-    // require(account != address(0));
-    require(_dai[account] == 0);
+    require(_dai[account] == 0, "This account already is owed some currency.");
 
     _payees.push(account);
     _dai[account] = dai_;
@@ -147,9 +146,9 @@ contract CustomPaymentSplitter {
    *   funds after constructor initialisation.
    */
   function publicAddPayee(address account, uint256 dai_) public onlyOwner {
-    require(account != address(0));
-    require(dai_ > 0);
-    require(_dai[account] == 0);
+    require(account != address(0), "This account is equal to the address of this account.");
+    require(dai_ > 0, "The number of incoming dai is not larger than 0.");
+    require(_dai[account] == 0, "This account already has some currency.");
 
     _payees.push(account);
     _dai[account] = dai_;
@@ -185,7 +184,7 @@ contract CustomPaymentSplitter {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner);
+    require(msg.sender == _owner, "The sender of this message is not the owner.");
     _;
   }
 }

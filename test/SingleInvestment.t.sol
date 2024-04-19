@@ -17,7 +17,7 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract SimplifiedTest is PRBTest, StdCheats {
+contract SingleInvestmentTest is PRBTest, StdCheats {
   address internal projectLeadAddress;
   address payable _investorWallet;
   address private _userWallet;
@@ -46,7 +46,7 @@ contract SimplifiedTest is PRBTest, StdCheats {
     );
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet, 80 ether);
+    deal(_investorWallet, 3 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
 
@@ -123,5 +123,6 @@ contract SimplifiedTest is PRBTest, StdCheats {
     // Assert investor can retrieve saas revenue fraction.
     paymentSplitter.release(_investorWallet);
     assertEq(paymentSplitter.released(_investorWallet), 0.12 ether);
+    assertEq(_investorWallet.balance, 3 ether - 0.5 ether + 0.12 ether);
   }
 }

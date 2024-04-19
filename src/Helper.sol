@@ -42,7 +42,7 @@ contract DecentralisedInvestmentHelper {
   ) public view returns (Tier) {
     // Check for exceeding investment ceiling.
 
-    require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers));
+    require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers), "The investment ceiling is reached.");
 
     // Validate positive investment amount.
     require(cumReceivedInvestments >= 0, "Error: Negative investments not allowed.");
