@@ -82,12 +82,6 @@ contract DecentralisedInvestmentManager {
 
     // Compute how much the investors can receive together as total ROI.
     uint256 cumRemainingInvestorReturn = _helper.computeCumRemainingInvestorReturn(_tierInvestments);
-    console2.log(
-      "BEFORE paidAmount=%s,cumRemainingInvestorReturn=%s, saasRevenueForInvestors=%s",
-      paidAmount,
-      cumRemainingInvestorReturn,
-      saasRevenueForInvestors
-    );
 
     // Compute the saasRevenue for the investors.
     uint256 investorFracNumerator = _projectLeadFracDenominator - _projectLeadFracNumerator;
@@ -100,12 +94,6 @@ contract DecentralisedInvestmentManager {
     );
     saasRevenueForProjectLead = paidAmount - saasRevenueForInvestors;
 
-    console2.log(
-      "paidAmount=%s,cumRemainingInvestorReturn=%s, saasRevenueForInvestors=%s",
-      paidAmount,
-      cumRemainingInvestorReturn,
-      saasRevenueForInvestors
-    );
     string memory errorMessage = "Error: SAAS revenue distribution mismatch.\n";
     errorMessage = string(
       abi.encodePacked(
@@ -145,21 +133,29 @@ contract DecentralisedInvestmentManager {
       // TODO: Determine if paymentSplitter can be used to compute remaining
       // investment shares instead.
       // Compute how much an investor receives for its investment in this tier.
-      uint256 tierInvestmentReturnFraction = _tierInvestments[i].remainingReturn() / cumRemainingInvestorReturn;
+
+      // Perform division with roundup to ensure the invstors are paid in whole
+      // during their last payout without requiring an additional 1 wei payout.
+      uint256 numerator = _tierInvestments[i].remainingReturn() * saasRevenueForInvestors;
+      uint256 denominator = cumRemainingInvestorReturn;
+      uint256 investmentReturn = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+      console2.log("\n_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
+      console2.log("saasRevenueForInvestors;=                ", cumRemainingInvestorReturn);
       console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
-      console2.log("_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
-      console2.log("tierInvestmentReturnFraction=", tierInvestmentReturnFraction);
-
-      uint256 investmentReturn = tierInvestmentReturnFraction * saasRevenueForInvestors;
       console2.log("investmentReturn=", investmentReturn);
-      console2.log("_tierInvestments[%s].getInvestor()=", i, _tierInvestments[i].getInvestor());
-      // Allocate that amount to the investor.
-      performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
+      console2.log("\n");
 
-      // Track the payout in the tierInvestment.
-      _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
-      cumulativePayout += investmentReturn;
+      if (investmentReturn > 0) {
+        // Allocate that amount to the investor.
+        performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
+
+        // Track the payout in the tierInvestment.
+        _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
+        cumulativePayout += investmentReturn;
+      }
     }
+    console2.log("cumulativePayout=", cumulativePayout);
+    console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
     require(
       cumulativePayout == saasRevenueForInvestors,
       "The cumulativePayout is not equal to the saasRevenueForInvestors."
@@ -169,6 +165,7 @@ contract DecentralisedInvestmentManager {
   // TODO: include safe handling of gas costs.
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
+    require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
 
     // Transfer the amount to the PaymentSplitter contract
     (bool success, ) = address(_paymentSplitter).call{ value: amount }(

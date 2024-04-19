@@ -61,11 +61,10 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
-  function testInitialInvestment() public {
+  function testMultipleInvestments() public {
     uint256 startBalance = _investorWallet0.balance;
     uint256 investmentAmount0 = 0.5 ether;
 
-    console2.log("_dim balance before=", address(_dim).balance);
     // Set the msg.sender address to that of the _investorWallet0 for the next call.
     vm.prank(address(_investorWallet0));
     // Send investment directly from the investor wallet into the receiveInvestment function.
@@ -96,7 +95,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     // TODO: write tests to assert the remaining investments are returned.
 
     // Assert can make saas payment.
-    uint256 saasPaymentAmount = 10 ether;
+    uint256 saasPaymentAmount = 20 ether;
     // Set the msg.sender address to that of the _userWallet for the next call.
     vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
@@ -117,7 +116,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
       // but only the 0.6 fraction which is for investors.
       // 0.5 * 10 * 10^18 - 10*10^18 * 0.6 = (5 - 6)*10 =0
       0 ether,
-      "Error, the cumRemainingInvestorReturn was not as expected directly after SAAS payment."
+      "Error, the cumRemainingInvestorReturn was not as expected directly after first SAAS payment."
     );
 
     // Assert investor can retrieve saas revenue fraction.
@@ -158,14 +157,21 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
       "Error, the _tierInvestments.length was not as expected after second investment."
     );
 
-    followUpSecondSaasPayment(investmentAmount1, _investorWallet1);
+    followUpSecondSaasPayment(investmentAmount0, investmentAmount1);
   }
 
-  function followUpSecondSaasPayment(uint256 investmentAmount1, address _investorWallet1) public {
+  function followUpSecondSaasPayment(uint256 investmentAmount0, uint256 investmentAmount1) public {
     // Assert can make saas payment.
-    uint256 saasPaymentAmount = 10 ether;
+    uint256 saasPaymentAmount = 1 ether;
     // Set the msg.sender address to that of the _userWallet for the next call.
-    console2.log("_userWallet.balance", _userWallet.balance);
+    assertEq(
+      _dim.getCumRemainingInvestorReturn(),
+      // The first investor is made whole, so only the second investment is
+      // still to be returned.
+      10 * 3.5 ether + 5 * 0.5 ether,
+      "Error, the cumRemainingInvestorReturn was not as expected before second SAAS payment."
+    );
+
     vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
     _dim.receiveSaasPayment{ value: saasPaymentAmount }();
@@ -176,21 +182,27 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     assertTrue(paymentSplitter.isPayee(_investorWallet1), "The _investorWallet0 is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
-      investmentAmount1,
+      investmentAmount0 + investmentAmount1,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // Tier 0 has a multiple of 10. So 0.5 * 10. Then subtract the 0.2 SAAS payment
-      // but only the 0.6 fraction which is for investors.
-      // 0.5 * 10 * 10^18 - 10*10^18 * 0.6 = (5 - 6)*10 =0
-      0 ether,
-      "Error, the cumRemainingInvestorReturn was not as expected directly after SAAS payment."
+      // 10 * 3.5 ether + 5 * 0.5 ether - 1*0.6 =
+      10 * 3.5 ether + 5 * 0.5 ether - 0.6 ether,
+      "Error, the cumRemainingInvestorReturn was not as expected directly after second SAAS payment."
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet0);
-    assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
-    assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
+    paymentSplitter.release(_investorWallet1);
+    assertEq(
+      paymentSplitter.released(_investorWallet1),
+      0.6 ether,
+      "The amount released was unexpected for investorWallet1."
+    );
+    assertEq(
+      _investorWallet1.balance,
+      4 ether - 4 ether + 0.6 ether,
+      "The balance of the investorWallet1 was unexpected."
+    );
   }
 }
