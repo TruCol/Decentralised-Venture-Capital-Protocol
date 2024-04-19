@@ -35,7 +35,7 @@ its income. This requires trust in the project lead. Otherwise, all
 transactions are automated. An ideal application of this protocol would
 include a method to verify the SAAS service is developed as expected, e.g. a
 streaming service that provides access to all songs in spotify, through
-hashrate. This verification is considered out of scope.
+(randomized) file hashes. This verification is considered out of scope.
 
 Secondary risk is that this contract is hacked:
 
