@@ -16,18 +16,25 @@ A Foundry-based template for developing Solidity smart contracts, with sensible 
 
 ## Getting Started
 
-Click the
-[`Use this template`](https://github.com/PaulRBerg/foundry-template/generate)
-button at the top of the page to create a new repository with this repo as the
-initial state.
-
-Or, if you prefer to install the template manually:
+Run this inside the repository you cloned and downloaded:
 
 ```sh
-mkdir my-project
-cd my-project
-forge init --template PaulRBerg/foundry-template
+# Install repository configuration.
+sudo snap install bun-js
 bun install # install Solhint, Prettier, and other Node.js deps
+pre-commit install
+
+# Facilitate branch coverage checks.
+sudo apt install lcov
+
+# Install foundry
+sudo apt install curl -y
+curl -L https://foundry.paradigm.xyz | bash
+source ~/.bashrc
+foundryup
+forge build
+pre-commit install
+git add -A && pre-commit run --all
 ```
 
 If this is your first time with Foundry, check out the
@@ -104,7 +111,7 @@ test contract. PRBTest comes with a pre-instantiated
 environment accessible via the `vm` property. If you would like to view the
 logs in the terminal output you can add the
 `-vvv` flag and use
-[console.log](https://book.getfoundry.sh/faq?highlight=console.log#how-do-i-use-consolelog).
+[console2.log](https://book.getfoundry.sh/faq?highlight=console2.log#how-do-i-use-consolelog).
 
 This template comes with an example test contract [Foo.t.sol](./test/Foo.t.sol)
 
@@ -117,6 +124,7 @@ This is a list of the most frequently needed commands.
 Build the contracts:
 
 ```sh
+bun install # run this once.
 forge build
 ```
 
@@ -146,7 +154,8 @@ forge build
 Get a test coverage report:
 
 ```sh
-forge coverage
+forge coverage --report lcov
+genhtml -o report --branch-coverage lcov.info
 ```
 
 ### Deploy
@@ -214,8 +223,17 @@ bun run lint
 Run the tests:
 
 ```sh
-forge test
+forge test -vvv
 ```
+
+Or to run a single test (function):
+
+```sh
+clear && forge test --vvv --match-test testInvestorGetsSaasRevenue
+```
+
+The `-vvv` is necessary to display the error messages that you wrote with the
+assertions, in the CLI. Otherwise it just says: "test failed".
 
 Generate test coverage and output result to the terminal:
 
