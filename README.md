@@ -1,22 +1,63 @@
-# Foundry Template [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+# Decentralised Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
-A Foundry-based template for developing Solidity smart contracts, with sensible defaults.
+This is a decentralised investment protocol for SAAS applications. Investors
+can see what the project lead proposes to do with the investment, along with
+the proposed multiple ROI (e.g. 20 times the initial investment amount).
+The investor can then evaluate the project and estimate whether the project
+has a probability of more than `1/20 = 5 [%]` of returning the whole multiple
+they may receive for their investment.
 
-## What's Inside
+Three investment tiers are supported, each with different ROI multiples. E.g.
 
-- [Forge](https://github.com/foundry-rs/foundry/blob/master/forge): compile,
-  test, fuzz, format, and deploy smart contracts
-- [Forge Std](https://github.com/foundry-rs/forge-std): collection of helpful
-  contracts and cheatcodes for testing
-- [PRBTest](https://github.com/PaulRBerg/prb-test): modern collection of
-  testing assertions and logging utilities
-- [Prettier](https://github.com/prettier/prettier): code formatter for
-  non-Solidity files
-- [Solhint](https://github.com/protofire/solhint): linter for Solidity code
+- Tier 0: 0 to 4 ether, multiple ROI: 10x.
+- Tier 0: 4 to 15 ether, multiple ROI: 5x.
+- Tier 15: 4 to 30 ether, multiple ROI: 2x.
 
-## Getting Started
+The idea is that in later stages of investment, the risk becomes lower as more
+data is available on whether the project will succeed or not, hence a lower ROI
+multiple is offered.
 
-Run this inside the repository you cloned and downloaded:
+All investors are made whole at the same time, if they are made whole,
+regardless of when they invested. Early investors have the advantage of a
+higher ROI (if they invested in an earlier investment tier).
+
+The project lead gets a fixed fraction of the SAAS revenue until the investors
+are made whole, then the project lead receives all the SAAS payments.
+
+**TODO: test** - The project lead can get the investments out of the contract and
+distribute it to workers, or allow the workers to retrieve their own investment
+fraction.
+
+## Risks
+
+Primary risk is the project lead using a different SAAS payment address to gain
+its income. This requires trust in the project lead. Otherwise, all
+transactions are automated. An ideal application of this protocol would
+include a method to verify the SAAS service is developed as expected, e.g. a
+streaming service that provides access to all songs in spotify, through
+hashrate. This verification is considered out of scope.
+
+Secondary risk is that this contract is hacked:
+
+- (Branch) code coverage is well below 100%.
+- No fuzztests are implemented.
+- No formal verification is performed.
+- No security-audit is performed.
+- No stake on its security is applied.
+
+Ternary risk is that the project may not yield (enough) SAAS revenue to
+provide the investors with (their whole) ROI multiple.
+
+## Why
+
+- This can give ordinary people access to opportunities typically only reserved
+  for venture capitalists.
+- It provides an automated way to negotiate with all venture capitalists (and
+  people) simultaneously, rather than going to all their websites, tailoring the
+  pitchdecks to their demands, and spending time and resources in the
+  negotiations.
+
+## Deployment Prerequisites
 
 ```sh
 # Install repository configuration.
@@ -33,93 +74,13 @@ curl -L https://foundry.paradigm.xyz | bash
 source ~/.bashrc
 foundryup
 forge build
+
+# Install pre-commit
 pre-commit install
 git add -A && pre-commit run --all
 ```
 
-If this is your first time with Foundry, check out the
-[installation](https://github.com/foundry-rs/foundry#installation)
-instructions.
-
-## Features
-
-This template builds upon the frameworks and libraries mentioned above, so
-please consult their respective documentation for details about their specific
-features.
-
-For example, if you're interested in exploring Foundry in more detail, you
-should look at the [Foundry Book](https://book.getfoundry.sh/). In
-particular, you may be interested in reading the
-[Writing Tests](https://book.getfoundry.sh/forge/writing-tests.html) tutorial.
-
-### Sensible Defaults
-
-This template comes with a set of sensible default configurations for you to
-use. These defaults can be found in the following files:
-
-```text
-├── .editorconfig
-├── .gitignore
-├── .prettierignore
-├── .prettierrc.yml
-├── .solhint.json
-├── foundry.toml
-└── remappings.txt
-```
-
-### VSCode Integration
-
-This template is IDE agnostic, but for the best user experience, you may want
-to use it in VSCode alongside Nomic Foundation's
-[Solidity extension](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity).
-
-For guidance on how to integrate a Foundry project in VSCode, please refer to
-this [guide](https://book.getfoundry.sh/config/vscode).
-
-### GitHub Actions
-
-This template comes with GitHub Actions pre-configured. Your contracts will be
-linted and tested on every push and pull request made to the `main` branch.
-
-You can edit the CI script in
-[.github/workflows/ci.yml](./.github/workflows/ci.yml).
-
-## Installing Dependencies
-
-Foundry typically uses git submodules to manage dependencies, but this
-template uses Node.js packages because
-[submodules don't scale](https://twitter.com/PaulRBerg/status/1736695487057531328).
-
-This is how to install dependencies:
-
-1. Install the dependency using your preferred package manager,
-   e.g. `bun install dependency-name`
-   - Use this syntax to install from GitHub:
-     `bun install github:username/repo-name`
-1. Add a remapping for the dependency in [remappings.txt](./remappings.txt), e.g.
-   `dependency-name=node_modules/dependency-name`
-
-Note that OpenZeppelin Contracts is pre-installed, so you can follow that as
-an example.
-
-## Writing Tests
-
-To write a new test contract, you start by importing
-[PRBTest](https://github.com/PaulRBerg/prb-test) and inherit from it in your
-test contract. PRBTest comes with a pre-instantiated
-[cheatcodes](https://book.getfoundry.sh/cheatcodes/)
-environment accessible via the `vm` property. If you would like to view the
-logs in the terminal output you can add the
-`-vvv` flag and use
-[console2.log](https://book.getfoundry.sh/faq?highlight=console2.log#how-do-i-use-consolelog).
-
-This template comes with an example test contract [Foo.t.sol](./test/Foo.t.sol)
-
-## Usage
-
-This is a list of the most frequently needed commands.
-
-### Build
+## Build
 
 Build the contracts:
 
@@ -133,7 +94,7 @@ probably have the wrong forge, a snap package for Ubuntu installed. See
 [solution](https://ethereum.stackexchange.com/questions/139754/when-i-type-forge-init-force-forge-init)
 )
 
-### Clean
+## Clean
 
 Delete the build artifacts and cache directories:
 
@@ -141,7 +102,7 @@ Delete the build artifacts and cache directories:
 forge clean
 ```
 
-### Compile
+## Compile
 
 Compile the contracts:
 
@@ -149,7 +110,24 @@ Compile the contracts:
 forge build
 ```
 
-### Coverage
+## Test
+
+Run the tests:
+
+```sh
+forge test -vvv
+```
+
+Or to run a single test (function):
+
+```sh
+clear && forge test --vvv --match-test testInvestorGetsSaasRevenue
+```
+
+The `-vvv` is necessary to display the error messages that you wrote with the
+assertions, in the CLI. Otherwise it just says: "test failed".
+
+## Branch Code Coverage Report
 
 Get a test coverage report:
 
@@ -158,7 +136,15 @@ forge coverage --report lcov
 genhtml -o report --branch-coverage lcov.info
 ```
 
-### Deploy
+## Gas Usage
+
+Get a gas report:
+
+```sh
+forge test --gas-report
+```
+
+## Deploy Locally
 
 Deploy to Anvil, first open another terminal, give it your custom `MNEMONIC` as
 an environment variable, and run anvil in it:
@@ -190,64 +176,19 @@ forge script script/Deploy.s.sol --broadcast --fork-url http://localhost:8545
 
 By default, this deploys to the HardHat Chain 31337.
 
+## Deploy to Mainnet
+
 For instructions on how to deploy to a testnet or mainnet, check out the
 [Solidity Scripting](https://book.getfoundry.sh/tutorials/solidity-scripting.html)
 tutorial.
 
-### Format
+## GitHub Actions
 
-Format the contracts:
+This template comes with GitHub Actions pre-configured. Your contracts will be
+linted and tested on every push and pull request made to the `main` branch.
 
-```sh
-forge fmt
-```
-
-### Gas Usage
-
-Get a gas report:
-
-```sh
-forge test --gas-report
-```
-
-### Lint
-
-Lint the contracts:
-
-```sh
-bun run lint
-```
-
-### Test
-
-Run the tests:
-
-```sh
-forge test -vvv
-```
-
-Or to run a single test (function):
-
-```sh
-clear && forge test --vvv --match-test testInvestorGetsSaasRevenue
-```
-
-The `-vvv` is necessary to display the error messages that you wrote with the
-assertions, in the CLI. Otherwise it just says: "test failed".
-
-Generate test coverage and output result to the terminal:
-
-```sh
-bun run test:coverage
-```
-
-Generate test coverage with lcov report (you'll have to open the
-`./coverage/index.html` file in your browser, to do so simply copy paste the
-path):
-
-```sh
-bun run test:coverage:report
-```
+You can edit the CI script in
+[.github/workflows/ci.yml](./.github/workflows/ci.yml).
 
 ## Related Efforts
 
