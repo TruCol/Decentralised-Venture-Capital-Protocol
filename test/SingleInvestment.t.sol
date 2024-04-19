@@ -113,8 +113,10 @@ contract SimplifiedTest is PRBTest, StdCheats {
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // 0.5 * 10^18 - 0.2*10^18 * 0.6 = (0.5 - 0.12)*10 =0.38 *10 = 3.8 *10^18 wei
-      4.88 ether, // Tier 0 has a multiple of 10.
+      // Tier 0 has a multiple of 10. So 0.5 * 10. Then subtract the 0.2 SAAS payment
+      // but only the 0.6 fraction which is for investors.
+      // 0.5 * 10 * 10^18 - 0.2*10^18 * 0.6 = (5 - 0.12)*10 =4.88 = 4.88 *10^18 wei
+      4.88 ether,
       "Error, the cumRemainingInvestorReturn was not as expected directly after SAAS payment."
     );
 

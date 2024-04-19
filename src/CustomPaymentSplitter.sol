@@ -92,6 +92,9 @@ contract CustomPaymentSplitter {
   }
 
   /**
+  Doubt: by not requiring msg.sender == account, one allows anyone to trigger
+  the release of the investment funds. This can be inefficient for tax
+  purposes.
    * @dev Release one of the payee's proportional payment.
    * @param account Whose payments will be released.
    */
