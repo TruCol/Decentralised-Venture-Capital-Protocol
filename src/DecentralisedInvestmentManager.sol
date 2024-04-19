@@ -278,6 +278,21 @@ contract DecentralisedInvestmentManager {
     return newTierInvestment;
   }
 
+  // Allow project lead to retrieve the investment.
+  function withdraw(uint amount) public {
+    // Ensure only the project lead can retrieve funds in this contract. The
+    // funds in this contract are those coming from investments. Saaspayments are
+    // automatically transfured into the CustomPaymentSplitter and retrieved from
+    // there.
+    require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
+    // Check if contract has sufficient balance
+    require(address(this).balance >= amount, "Insufficient contract balance");
+
+    // Transfer funds to user using call{value: } (safer approach)
+    (bool success, ) = payable(msg.sender).call{ value: amount }("");
+    require(success, "Investment withdraw by project lead failed");
+  }
+
   // Assuming there's an internal function to get tier investment length
   function getTierInvestmentLength() public view returns (uint256) {
     return _tierInvestments.length;

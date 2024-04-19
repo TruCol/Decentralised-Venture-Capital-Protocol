@@ -24,7 +24,7 @@ higher ROI (if they invested in an earlier investment tier).
 The project lead gets a fixed fraction of the SAAS revenue until the investors
 are made whole, then the project lead receives all the SAAS payments.
 
-**TODO: test** - The project lead can get the investments out of the contract and
+The project lead **alone** can get the investments out of the contract and
 distribute it to workers, or allow the workers to retrieve their own investment
 fraction.
 
