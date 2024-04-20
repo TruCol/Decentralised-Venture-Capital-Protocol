@@ -60,6 +60,12 @@ contract DecentralisedInvestmentManager {
     // Iterate through the tiers and potentially perform additional checks
     for (uint256 i = 0; i < tiers.length; i++) {
       // You can access tier properties using _tiers[i].minVal(), etc.
+      if (i > 0) {
+        require(
+          tiers[i - 1].maxVal == tiers[i].minVal,
+          "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
+        );
+      }
       _tiers.push(Tier(tiers[i]));
     }
   }
