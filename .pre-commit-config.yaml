@@ -71,21 +71,12 @@ repos:
            "-rn", # Only display messages
            "-sn", # Don't display the score
          ]
-     - id: lint-sol
-       name: "lint solidity"
-       description: "Checks Solidity code according to the package's linter configuration"
-       language: node
-       entry: solhint
-      #  files: ^(contracts/|interfaces/|libraries/|src/)
-      #  files: '\.sol$'
-      #  files: '^(.sol$)'
-       args:
-         - --config=./.solhint.json
-       additional_dependencies:
-         - solhint
-         - solhint-plugin-prettier
-         - prettier
-         - prettier-plugin-solidity
+     - id: run-solhint
+       name: run-solhint
+       language: script
+       entry: .pre-commit/run_solhint.sh
+       types: [ file, solidity ]
+       require_serial: true
 
 # Runs additional tests that are created by the pre-commit software itself.
  - repo: https://github.com/pre-commit/pre-commit-hooks

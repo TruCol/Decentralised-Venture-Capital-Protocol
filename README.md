@@ -84,13 +84,13 @@ foundryup
 forge build
 
 # Install SolHint (Solidity Style Guide Linter)
-sudo npm cache clean -f
-sudo npm install -g n
-sudo n stable
-
 sudo apt install npm -y
+sudo npm install nodejs
 sudo npm install -g solhint
 solhint --version
+cd .pre-commit
+chmod +x run_solhint.sh
+cd ..
 
 npm install --save-dev --save-exact prettier
 
