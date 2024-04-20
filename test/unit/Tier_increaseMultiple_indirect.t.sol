@@ -39,14 +39,14 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     uint256 secondTierCeiling = 15 ether;
     uint256 thirdTierCeiling = 30 ether;
     vm.prank(projectLeadAddress);
-    Tier tier_0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier_0);
+    Tier tier0 = new Tier(0, firstTierCeiling, 10);
+    _tiers.push(tier0);
     vm.prank(projectLeadAddress);
-    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier_1);
+    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
+    _tiers.push(tier1);
     vm.prank(projectLeadAddress);
-    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier_2);
+    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
+    _tiers.push(tier2);
 
     // assertEq(address(projectLeadAddress).balance, 43);
     _dim = new DecentralisedInvestmentManager(

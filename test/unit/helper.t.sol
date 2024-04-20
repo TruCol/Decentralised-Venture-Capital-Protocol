@@ -27,12 +27,12 @@ contract HelperTest is PRBTest, StdCheats {
 
     // Start lowst tier at 2 wei, such that the tested cumulative investment
     //amount can go below that at 1 wei.
-    Tier tier_0 = new Tier(2, firstTierCeiling, 10);
-    _tiers.push(tier_0);
-    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier_1);
-    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier_2);
+    Tier tier0 = new Tier(2, firstTierCeiling, 10);
+    _tiers.push(tier0);
+    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
+    _tiers.push(tier1);
+    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
+    _tiers.push(tier2);
 
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
@@ -40,7 +40,7 @@ contract HelperTest is PRBTest, StdCheats {
 
   function testExceedInvestmentCeiling() public {
     // vm.prank(address(validTierInvestment));
-    vm.expectRevert(bytes("The investment ceiling is reached."));
+    vm.expectRevert(bytes("Investment ceiling is reached."));
     _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
   }
 

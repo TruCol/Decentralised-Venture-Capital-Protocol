@@ -15,9 +15,13 @@ import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 // Import contract that is an attribute of main contract to test the attribute.
 import { TierInvestment } from "../../src/TierInvestment.sol";
 
+interface Interface {
+  function setUp() external;
+}
+
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract MultipleInvestmentTest is PRBTest, StdCheats {
+contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal projectLeadAddress;
   address payable _investorWallet0;
   address payable _investorWallet1;
@@ -37,12 +41,12 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     uint256 firstTierCeiling = 4 ether;
     uint256 secondTierCeiling = 15 ether;
     uint256 thirdTierCeiling = 30 ether;
-    Tier tier_0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier_0);
-    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier_1);
-    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier_2);
+    Tier tier0 = new Tier(0, firstTierCeiling, 10);
+    _tiers.push(tier0);
+    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
+    _tiers.push(tier1);
+    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
+    _tiers.push(tier2);
 
     // assertEq(address(projectLeadAddress).balance, 43);
     _dim = new DecentralisedInvestmentManager(

@@ -1,18 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
-import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
-contract DecentralisedInvestmentHelper {
-  constructor() {}
+interface Interface {
+  function computeCumRemainingInvestorReturn(
+    TierInvestment[] memory tierInvestments
+  ) external view returns (uint256 cumRemainingInvestorReturn);
 
-  function computeCumRemainingInvestorReturn(TierInvestment[] memory tierInvestments) public view returns (uint256) {
-    uint256 cumRemainingInvestorReturn = 0;
-    console2.log("\n\n");
-    for (uint256 i = 0; i < tierInvestments.length; i++) {
+  function getInvestmentCeiling(Tier[] memory tiers) external view returns (uint256 investmentCeiling);
+}
+
+contract DecentralisedInvestmentHelper is Interface {
+  function computeCumRemainingInvestorReturn(
+    TierInvestment[] memory tierInvestments
+  ) public view override returns (uint256 cumRemainingInvestorReturn) {
+    cumRemainingInvestorReturn = 0;
+    uint256 nrOfTierInvestments = tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // TODO: assert tierInvestments[i].remainingReturn() >= 0.
       cumRemainingInvestorReturn += tierInvestments[i].remainingReturn();
     }
@@ -20,12 +26,12 @@ contract DecentralisedInvestmentHelper {
     return cumRemainingInvestorReturn;
   }
 
-  function getInvestmentCeiling(Tier[] memory tiers) public view returns (uint256) {
+  function getInvestmentCeiling(Tier[] memory tiers) public view override returns (uint256 investmentCeiling) {
     // Access the last tier in the array
 
     uint256 lastIndex = tiers.length - 1;
 
-    uint256 investmentCeiling = tiers[lastIndex].maxVal();
+    investmentCeiling = tiers[lastIndex].maxVal();
 
     return investmentCeiling;
   }
@@ -40,10 +46,10 @@ contract DecentralisedInvestmentHelper {
   ) public view returns (Tier) {
     // Check for exceeding investment ceiling.
 
-    require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers), "The investment ceiling is reached.");
+    require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers), "Investment ceiling is reached.");
 
     // Find the matching tier
-    for (uint256 i = 0; i < tiers.length; i++) {
+    for (uint256 i = 0; i < tiers.length; ++i) {
       if (tiers[i].minVal() <= cumReceivedInvestments && cumReceivedInvestments < tiers[i].maxVal()) {
         return tiers[i];
       }

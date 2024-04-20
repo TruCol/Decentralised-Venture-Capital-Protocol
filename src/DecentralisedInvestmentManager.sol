@@ -202,7 +202,7 @@ contract DecentralisedInvestmentManager {
   new investments. If the investment ceiling is reached it reverts the
   investment back to the investor. Otherwise it takes it in, and fills up the
   investment tiers that are still open until the whole investment amount is
-  allocated or until the investment ceiling is reached. The remaining
+  allocated or until Investment ceiling is reached. The remaining
   investment amount is then reverted.
 
   To allocate the investment over the investment tiers, first the
@@ -234,7 +234,7 @@ contract DecentralisedInvestmentManager {
   investment tier. If the investment amount is larger than the amount remaining
   in that tier, it fills that tier up with a part of the investment using the
   addInvestmentToCurrentTier function, and recursively calls itself until the
-  investment amount is fully allocated, or the investment ceiling is reached.
+  investment amount is fully allocated, or Investment ceiling is reached.
   If the investment amount is equal to- or smaller than the amount remaining in
   that tier, it adds that amount to the current investment tier using the
   addInvestmentToCurrentTier. That's it.
