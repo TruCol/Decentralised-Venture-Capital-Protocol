@@ -4,7 +4,9 @@
     "url": "https://github.com/TruCol"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.1"
+    "@openzeppelin/contracts": "^5.0.1",
+    "gulp": "^5.0.0",
+    "markdownlint-cli": "^0.39.0"
   },
   "description": "",
   "devDependencies": {
