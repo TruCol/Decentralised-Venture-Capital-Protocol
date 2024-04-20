@@ -49,8 +49,4 @@ contract Tier is ITier {
     require(newMultiple > multiple, "The new multiple was not larger than the old multiple.");
     multiple = newMultiple;
   }
-
-  function getOwner() public returns (address) {
-    return owner;
-  }
 }

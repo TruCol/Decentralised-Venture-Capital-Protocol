@@ -42,9 +42,6 @@ contract DecentralisedInvestmentHelper {
 
     require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers), "The investment ceiling is reached.");
 
-    // Validate positive investment amount.
-    require(cumReceivedInvestments >= 0, "Error: Negative investments not allowed.");
-
     // Find the matching tier
     for (uint256 i = 0; i < tiers.length; i++) {
       if (tiers[i].minVal() <= cumReceivedInvestments && cumReceivedInvestments < tiers[i].maxVal()) {
@@ -52,7 +49,9 @@ contract DecentralisedInvestmentHelper {
       }
     }
     // Should not reach here with valid tiers
-    revert("Unexpected state: No matching tier found.");
+    revert(
+      "Unexpected state: No matching tier found, the lowest investment tier starting point was larger than the cumulative received investments. All (Tier) arrays should start at 0."
+    );
   }
 
   function getRemainingAmountInCurrentTier(
@@ -75,39 +74,15 @@ contract DecentralisedInvestmentHelper {
     return currentTier.maxVal() - cumReceivedInvestments;
   }
 
-  /**
-  @dev Implements the following Python logic:
-if cum_remaining_investor_return == 0:
-      # Perform transaction and administration towards project lead.
-      amount_for_project_lead = paid_amount
-  elif cum_remaining_investor_return <= paid_amount * (
-      1 - self.project_lead_fraction
-  ):
-      amount_for_investors = cum_remaining_investor_return
-      amount_for_project_lead = (
-          paid_amount - cum_remaining_investor_return
-      )
-  else:
-      amount_for_project_lead = paid_amount * self.project_lead_fraction
-      amount_for_investors = paid_amount - amount_for_project_lead
-  if amount_for_investors + amount_for_project_lead != paid_amount:
-      raise ValueError(
-          "Error, all the SAAS revenues should be distributed to "
-          "investors and project lead."
-      )
-   */
   function computeRemainingInvestorPayout(
     uint256 cumRemainingInvestorReturn,
     uint256 investorFracNumerator,
     uint256 investorFracDenominator,
     uint256 paidAmount
   ) public pure returns (uint256) {
-    require(investorFracNumerator >= 0, "investorFracNumerator is smaller than 0.");
-    require(investorFracDenominator >= 0, "investorFracDenominator is smaller than 0.");
-    require(paidAmount >= 0, "paidAmount is smaller than 0.");
     require(
       investorFracDenominator >= investorFracNumerator,
-      "investorFracNumerator is smaller than investorFracNumerator."
+      "investorFracNumerator is smaller than investorFracDenominator."
     );
 
     if (cumRemainingInvestorReturn == 0) {
