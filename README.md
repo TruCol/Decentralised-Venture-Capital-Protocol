@@ -140,8 +140,7 @@ assertions, in the CLI. Otherwise it just says: "test failed".
 Get a test coverage report:
 
 ```sh
-forge coverage --report lcov
-genhtml -o report --branch-coverage lcov.info
+clear && forge coverage --report lcov && genhtml -o report --branch-coverage lcov.info
 ```
 
 ## Gas Usage

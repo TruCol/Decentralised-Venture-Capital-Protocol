@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+import { console2 } from "forge-std/src/console2.sol";
 
 interface ITier {
   function minVal() external view returns (uint256);
@@ -13,15 +14,16 @@ contract Tier is ITier {
   uint256 public minVal;
   uint256 public maxVal;
   uint256 public multiple;
-  address private projectLead;
+  address private owner;
 
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
    *
    */
-  constructor(address projectLead_, uint256 _minVal, uint256 _maxVal, uint256 _multiple) {
-    projectLead = projectLead_;
+  constructor(uint256 _minVal, uint256 _maxVal, uint256 _multiple) {
+    owner = msg.sender;
+    console2.log("owner=", owner);
     // Improved error message using string concatenation
     string memory errorMessage = string(
       abi.encodePacked("A tier minimum amount should always be 0 or greater. Provided value:")
@@ -42,10 +44,7 @@ contract Tier is ITier {
   }
 
   function increaseMultiple(uint256 newMultiple) public {
-    require(
-      msg.sender == projectLead,
-      "Increasing the Tier object multiple attempted by someone other than project lead."
-    );
+    require(msg.sender == owner, "Increasing the Tier object multiple attempted by someone other than project lead.");
     require(newMultiple > multiple, "The new multiple was not larger than the old multiple.");
     multiple = newMultiple;
   }

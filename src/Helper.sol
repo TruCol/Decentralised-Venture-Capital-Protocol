@@ -101,7 +101,7 @@ if cum_remaining_investor_return == 0:
     uint256 investorFracNumerator,
     uint256 investorFracDenominator,
     uint256 paidAmount
-  ) public view returns (uint256) {
+  ) public pure returns (uint256) {
     require(investorFracNumerator >= 0, "investorFracNumerator is smaller than 0.");
     require(investorFracDenominator >= 0, "investorFracDenominator is smaller than 0.");
     require(paidAmount >= 0, "paidAmount is smaller than 0.");

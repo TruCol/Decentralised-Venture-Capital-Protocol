@@ -35,11 +35,11 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
     uint256 firstTierCeiling = 4 ether;
     uint256 secondTierCeiling = 15 ether;
     uint256 thirdTierCeiling = 30 ether;
-    Tier tier_0 = new Tier(projectLeadAddress, 0, firstTierCeiling, 10);
+    Tier tier_0 = new Tier(0, firstTierCeiling, 10);
     _tiers.push(tier_0);
-    Tier tier_1 = new Tier(projectLeadAddress, firstTierCeiling, secondTierCeiling, 5);
+    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
     _tiers.push(tier_1);
-    Tier tier_2 = new Tier(projectLeadAddress, secondTierCeiling, thirdTierCeiling, 2);
+    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier_2);
 
     // assertEq(address(projectLeadAddress).balance, 43);
@@ -63,7 +63,6 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
 
   /// @dev Test to simulate a larger balance using `deal`.
   function testInvestorGetsSaasRevenue() public {
-    uint256 startBalance = _investorWallet.balance;
     uint256 investmentAmount = 0.5 ether;
 
     console2.log("_dim balance before=", address(_dim).balance);

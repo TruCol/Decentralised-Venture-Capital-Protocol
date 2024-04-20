@@ -291,6 +291,7 @@ contract DecentralisedInvestmentManager {
     );
     Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
     require(newMultiple > currentTier.multiple(), "The new multiple was not larger than the old multiple.");
+    currentTier.increaseMultiple(newMultiple);
   }
 
   // Allow project lead to retrieve the investment.
