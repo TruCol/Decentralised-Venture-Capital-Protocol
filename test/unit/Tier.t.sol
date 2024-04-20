@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
 
-// import "truffle/Assert.sol"; // Assuming Truffle for testing framework
-// import "truffle/Assert.sol"; // Assuming Truffle for testing framework
-// import "forge-std/Test.sol"; // Import Forge's testing functionalities
-
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { Tier } from "../src/Tier.sol";
+import { Tier } from "../../src/Tier.sol";
 
-/// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
-/// https://book.getfoundry.sh/forge/writing-tests
 contract TierTest is PRBTest, StdCheats {
   Tier internal validTier;
 

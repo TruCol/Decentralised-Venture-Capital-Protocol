@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
 import { console2 } from "forge-std/src/console2.sol";
-import { Tier } from "../src/Tier.sol";
+import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 // Import the main contract that is being tested.
-import { DecentralisedInvestmentManager } from "../src/DecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
 // Import the paymentsplitter that has the shares for the investors.
-import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
 // Import contract that is an attribute of main contract to test the attribute.
-import { TierInvestment } from "../src/TierInvestment.sol";
+import { TierInvestment } from "../../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests

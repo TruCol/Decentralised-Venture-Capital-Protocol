@@ -4,7 +4,7 @@ pragma solidity >=0.8.23 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
+import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
 
 contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
   DecentralisedInvestmentHelper private _helper;

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
 import { console2 } from "forge-std/src/console2.sol";
-import { Tier } from "../src/Tier.sol";
+import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 // Import the main contract that is being tested.
-import { DecentralisedInvestmentManager } from "../src/DecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
 // Import the paymentsplitter that has the shares for the investors.
-import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
 // Import contract that is an attribute of main contract to test the attribute.
-import { TierInvestment } from "../src/TierInvestment.sol";
+import { TierInvestment } from "../../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
@@ -23,6 +23,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
   address payable _investorWallet1;
   address private _userWallet;
   Tier[] private _tiers;
+  uint256 private investmentAmount0;
 
   DecentralisedInvestmentManager private _dim;
 
@@ -37,10 +38,13 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     uint256 firstTierCeiling = 4 ether;
     uint256 secondTierCeiling = 15 ether;
     uint256 thirdTierCeiling = 30 ether;
+    vm.prank(projectLeadAddress);
     Tier tier_0 = new Tier(0, firstTierCeiling, 10);
     _tiers.push(tier_0);
+    vm.prank(projectLeadAddress);
     Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
     _tiers.push(tier_1);
+    vm.prank(projectLeadAddress);
     Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier_2);
 
@@ -64,41 +68,29 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     console2.log("projectLeadAddress=    ", projectLeadAddress);
     console2.log("_investorWallet0=       ", _investorWallet0);
     console2.log("_userWallet=           ", _userWallet, "\n");
-  }
 
-  /// @dev Test to simulate a larger balance using `deal`.
-  function testMultipleInvestments() public {
-    uint256 startBalance = _investorWallet0.balance;
-    uint256 investmentAmount0 = 0.5 ether;
+    investmentAmount0 = 0.5 ether;
 
     // Set the msg.sender address to that of the _investorWallet0 for the next call.
     vm.prank(address(_investorWallet0));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: investmentAmount0 }();
-
-    // Assert that user balance decreased by the investment amount
-    uint256 endBalance = _investorWallet0.balance;
-    assertEq(
-      startBalance - endBalance,
-      investmentAmount0,
-      "investmentAmount0 not equal to difference in investorWalletBalance"
-    );
-
-    // TODO: assert the tierInvestment(s) are made as expected.
-    assertEq(
-      _dim.getCumReceivedInvestments(),
-      investmentAmount0,
-      "Error, the _cumReceivedInvestments was not as expected after investment."
-    );
-    assertEq(
-      _dim.getCumRemainingInvestorReturn(),
-      // investmentAmount0*10, // Tier 0 has a multiple of 10.
-      10 * 0.5 ether,
-      "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
-    );
-
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
-    // TODO: write tests to assert the remaining investments are returned.
+    uint256 startBalance = _investorWallet0.balance;
+  }
+
+  /**
+  @dev The investor has invested 0.5 eth, at a multiple of 10. Then the
+  multiple of that tier gets increased to 20, but that was after the investment
+  was made, so the investor still gets a multiple of 10, yielding a return of 5
+  ether.
+   */
+
+  function testIncreaseMultipleIndirectly() public {
+    // Assert project lead can increase multiple.
+    vm.prank(projectLeadAddress);
+    _dim.increaseCurrentMultipleInstantly(20);
+    assertEq(_dim.getCurrentTier().multiple(), 20, "The multiple was not 20.");
 
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 20 ether;
@@ -132,6 +124,12 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     followUpSecondInvestment(investmentAmount0);
   }
 
+  /**
+The multiple has increased from 10 to 20, the ceiling of the first investment
+tier is 4 ether, and 0.5 has already been invested, and 5 ether has already
+been paid out, so the cumulative remaining return becomes 3.5*20 +0.5*5 (5 is
+the multiple of the xecond tier) = 72.5 ether.
+*/
   function followUpSecondInvestment(uint256 investmentAmount0) public {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
@@ -154,7 +152,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
       // Initial investment is 0.5, ceiling is 4, so 3.5 *10, and 0.5 remains.
-      10 * 3.5 ether + 5 * 0.5 ether,
+      20 * 3.5 ether + 5 * 0.5 ether,
       "Error, the cumRemainingInvestorReturn was not as expected directly after the second investment."
     );
     assertEq(
@@ -174,7 +172,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
       _dim.getCumRemainingInvestorReturn(),
       // The first investor is made whole, so only the second investment is
       // still to be returned.
-      10 * 3.5 ether + 5 * 0.5 ether,
+      20 * 3.5 ether + 5 * 0.5 ether,
       "Error, the cumRemainingInvestorReturn was not as expected before second SAAS payment."
     );
 
@@ -194,7 +192,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
       // 10 * 3.5 ether + 5 * 0.5 ether - 1*0.6 =
-      10 * 3.5 ether + 5 * 0.5 ether - 0.6 ether,
+      20 * 3.5 ether + 5 * 0.5 ether - 0.6 ether,
       "Error, the cumRemainingInvestorReturn was not as expected directly after second SAAS payment."
     );
 

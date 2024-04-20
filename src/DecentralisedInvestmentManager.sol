@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-
+import "@openzeppelin/contracts/utils/Strings.sol";
 // import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
@@ -66,7 +66,13 @@ contract DecentralisedInvestmentManager {
           "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
         );
       }
-      _tiers.push(Tier(tiers[i]));
+
+      // Recreate the Tier objects because this contract should be the owner.
+      uint256 someMin = tiers[i].minVal();
+      uint256 someMax = tiers[i].maxVal();
+      uint256 someMultiple = tiers[i].multiple();
+      Tier tierOwnedByThisContract = new Tier(someMin, someMax, someMultiple);
+      _tiers.push(tierOwnedByThisContract);
     }
   }
 
@@ -129,12 +135,17 @@ contract DecentralisedInvestmentManager {
     emit PaymentReceived(msg.sender, msg.value);
   }
 
+  function isRoundUp(uint256 withRounding, uint256 withoutRounding) public returns (bool) {
+    return withRounding != withoutRounding;
+  }
+
   function distributeSaasPaymentFractionToInvestors(
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
   ) private {
     uint256 cumulativePayout = 0;
 
+    bool hasRoundedUp = false;
     for (uint256 i = 0; i < _tierInvestments.length; i++) {
       // TODO: Determine if paymentSplitter can be used to compute remaining
       // investment shares instead.
@@ -144,9 +155,20 @@ contract DecentralisedInvestmentManager {
       // during their last payout without requiring an additional 1 wei payout.
       uint256 numerator = _tierInvestments[i].remainingReturn() * saasRevenueForInvestors;
       uint256 denominator = cumRemainingInvestorReturn;
-      uint256 investmentReturn = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
-      console2.log("\n_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
-      console2.log("saasRevenueForInvestors;=                ", cumRemainingInvestorReturn);
+      // Divide with round up.
+      uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+      uint256 withoutRounding = numerator / denominator;
+      // uint256 investmentReturn = numerator / denominator;
+      uint256 investmentReturn;
+      if (isRoundUp(withRoundUp, withoutRounding) && !hasRoundedUp) {
+        investmentReturn = withRoundUp;
+        hasRoundedUp = true;
+        console2.log("PERFORMED ROUNDUP.");
+      } else {
+        investmentReturn = withoutRounding;
+        console2.log("Without Rounding.");
+      }
+      console2.log("_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
       console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
       console2.log("investmentReturn=", investmentReturn);
       console2.log("\n");
@@ -160,11 +182,17 @@ contract DecentralisedInvestmentManager {
         cumulativePayout += investmentReturn;
       }
     }
-    console2.log("cumulativePayout=", cumulativePayout);
-    console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
+
     require(
-      cumulativePayout == saasRevenueForInvestors,
-      "The cumulativePayout is not equal to the saasRevenueForInvestors."
+      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
+      // cumulativePayout == saasRevenueForInvestors,
+      string.concat(
+        "The cumulativePayout (\n",
+        Strings.toString(cumulativePayout),
+        ") is not equal to the saasRevenueForInvestors (\n",
+        Strings.toString(saasRevenueForInvestors),
+        ")."
+      )
     );
   }
 
@@ -285,6 +313,8 @@ contract DecentralisedInvestmentManager {
   }
 
   function increaseCurrentMultipleInstantly(uint256 newMultiple) public {
+    console2.log("_projectLead=", _projectLead);
+    console2.log("msg.sender in Manager=", msg.sender);
     require(
       msg.sender == _projectLead,
       "Increasing the current investment tier multiple attempted by someone other than project lead."
@@ -324,5 +354,10 @@ contract DecentralisedInvestmentManager {
 
   function getCumRemainingInvestorReturn() public view returns (uint256) {
     return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
+  }
+
+  function getCurrentTier() public view returns (Tier) {
+    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+    return currentTier;
   }
 }

@@ -162,6 +162,9 @@ import { console2 } from "forge-std/src/console2.sol";
 console2.log("Hello World, a={0}, b={1}", a, b);
 ```
 
+You need console2 iso console to ~+-print numbers correctly in some case due to
+some update.
+
 and run:
 
 ```sh

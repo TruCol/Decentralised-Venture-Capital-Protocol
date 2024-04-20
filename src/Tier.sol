@@ -23,7 +23,6 @@ contract Tier is ITier {
    */
   constructor(uint256 _minVal, uint256 _maxVal, uint256 _multiple) {
     owner = msg.sender;
-    console2.log("owner=", owner);
     // Improved error message using string concatenation
     string memory errorMessage = string(
       abi.encodePacked("A tier minimum amount should always be 0 or greater. Provided value:")
@@ -44,8 +43,14 @@ contract Tier is ITier {
   }
 
   function increaseMultiple(uint256 newMultiple) public {
+    console2.log("msg.sender in Tier=", msg.sender);
+    console2.log("owner=", owner);
     require(msg.sender == owner, "Increasing the Tier object multiple attempted by someone other than project lead.");
     require(newMultiple > multiple, "The new multiple was not larger than the old multiple.");
     multiple = newMultiple;
+  }
+
+  function getOwner() public returns (address) {
+    return owner;
   }
 }

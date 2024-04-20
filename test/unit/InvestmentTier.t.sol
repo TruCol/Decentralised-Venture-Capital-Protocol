@@ -4,10 +4,10 @@ pragma solidity >=0.8.23 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { Tier } from "../src/Tier.sol";
-import { ITier } from "../src/Tier.sol";
+import { Tier } from "../../src/Tier.sol";
+import { ITier } from "../../src/Tier.sol";
 
-import { TierInvestment } from "../src/TierInvestment.sol";
+import { TierInvestment } from "../../src/TierInvestment.sol";
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
