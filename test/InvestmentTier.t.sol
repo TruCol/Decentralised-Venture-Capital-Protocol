@@ -21,9 +21,9 @@ contract TierTest is PRBTest, StdCheats {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
-    // Instantiate the attribute for the contract-under-test.
-    tierInterface = new Tier(0, 10_000, 10); // Set expected values
     testAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    // Instantiate the attribute for the contract-under-test.
+    tierInterface = new Tier(testAddress, 0, 10_000, 10); // Set expected values
 
     // Instantiate the object that is tested.
     // tierInvestment = new TierInvestment(testAddress, 43, mockTierInterface);

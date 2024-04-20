@@ -18,7 +18,7 @@ contract TierTest is PRBTest, StdCheats {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the contract-under-test.
-    validTier = new Tier(0, 10_000, 10);
+    validTier = new Tier(address(0), 0, 10_000, 10);
   }
 
   /**
@@ -48,7 +48,7 @@ contract TierTest is PRBTest, StdCheats {
     // Act (call the function that might throw)
     bool didThrow;
     // Pass invalid maxVal 9 which is smaller than minVal (10)
-    try new Tier(10, 9, 11) {
+    try new Tier(address(0), 10, 9, 11) {
       // Reaching this statement means the constructor did not throw an error.
       didThrow = false;
     } catch Error(string memory reason) {
@@ -70,7 +70,7 @@ contract TierTest is PRBTest, StdCheats {
     // Act (call the function that might throw)
     bool didThrow;
     // Pass invalid multiple (0)
-    try new Tier(2, 9, 0) {
+    try new Tier(address(0), 2, 9, 0) {
       // Reaching this statement means the constructor did not throw an error.
       didThrow = false;
     } catch Error(string memory reason) {
@@ -96,7 +96,7 @@ contract TierTest is PRBTest, StdCheats {
     // Act (call the function that might throw)
     bool didThrow;
     // Pass invalid multiple (1)
-    try new Tier(2, 9, 1) {
+    try new Tier(address(0), 2, 9, 1) {
       // Reaching this statement means the constructor did not throw an error.
       didThrow = false;
     } catch Error(string memory reason) {

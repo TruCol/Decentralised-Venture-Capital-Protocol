@@ -8,6 +8,6 @@ import { BaseScript } from "./Base.s.sol";
 /// @dev See the Solidity Scripting tutorial: https://book.getfoundry.sh/tutorials/solidity-scripting
 contract Deploy is BaseScript {
   function runTier() public broadcast returns (Tier tier) {
-    tier = new Tier(0, 10_000, 10);
+    tier = new Tier(address(0), 0, 10_000, 10);
   }
 }

@@ -62,7 +62,7 @@ contract DecentralisedInvestmentManager {
       // You can access tier properties using _tiers[i].minVal(), etc.
       if (i > 0) {
         require(
-          tiers[i - 1].maxVal == tiers[i].minVal,
+          tiers[i - 1].maxVal() == tiers[i].minVal(),
           "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
         );
       }
@@ -282,6 +282,15 @@ contract DecentralisedInvestmentManager {
     TierInvestment newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
     _cumReceivedInvestments += newInvestmentAmount;
     return newTierInvestment;
+  }
+
+  function increaseCurrentMultipleInstantly(uint256 newMultiple) public {
+    require(
+      msg.sender == _projectLead,
+      "Increasing the current investment tier multiple attempted by someone other than project lead."
+    );
+    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+    require(newMultiple > currentTier.multiple(), "The new multiple was not larger than the old multiple.");
   }
 
   // Allow project lead to retrieve the investment.
