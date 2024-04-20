@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
-import { ITier } from "../src/ITier.sol";
+// import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
@@ -36,9 +36,7 @@ contract DecentralisedInvestmentManager {
    *
    */
   constructor(
-    uint256 firstTierCeiling,
-    uint256 secondTierCeiling,
-    uint256 thirdTierCeiling,
+    Tier[] memory tiers,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     address projectLead
@@ -56,12 +54,14 @@ contract DecentralisedInvestmentManager {
     _helper = new DecentralisedInvestmentHelper();
 
     // Specify the different investment tiers in DAI.
-    Tier tier_0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier_0);
-    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier_1);
-    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier_2);
+    // Validate the provided tiers array (optional)
+    require(tiers.length > 0, "You must provide at least one tier.");
+
+    // Iterate through the tiers and potentially perform additional checks
+    for (uint256 i = 0; i < tiers.length; i++) {
+      // You can access tier properties using _tiers[i].minVal(), etc.
+      _tiers.push(Tier(tiers[i]));
+    }
   }
 
   function initialiseCustomPaymentSplitter(address projectLead) private returns (CustomPaymentSplitter) {
