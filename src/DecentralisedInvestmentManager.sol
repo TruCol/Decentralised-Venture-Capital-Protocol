@@ -393,4 +393,8 @@ contract DecentralisedInvestmentManager {
     Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
     return currentTier;
   }
+
+  function getProjectLeadFracNumerator() public view returns (uint256) {
+    return _projectLeadFracNumerator;
+  }
 }
