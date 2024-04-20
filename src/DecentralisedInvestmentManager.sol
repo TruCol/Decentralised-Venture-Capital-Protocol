@@ -135,10 +135,6 @@ contract DecentralisedInvestmentManager {
     emit PaymentReceived(msg.sender, msg.value);
   }
 
-  function isRoundUp(uint256 withRounding, uint256 withoutRounding) public returns (bool) {
-    return withRounding != withoutRounding;
-  }
-
   function distributeSaasPaymentFractionToInvestors(
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
@@ -147,31 +143,15 @@ contract DecentralisedInvestmentManager {
 
     bool hasRoundedUp = false;
     for (uint256 i = 0; i < _tierInvestments.length; i++) {
-      // TODO: Determine if paymentSplitter can be used to compute remaining
-      // investment shares instead.
       // Compute how much an investor receives for its investment in this tier.
-
-      // Perform division with roundup to ensure the invstors are paid in whole
-      // during their last payout without requiring an additional 1 wei payout.
-      uint256 numerator = _tierInvestments[i].remainingReturn() * saasRevenueForInvestors;
-      uint256 denominator = cumRemainingInvestorReturn;
-      // Divide with round up.
-      uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
-      uint256 withoutRounding = numerator / denominator;
-      // uint256 investmentReturn = numerator / denominator;
-      uint256 investmentReturn;
-      if (isRoundUp(withRoundUp, withoutRounding) && !hasRoundedUp) {
-        investmentReturn = withRoundUp;
-        hasRoundedUp = true;
-        console2.log("PERFORMED ROUNDUP.");
-      } else {
-        investmentReturn = withoutRounding;
-        console2.log("Without Rounding.");
-      }
-      console2.log("_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
-      console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
-      console2.log("investmentReturn=", investmentReturn);
-      console2.log("\n");
+      (uint256 investmentReturn, bool returnHasRoundedUp) = computeInvestmentReturn(
+        _tierInvestments[i].remainingReturn(),
+        saasRevenueForInvestors,
+        cumRemainingInvestorReturn,
+        hasRoundedUp
+      );
+      // Booleans are passed by value, so have to overwrite it.
+      hasRoundedUp = returnHasRoundedUp;
 
       if (investmentReturn > 0) {
         // Allocate that amount to the investor.
@@ -293,6 +273,59 @@ contract DecentralisedInvestmentManager {
       console2.log("REACHED investment ceiling");
       // TODO: ensure the remaining funds are returned to the investor.
     }
+  }
+
+  /**
+  @dev Since this is an integer division, which is used to allocate shares,
+  the decimals that are discarded by the integer division, in total would add
+  up to 1, if the shares are not exact division. Therefore, this function
+  compares the results of the division, with round down vs round up. If the two
+  divisions are the same, it is an exact division of shares. Otherwise, there
+  is one Wei that needs to be added to one of the investor returns to ensure
+  the sum of the fractions add up to the whole original.
+
+  It is currently not clear which investor gets this +1 raise. I tried just
+  checking it only for the first investor, (as I incorrectly assumed if the
+  division is not whole, all investor shares should be not whole). However,
+  that led to an off-by one error. I expect this occurred because, by chance the
+  fraction of the first investor share was whole, whereas another investor
+  share was not whole. So the first investor with a non-whole remaining share
+  fraction gets +1 wei to ensure all the numbers add up correctly. A
+  difference of +- wei is considederd negligible w.r.t. to the investor return,
+  yet critical in the safe evaluation of this contract.
+  */
+  function computeInvestmentReturn(
+    uint256 remainingReturn,
+    uint256 saasRevenueForInvestors,
+    uint256 cumRemainingInvestorReturn,
+    bool hasRoundedUp
+  ) public returns (uint256, bool) {
+    uint256 numerator = remainingReturn * saasRevenueForInvestors;
+    uint256 denominator = cumRemainingInvestorReturn;
+
+    // Divide with round up.
+    uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+    // Default Solidity division is rounddown.
+    uint256 roundDown = numerator / denominator;
+    // uint256 investmentReturn = numerator / denominator;
+    uint256 investmentReturn;
+    if (isWholeDivision(withRoundUp, roundDown) && !hasRoundedUp) {
+      investmentReturn = withRoundUp;
+      hasRoundedUp = true;
+      console2.log("PERFORMED ROUNDUP.");
+    } else {
+      investmentReturn = roundDown;
+      console2.log("Without Rounding.");
+    }
+    console2.log("_tierInvestments[i].remainingReturn()=", remainingReturn);
+    console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
+    console2.log("investmentReturn=", investmentReturn);
+    console2.log("\n");
+    return (investmentReturn, hasRoundedUp);
+  }
+
+  function isWholeDivision(uint256 withRounding, uint256 roundDown) public returns (bool) {
+    return withRounding != roundDown;
   }
 
   /**
