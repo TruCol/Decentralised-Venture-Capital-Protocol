@@ -18,7 +18,7 @@ contract HelperTest is PRBTest, StdCheats {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
-    cumReceivedInvestments = 5;
+    _cumReceivedInvestments = 5;
 
     // Specify the investment tiers in ether.
     uint256 firstTierCeiling = 4 ether;
@@ -39,13 +39,13 @@ contract HelperTest is PRBTest, StdCheats {
   }
 
   function testExceedInvestmentCeiling() public {
-    // vm.prank(address(validTierInvestment));
+    // vm.prank(address(_validTierInvestment));
     vm.expectRevert(bytes("Investment ceiling is reached."));
     _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
   }
 
   function testNegativeInvestment() public {
-    // vm.prank(address(validTierInvestment));
+    // vm.prank(address(_validTierInvestment));
     vm.expectRevert(
       bytes(
         "Unexpected state: No matching tier found, the lowest investment tier starting point was larger than the cumulative received investments. All (Tier) arrays should start at 0."
@@ -88,7 +88,7 @@ contract HelperTest is PRBTest, StdCheats {
   }
 
   function testGetInvestmentCeiling() public {
-    // vm.prank(address(validTierInvestment));
+    // vm.prank(address(_validTierInvestment));
 
     assertEq(_helper.getInvestmentCeiling(_tiers), 30 ether);
   }

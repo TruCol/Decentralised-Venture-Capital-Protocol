@@ -19,6 +19,9 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 /// https://book.getfoundry.sh/forge/writing-tests
 contract PartialReturnTest is PRBTest, StdCheats {
   address internal _projectLeadAddress;
+
+  uint256 private _projectLeadFracNumerator;
+  uint256 private _projectLeadFracDenominator;
   address payable _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
@@ -27,9 +30,9 @@ contract PartialReturnTest is PRBTest, StdCheats {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
-    projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    uint256 projectLeadFracNumerator = 4;
-    uint256 projectLeadFracDenominator = 10;
+    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLeadFracNumerator = 4;
+    _projectLeadFracDenominator = 10;
 
     // Specify the investment tiers in ether.
     uint256 firstTierCeiling = 3 ether;
@@ -42,12 +45,11 @@ contract PartialReturnTest is PRBTest, StdCheats {
     Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier2);
 
-    // assertEq(address(projectLeadAddress).balance, 43);
     _dim = new DecentralisedInvestmentManager(
       _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
-      projectLeadAddress
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
     );
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));

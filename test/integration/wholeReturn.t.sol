@@ -22,6 +22,8 @@ interface Interface {
 /// https://book.getfoundry.sh/forge/writing-tests
 contract WholeReturn is PRBTest, StdCheats, Interface {
   address internal _projectLeadAddress;
+  uint256 private _projectLeadFracNumerator;
+  uint256 private _projectLeadFracDenominator;
   address payable private _investorWallet0;
   address private _userWallet;
   Tier[] private _tiers;
@@ -31,8 +33,8 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
   function setUp() public override {
     // Instantiate the attribute for the contract-under-test.
     _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    uint256 projectLeadFracNumerator = 4;
-    uint256 projectLeadFracDenominator = 10;
+    _projectLeadFracNumerator = 4;
+    _projectLeadFracDenominator = 10;
 
     // Specify the investment tiers in ether.
     uint256 firstTierCeiling = 3 ether;
@@ -47,8 +49,8 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
 
     _dim = new DecentralisedInvestmentManager(
       _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
       _projectLeadAddress
     );
 

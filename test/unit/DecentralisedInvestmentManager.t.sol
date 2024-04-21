@@ -24,13 +24,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats {
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
   uint256 private _projectLeadFracNumerator;
+  uint256 private _projectLeadFracDenominator;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
-    projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    projectLeadFracNumerator = 4;
-    uint256 projectLeadFracDenominator = 10;
+    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLeadFracNumerator = 4;
+    _projectLeadFracDenominator = 10;
 
     // Specify the investment tiers in ether.
     uint256 firstTierCeiling = 4 ether;
@@ -43,12 +44,12 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats {
     Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier2);
 
-    // assertEq(address(projectLeadAddress).balance, 43);
+    // assertEq(address(_projectLeadAddress).balance, 43);
     _dim = new DecentralisedInvestmentManager(
       _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
-      projectLeadAddress
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
     );
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
@@ -58,7 +59,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats {
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
-  function testProjectLeadFracNumerator() public {
-    assertEq(_dim.getProjectLeadFracNumerator(), projectLeadFracNumerator);
+  function test_projectLeadFracNumerator() public {
+    assertEq(_dim.get_projectLeadFracNumerator(), _projectLeadFracNumerator);
   }
 }

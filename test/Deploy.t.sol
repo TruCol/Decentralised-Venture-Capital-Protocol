@@ -11,10 +11,10 @@ contract TestDeploy is PRBTest {
   Deploy _deploy;
 
   function setUp() public {
-    deploy = new Deploy();
+    _deploy = new Deploy();
   }
 
   function testRunTier() public {
-    deploy.runTier(); // Call the run0 function to deploy Tier.sol
+    _deploy.runTier(); // Call the run0 function to deploy Tier.sol
   }
 }

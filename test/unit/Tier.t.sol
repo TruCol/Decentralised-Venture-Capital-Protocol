@@ -12,7 +12,7 @@ contract TierTest is PRBTest, StdCheats {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the contract-under-test.
-    validTier = new Tier(0, 10_000, 10);
+    _validTier = new Tier(0, 10_000, 10);
   }
 
   /**
@@ -22,9 +22,9 @@ contract TierTest is PRBTest, StdCheats {
    *
    */
   function testAttributes() public {
-    assertEq(validTier.minVal(), 0, "The minVal was not as expected");
-    assertEq(validTier.maxVal(), 10_000, "The maxVal was not as expected");
-    assertEq(validTier.multiple(), 10, "The multiple was not as expected.");
+    assertEq(_validTier.minVal(), 0, "The minVal was not as expected");
+    assertEq(_validTier.maxVal(), 10_000, "The maxVal was not as expected");
+    assertEq(_validTier.multiple(), 10, "The multiple was not as expected.");
   }
 
   /**

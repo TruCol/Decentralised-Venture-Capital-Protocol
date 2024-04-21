@@ -6,36 +6,42 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../src/Tier.sol";
 
-contract TierTest is PRBTest, StdCheats {
+interface Interface {
+  function setUp() external;
+
+  function testTierDirectly() external;
+}
+
+contract TierTest is PRBTest, StdCheats, Interface {
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
-  function setUp() public virtual {
+  function setUp() public override {
     // Instantiate the contract-under-test.
-    validTier = new Tier(0, 10_000, 10);
+    _validTier = new Tier(0, 10_000, 10);
   }
 
   /**
    * Creates a tier object and then raises its value.
    */
-  function testTierDirectly() public {
-    validTier.increaseMultiple(11);
-    assertEq(validTier.multiple(), 11, "The multiple was not 11.");
+  function testTierDirectly() public override {
+    _validTier.increaseMultiple(11);
+    assertEq(_validTier.multiple(), 11, "The multiple was not 11.");
   }
 
   function testTierDirectlyWithOtherAddress() public {
     vm.prank(address(1));
     vm.expectRevert(bytes("Increasing the Tier object multiple attempted by someone other than project lead."));
-    validTier.increaseMultiple(11);
+    _validTier.increaseMultiple(11);
   }
 
   function testTierDirectlyEqualMultiple() public {
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
-    validTier.increaseMultiple(10);
+    _validTier.increaseMultiple(10);
   }
 
   function testTierDirectlySmallerMultiple() public {
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
-    validTier.increaseMultiple(4);
+    _validTier.increaseMultiple(4);
   }
 }

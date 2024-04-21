@@ -19,6 +19,8 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 /// https://book.getfoundry.sh/forge/writing-tests
 contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
   address internal _projectLeadAddress;
+  uint256 private _projectLeadFracNumerator;
+  uint256 private _projectLeadFracDenominator;
   address payable _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
@@ -27,9 +29,9 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
-    projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    uint256 projectLeadFracNumerator = 4;
-    uint256 projectLeadFracDenominator = 10;
+    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLeadFracNumerator = 4;
+    _projectLeadFracDenominator = 10;
 
     // Specify the investment tiers in ether.
     uint256 firstTierCeiling = 4 ether;
@@ -42,12 +44,11 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
     Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier2);
 
-    // assertEq(address(projectLeadAddress).balance, 43);
     _dim = new DecentralisedInvestmentManager(
       _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
-      projectLeadAddress
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
     );
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
@@ -68,11 +69,11 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
     _dim.receiveInvestment{ value: investmentAmount }();
 
     // Assert project lead can retrieve investment.
-    assertEq(projectLeadAddress.balance, 0);
+    assertEq(_projectLeadAddress.balance, 0);
     // vm.prank(address(_investorWallet)); // fail first test.
-    vm.prank(address(projectLeadAddress)); // fail first test.
+    vm.prank(address(_projectLeadAddress)); // fail first test.
     _dim.withdraw(investmentAmount); // fail first test.
-    assertEq(projectLeadAddress.balance, 0.5 ether);
+    assertEq(_projectLeadAddress.balance, 0.5 ether);
 
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 0.2 ether;

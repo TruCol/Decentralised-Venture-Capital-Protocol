@@ -48,7 +48,7 @@ contract DecentralisedInvestmentManager {
 
     // Initialise default values.
     _cumReceivedInvestments = 0;
-    _paymentSplitter = initialiseCustomPaymentSplitter(_projectLead);
+    _paymentSplitter = _initialiseCustomPaymentSplitter(_projectLead);
 
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
@@ -123,11 +123,11 @@ contract DecentralisedInvestmentManager {
     // Distribute remaining amount to investors (if applicable)Store
 
     if (saasRevenueForInvestors > 0) {
-      distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
+      _distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
     } else {}
 
     // Perform transaction and administration for project lead (if applicable)
-    performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
+    _performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
     emit PaymentReceived(msg.sender, msg.value);
   }
@@ -152,7 +152,7 @@ contract DecentralisedInvestmentManager {
 
       if (investmentReturn > 0) {
         // Allocate that amount to the investor.
-        performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
+        _performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
 
         // Track the payout in the tierInvestment.
         _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
@@ -220,7 +220,7 @@ contract DecentralisedInvestmentManager {
       "The investor ceiling is not reached."
     );
 
-    allocateInvestment(msg.value, msg.sender);
+    _allocateInvestment(msg.value, msg.sender);
 
     emit InvestmentReceived(msg.sender, msg.value);
   }
@@ -253,16 +253,16 @@ contract DecentralisedInvestmentManager {
       TierInvestment tierInvestment;
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
-        tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
         _tierInvestments.push(tierInvestment);
 
         // Invest remaining amount from user
         uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
 
-        allocateInvestment(remainingInvestmentAmount, investorWallet);
+        _allocateInvestment(remainingInvestmentAmount, investorWallet);
       } else {
         // Invest full amount in current tier
-        tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
 
         _tierInvestments.push(tierInvestment);
       }
@@ -383,7 +383,7 @@ contract DecentralisedInvestmentManager {
     return currentTier;
   }
 
-  function getProjectLeadFracNumerator() public view returns (uint256) {
+  function get_projectLeadFracNumerator() public view returns (uint256) {
     return _projectLeadFracNumerator;
   }
 }

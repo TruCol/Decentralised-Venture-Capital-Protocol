@@ -6,7 +6,7 @@ import { console2 } from "forge-std/src/console2.sol";
 
 contract TierInvestment {
   address public investor;
-  uint256 public newInvestmentAmount;
+  uint256 private _newInvestmentAmount;
   Tier private _tier;
 
   /**
@@ -26,13 +26,13 @@ contract TierInvestment {
    * after creation.
    *
    */
-  constructor(address someInvestor, uint256 _newInvestmentAmount, Tier _tier) {
-    require(_newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
+  constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) {
+    require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;
 
     investor = someInvestor;
-    newInvestmentAmount = _newInvestmentAmount;
-    tier = _tier;
+    _newInvestmentAmount = newInvestmentAmount;
+    _tier = tier;
 
     // Initialise default value.
     remainingReturn = _newInvestmentAmount * tier.multiple();
@@ -57,5 +57,9 @@ contract TierInvestment {
 
   function getInvestor() public view returns (address) {
     return investor;
+  }
+
+  function getNewInvestmentAmount() public view returns (uint256) {
+    return _newInvestmentAmount;
   }
 }

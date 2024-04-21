@@ -24,36 +24,40 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
   address private _userWallet;
   Tier[] private _tiers;
   uint256 private _investmentAmount0;
+  uint256 private _investmentAmount1;
+
+  uint256 private _projectLeadFracNumerator;
+  uint256 private _projectLeadFracDenominator;
 
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {
     // Instantiate the attribute for the contract-under-test.
-    projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    uint256 projectLeadFracNumerator = 4;
-    uint256 projectLeadFracDenominator = 10;
+    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLeadFracNumerator = 4;
+    _projectLeadFracDenominator = 10;
 
     // Specify the investment tiers in ether.
     uint256 firstTierCeiling = 4 ether;
     uint256 secondTierCeiling = 15 ether;
     uint256 thirdTierCeiling = 30 ether;
-    vm.prank(projectLeadAddress);
+    vm.prank(_projectLeadAddress);
     Tier tier0 = new Tier(0, firstTierCeiling, 10);
     _tiers.push(tier0);
-    vm.prank(projectLeadAddress);
+    vm.prank(_projectLeadAddress);
     Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
     _tiers.push(tier1);
-    vm.prank(projectLeadAddress);
+    vm.prank(_projectLeadAddress);
     Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
     _tiers.push(tier2);
 
-    // assertEq(address(projectLeadAddress).balance, 43);
+    // assertEq(address(_projectLeadAddress).balance, 43);
     _dim = new DecentralisedInvestmentManager(
       _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
-      projectLeadAddress
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
     );
 
     _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
@@ -66,12 +70,12 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
 
     // Print the addresses to console.
 
-    investmentAmount0 = 0.5 ether;
+    _investmentAmount0 = 0.5 ether;
 
     // Set the msg.sender address to that of the _investorWallet0 for the next call.
     vm.prank(address(_investorWallet0));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: investmentAmount0 }();
+    _dim.receiveInvestment{ value: _investmentAmount0 }();
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
     uint256 startBalance = _investorWallet0.balance;
   }
@@ -85,7 +89,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
 
   function testIncreaseMultipleIndirectly() public {
     // Assert project lead can increase multiple.
-    vm.prank(projectLeadAddress);
+    vm.prank(_projectLeadAddress);
     _dim.increaseCurrentMultipleInstantly(20);
     assertEq(_dim.getCurrentTier().multiple(), 20, "The multiple was not 20.");
 
@@ -102,7 +106,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     assertTrue(paymentSplitter.isPayee(_investorWallet0), "The _investorWallet0 is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
-      investmentAmount0,
+      _investmentAmount0,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -118,7 +122,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     paymentSplitter.release(_investorWallet0);
     assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
     assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
-    followUpSecondInvestment(investmentAmount0);
+    followUpSecondInvestment();
   }
 
   /**
@@ -127,23 +131,23 @@ tier is 4 ether, and 0.5 has already been invested, and 5 ether has already
 been paid out, so the cumulative remaining return becomes 3.5*20 +0.5*5 (5 is
 the multiple of the xecond tier) = 72.5 ether.
 */
-  function followUpSecondInvestment(uint256 investmentAmount0) public {
+  function followUpSecondInvestment() public {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // investmentAmount0*10, // Tier 0 has a multiple of 10.
+      // _investmentAmount0*10, // Tier 0 has a multiple of 10.
       0 ether,
       "Error, the cumRemainingInvestorReturn was not as expected before the second investment."
     );
 
-    uint256 investmentAmount1 = 4 ether;
+    _investmentAmount1 = 4 ether;
     vm.prank(address(_investorWallet1));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: investmentAmount1 }();
+    _dim.receiveInvestment{ value: _investmentAmount1 }();
 
     // TODO: assert the tierInvestment(s) are made as expected.
     assertEq(
       _dim.getCumReceivedInvestments(),
-      investmentAmount0 + investmentAmount1,
+      _investmentAmount0 + _investmentAmount1,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -158,10 +162,10 @@ the multiple of the xecond tier) = 72.5 ether.
       "Error, the _tierInvestments.length was not as expected after second investment."
     );
 
-    followUpSecondSaasPayment(investmentAmount0, investmentAmount1);
+    followUpSecondSaasPayment();
   }
 
-  function followUpSecondSaasPayment(uint256 investmentAmount0, uint256 investmentAmount1) public {
+  function followUpSecondSaasPayment() public {
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 1 ether;
     // Set the msg.sender address to that of the _userWallet for the next call.
@@ -183,7 +187,7 @@ the multiple of the xecond tier) = 72.5 ether.
     assertTrue(paymentSplitter.isPayee(_investorWallet1), "The _investorWallet0 is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
-      investmentAmount0 + investmentAmount1,
+      _investmentAmount0 + _investmentAmount1,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
