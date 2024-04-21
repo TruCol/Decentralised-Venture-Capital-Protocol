@@ -56,7 +56,13 @@ contract DecentralisedInvestmentHelper is Interface {
     }
     // Should not reach here with valid tiers
     revert(
-      "Unexpected state: No matching tier found, the lowest investment tier starting point was larger than the cumulative received investments. All (Tier) arrays should start at 0."
+      string(
+        abi.encodePacked(
+          "Unexpected state: No matching tier found, the lowest ",
+          "investment tier starting point was larger than the ",
+          "cumulative received investments. All (Tier) arrays should start at 0."
+        )
+      )
     );
   }
 

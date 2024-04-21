@@ -48,7 +48,13 @@ contract HelperTest is PRBTest, StdCheats {
     // vm.prank(address(_validTierInvestment));
     vm.expectRevert(
       bytes(
-        "Unexpected state: No matching tier found, the lowest investment tier starting point was larger than the cumulative received investments. All (Tier) arrays should start at 0."
+        string(
+          abi.encodePacked(
+            "Unexpected state: No matching tier found, the lowest ",
+            "investment tier starting point was larger than the ",
+            "cumulative received investments. All (Tier) arrays should start at 0."
+          )
+        )
       )
     );
     _helper.computeCurrentInvestmentTier(1 wei, _tiers);
