@@ -6,11 +6,23 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../src/Tier.sol";
 
-contract TierTest is PRBTest, StdCheats {
+interface Interface {
+  function setUp() external;
+
+  function testAttributes() external;
+
+  function testThrowsOnMaxValLargerThanMinVal() external;
+
+  function testThrowsOnZeroMultiple() external;
+
+  function testThrowsOnOneMultiple() external;
+}
+
+contract TierTest is PRBTest, StdCheats, Interface {
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
-  function setUp() public virtual {
+  function setUp() public virtual override {
     // Instantiate the contract-under-test.
     _validTier = new Tier(0, 10_000, 10);
   }
@@ -21,7 +33,7 @@ contract TierTest is PRBTest, StdCheats {
    * available.
    *
    */
-  function testAttributes() public {
+  function testAttributes() public override {
     assertEq(_validTier.getMinVal(), 0, "The minVal was not as expected");
     assertEq(_validTier.getMaxVal(), 10_000, "The maxVal was not as expected");
     assertEq(_validTier.getMultiple(), 10, "The multiple was not as expected.");
@@ -38,7 +50,7 @@ contract TierTest is PRBTest, StdCheats {
   /**
    * Test the tier object throws an error if the maxValue is larger than the minValue.
    */
-  function testThrowsOnMaxValLargerThanMinVal() public {
+  function testThrowsOnMaxValLargerThanMinVal() public override {
     // Act (call the function that might throw)
     bool didThrow;
     // Pass invalid maxVal 9 which is smaller than minVal (10)
@@ -60,7 +72,7 @@ contract TierTest is PRBTest, StdCheats {
   /**
    * Test the tier object throws an error if the multiple is 1 or smaller.
    */
-  function testThrowsOnZeroMultiple() public {
+  function testThrowsOnZeroMultiple() public override {
     // Act (call the function that might throw)
     bool didThrow;
     // Pass invalid multiple (0)
@@ -86,7 +98,7 @@ contract TierTest is PRBTest, StdCheats {
    * an integer. So the smallest two values are 0 and 1, after that the
    * multiple is large enough.
    */
-  function testThrowsOnOneMultiple() public {
+  function testThrowsOnOneMultiple() public override {
     // Act (call the function that might throw)
     bool didThrow;
     // Pass invalid multiple (1)

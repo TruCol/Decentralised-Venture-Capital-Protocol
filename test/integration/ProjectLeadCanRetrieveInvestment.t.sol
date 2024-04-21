@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
-import { console2 } from "forge-std/src/console2.sol";
+
 import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
@@ -12,22 +12,23 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 // Import the paymentsplitter that has the shares for the investors.
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
-// Import contract that is an attribute of main contract to test the attribute.
-import { TierInvestment } from "../../src/TierInvestment.sol";
+interface Interface {
+  function setUp() external;
 
-/// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
-/// https://book.getfoundry.sh/forge/writing-tests
-contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
+  function testInvestorGetsSaasRevenue() external;
+}
+
+contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLeadAddress;
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
-  address payable _investorWallet;
+  address payable private _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.
-  function setUp() public virtual {
+  function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
     _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     _projectLeadFracNumerator = 4;
@@ -60,7 +61,7 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
-  function testInvestorGetsSaasRevenue() public {
+  function testInvestorGetsSaasRevenue() public override {
     uint256 investmentAmount = 0.5 ether;
 
     // Set the msg.sender address to that of the _investorWallet for the next call.

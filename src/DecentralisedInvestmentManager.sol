@@ -179,189 +179,6 @@ contract DecentralisedInvestmentManager is Interface {
     emit InvestmentReceived(msg.sender, msg.value);
   }
 
-  function _initialiseCustomPaymentSplitter(
-    address projectLead
-  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
-    _withdrawers.push(projectLead);
-    _owedDai.push(0);
-    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
-    return customPaymentSplitter;
-  }
-
-  function _distributeSaasPaymentFractionToInvestors(
-    uint256 saasRevenueForInvestors,
-    uint256 cumRemainingInvestorReturn
-  ) private {
-    uint256 cumulativePayout = 0;
-
-    bool hasRoundedUp = false;
-    uint256 nrOfTierInvestments = _tierInvestments.length;
-    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
-      // Compute how much an investor receives for its investment in this tier.
-      (uint256 investmentReturn, bool returnHasRoundedUp) = _computeInvestmentReturn(
-        _tierInvestments[i].getRemainingReturn(),
-        saasRevenueForInvestors,
-        cumRemainingInvestorReturn,
-        hasRoundedUp
-      );
-      // Booleans are passed by value, so have to overwrite it.
-      hasRoundedUp = returnHasRoundedUp;
-
-      if (investmentReturn > 0) {
-        // Allocate that amount to the investor.
-        _performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
-
-        // Track the payout in the tierInvestment.
-        _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
-        cumulativePayout += investmentReturn;
-      }
-    }
-
-    require(
-      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
-      // cumulativePayout == saasRevenueForInvestors,
-      string.concat(
-        "The cumulativePayout (\n",
-        Strings.toString(cumulativePayout),
-        ") is not equal to the saasRevenueForInvestors (\n",
-        Strings.toString(saasRevenueForInvestors),
-        ")."
-      )
-    );
-  }
-
-  // TODO: include safe handling of gas costs.
-  function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
-    require(address(this).balance >= amount, "Error: Insufficient contract balance.");
-    require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
-
-    // Transfer the amount to the PaymentSplitter contract
-    (bool success, ) = address(_paymentSplitter).call{ value: amount }(
-      abi.encodeWithSignature("deposit()", receivingWallet)
-    );
-    // Check for successful transfer
-    require(success, "Error: Transfer to PaymentSplitter failed.");
-
-    // TODO: transfer this to the _paymentSplitter contract.
-    if (!(_paymentSplitter.isPayee(receivingWallet))) {
-      _paymentSplitter.publicAddPayee(receivingWallet, amount);
-    } else {
-      _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
-    }
-  }
-
-  /**
-  @notice If the investment ceiling is not reached, it finds the lowest open
-  investment tier, and then computes how much can still be invested in that
-  investment tier. If the investment amount is larger than the amount remaining
-  in that tier, it fills that tier up with a part of the investment using the
-  addInvestmentToCurrentTier function, and recursively calls itself until the
-  investment amount is fully allocated, or Investment ceiling is reached.
-  If the investment amount is equal to- or smaller than the amount remaining in
-  that tier, it adds that amount to the current investment tier using the
-  addInvestmentToCurrentTier. That's it.
-
-
-  */
-  function _allocateInvestment(
-    uint256 investmentAmount,
-    // uint256 remainingAmountInTier,
-    address investorWallet // Tier currentTier
-  ) private {
-    require(investmentAmount > 0, "The amount invested was not larger than 0.");
-
-    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
-      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-
-      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
-
-      TierInvestment tierInvestment;
-      if (investmentAmount > remainingAmountInTier) {
-        // Invest remaining amount in current tier
-        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-        _tierInvestments.push(tierInvestment);
-
-        // Invest remaining amount from user
-        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
-
-        _allocateInvestment(remainingInvestmentAmount, investorWallet);
-      } else {
-        // Invest full amount in current tier
-        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
-
-        _tierInvestments.push(tierInvestment);
-      }
-    } else {
-      revert("Temaining funds should be returned if the investment ceiling is reached.");
-    }
-  }
-
-  /**
-  @dev Since this is an integer division, which is used to allocate shares,
-  the decimals that are discarded by the integer division, in total would add
-  up to 1, if the shares are not exact division. Therefore, this function
-  compares the results of the division, with round down vs round up. If the two
-  divisions are the same, it is an exact division of shares. Otherwise, there
-  is one Wei that needs to be added to one of the investor returns to ensure
-  the sum of the fractions add up to the whole original.
-
-  It is currently not clear which investor gets this +1 raise. I tried just
-  checking it only for the first investor, (as I incorrectly assumed if the
-  division is not whole, all investor shares should be not whole). However,
-  that led to an off-by one error. I expect this occurred because, by chance the
-  fraction of the first investor share was whole, whereas another investor
-  share was not whole. So the first investor with a non-whole remaining share
-  fraction gets +1 wei to ensure all the numbers add up correctly. A
-  difference of +- wei is considederd negligible w.r.t. to the investor return,
-  yet critical in the safe evaluation of this contract.
-  */
-  function _computeInvestmentReturn(
-    uint256 remainingReturn,
-    uint256 saasRevenueForInvestors,
-    uint256 cumRemainingInvestorReturn,
-    bool incomingHasRoundedUp
-  ) private pure returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
-    uint256 numerator = remainingReturn * saasRevenueForInvestors;
-    uint256 denominator = cumRemainingInvestorReturn;
-
-    // Divide with round up.
-    uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
-    // Default Solidity division is rounddown.
-    uint256 roundDown = numerator / denominator;
-    // uint256 investmentReturn = numerator / denominator;
-
-    if (_isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
-      investmentReturn = withRoundUp;
-      returnedHasRoundedUp = true;
-    } else {
-      investmentReturn = roundDown;
-    }
-
-    return (investmentReturn, returnedHasRoundedUp);
-  }
-
-  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
-    isWholeDivision = withRounding != roundDown;
-    return isWholeDivision;
-  }
-
-  /**
-  @notice This creates a tierInvestment object/contract for the current tier.
-  Since it takes in the current tier, it stores the multiple used for that tier
-  to specify how much the investor may retrieve. Furthermore, it tracks how
-  much investment this contract has received in total using
-  _cumReceivedInvestments.
-   */
-  function _addInvestmentToCurrentTier(
-    address investorWallet,
-    Tier currentTier,
-    uint256 newInvestmentAmount
-  ) private returns (TierInvestment newTierInvestment) {
-    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
-    _cumReceivedInvestments += newInvestmentAmount;
-    return newTierInvestment;
-  }
-
   function increaseCurrentMultipleInstantly(uint256 newMultiple) public override {
     require(
       msg.sender == _projectLead,
@@ -415,5 +232,186 @@ contract DecentralisedInvestmentManager is Interface {
   function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
     projectLeadFracNumerator = _projectLeadFracNumerator;
     return projectLeadFracNumerator;
+  }
+
+  function _initialiseCustomPaymentSplitter(
+    address projectLead
+  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
+    _withdrawers.push(projectLead);
+    _owedDai.push(0);
+    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
+    return customPaymentSplitter;
+  }
+
+  function _distributeSaasPaymentFractionToInvestors(
+    uint256 saasRevenueForInvestors,
+    uint256 cumRemainingInvestorReturn
+  ) private {
+    uint256 cumulativePayout = 0;
+
+    bool hasRoundedUp = false;
+    uint256 nrOfTierInvestments = _tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
+      // Compute how much an investor receives for its investment in this tier.
+      (uint256 investmentReturn, bool returnHasRoundedUp) = _computeInvestmentReturn(
+        _tierInvestments[i].getRemainingReturn(),
+        saasRevenueForInvestors,
+        cumRemainingInvestorReturn,
+        hasRoundedUp
+      );
+      // Booleans are passed by value, so have to overwrite it.
+      hasRoundedUp = returnHasRoundedUp;
+
+      if (investmentReturn > 0) {
+        // Allocate that amount to the investor.
+        _performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
+
+        // Track the payout in the tierInvestment.
+        _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
+        cumulativePayout += investmentReturn;
+      }
+    }
+
+    require(
+      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
+      // cumulativePayout == saasRevenueForInvestors,
+      string.concat(
+        "The cumulativePayout (\n",
+        Strings.toString(cumulativePayout),
+        ") is not equal to the saasRevenueForInvestors (\n",
+        Strings.toString(saasRevenueForInvestors),
+        ")."
+      )
+    );
+  }
+
+  /**
+  @notice This creates a tierInvestment object/contract for the current tier.
+  Since it takes in the current tier, it stores the multiple used for that tier
+  to specify how much the investor may retrieve. Furthermore, it tracks how
+  much investment this contract has received in total using
+  _cumReceivedInvestments.
+   */
+  function _addInvestmentToCurrentTier(
+    address investorWallet,
+    Tier currentTier,
+    uint256 newInvestmentAmount
+  ) private returns (TierInvestment newTierInvestment) {
+    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+    _cumReceivedInvestments += newInvestmentAmount;
+    return newTierInvestment;
+  }
+
+  // TODO: include safe handling of gas costs.
+  function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
+    require(address(this).balance >= amount, "Error: Insufficient contract balance.");
+    require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
+
+    // Transfer the amount to the PaymentSplitter contract
+    (bool success, ) = address(_paymentSplitter).call{ value: amount }(
+      abi.encodeWithSignature("deposit()", receivingWallet)
+    );
+    // Check for successful transfer
+    require(success, "Error: Transfer to PaymentSplitter failed.");
+
+    // TODO: transfer this to the _paymentSplitter contract.
+    if (!(_paymentSplitter.isPayee(receivingWallet))) {
+      _paymentSplitter.publicAddPayee(receivingWallet, amount);
+    } else {
+      _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
+    }
+  }
+
+  /**
+  @notice If the investment ceiling is not reached, it finds the lowest open
+  investment tier, and then computes how much can still be invested in that
+  investment tier. If the investment amount is larger than the amount remaining
+  in that tier, it fills that tier up with a part of the investment using the
+  addInvestmentToCurrentTier function, and recursively calls itself until the
+  investment amount is fully allocated, or Investment ceiling is reached.
+  If the investment amount is equal to- or smaller than the amount remaining in
+  that tier, it adds that amount to the current investment tier using the
+  addInvestmentToCurrentTier. That's it.
+  */
+  function _allocateInvestment(
+    uint256 investmentAmount,
+    // uint256 remainingAmountInTier,
+    address investorWallet // Tier currentTier
+  ) private {
+    require(investmentAmount > 0, "The amount invested was not larger than 0.");
+
+    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+
+      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
+
+      TierInvestment tierInvestment;
+      if (investmentAmount > remainingAmountInTier) {
+        // Invest remaining amount in current tier
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+        _tierInvestments.push(tierInvestment);
+
+        // Invest remaining amount from user
+        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
+
+        _allocateInvestment(remainingInvestmentAmount, investorWallet);
+      } else {
+        // Invest full amount in current tier
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
+
+        _tierInvestments.push(tierInvestment);
+      }
+    } else {
+      revert("Temaining funds should be returned if the investment ceiling is reached.");
+    }
+  }
+
+  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
+    isWholeDivision = withRounding != roundDown;
+    return isWholeDivision;
+  }
+
+  /**
+  @dev Since this is an integer division, which is used to allocate shares,
+  the decimals that are discarded by the integer division, in total would add
+  up to 1, if the shares are not exact division. Therefore, this function
+  compares the results of the division, with round down vs round up. If the two
+  divisions are the same, it is an exact division of shares. Otherwise, there
+  is one Wei that needs to be added to one of the investor returns to ensure
+  the sum of the fractions add up to the whole original.
+
+  It is currently not clear which investor gets this +1 raise. I tried just
+  checking it only for the first investor, (as I incorrectly assumed if the
+  division is not whole, all investor shares should be not whole). However,
+  that led to an off-by one error. I expect this occurred because, by chance the
+  fraction of the first investor share was whole, whereas another investor
+  share was not whole. So the first investor with a non-whole remaining share
+  fraction gets +1 wei to ensure all the numbers add up correctly. A
+  difference of +- wei is considederd negligible w.r.t. to the investor return,
+  yet critical in the safe evaluation of this contract.
+  */
+  function _computeInvestmentReturn(
+    uint256 remainingReturn,
+    uint256 saasRevenueForInvestors,
+    uint256 cumRemainingInvestorReturn,
+    bool incomingHasRoundedUp
+  ) private pure returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
+    uint256 numerator = remainingReturn * saasRevenueForInvestors;
+    uint256 denominator = cumRemainingInvestorReturn;
+
+    // Divide with round up.
+    uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+    // Default Solidity division is rounddown.
+    uint256 roundDown = numerator / denominator;
+    // uint256 investmentReturn = numerator / denominator;
+
+    if (_isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
+      investmentReturn = withRoundUp;
+      returnedHasRoundedUp = true;
+    } else {
+      investmentReturn = roundDown;
+    }
+
+    return (investmentReturn, returnedHasRoundedUp);
   }
 }

@@ -16,6 +16,12 @@ abstract contract BaseScript is Script {
   /// @dev Used to derive the broadcaster's address if $ETH_FROM is not defined.
   string internal _mnemonic;
 
+  modifier broadcast() {
+    vm.startBroadcast(_broadcaster);
+    _;
+    vm.stopBroadcast();
+  }
+
   /// @dev Initializes the transaction broadcaster like this:
   ///
   /// - If $ETH_FROM is defined, use it.
@@ -31,11 +37,5 @@ abstract contract BaseScript is Script {
       _mnemonic = vm.envOr({ name: "MNEMONIC", defaultValue: _TEST_MNEMONIC });
       (_broadcaster, ) = deriveRememberKey({ mnemonic: _mnemonic, index: 0 });
     }
-  }
-
-  modifier broadcast() {
-    vm.startBroadcast(_broadcaster);
-    _;
-    vm.stopBroadcast();
   }
 }

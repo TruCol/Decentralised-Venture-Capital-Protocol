@@ -11,6 +11,28 @@ interface Interface {
   ) external view returns (uint256 cumRemainingInvestorReturn);
 
   function getInvestmentCeiling(Tier[] memory tiers) external view returns (uint256 investmentCeiling);
+
+  function hasReachedInvestmentCeiling(
+    uint256 cumReceivedInvestments,
+    Tier[] memory tiers
+  ) external view returns (bool reachedInvestmentCeiling);
+
+  function computeCurrentInvestmentTier(
+    uint256 cumReceivedInvestments,
+    Tier[] memory tiers
+  ) external view returns (Tier currentTier);
+
+  function getRemainingAmountInCurrentTier(
+    uint256 cumReceivedInvestments,
+    Tier someTier
+  ) external view returns (uint256 remainingAmountInTier);
+
+  function computeRemainingInvestorPayout(
+    uint256 cumRemainingInvestorReturn,
+    uint256 investorFracNumerator,
+    uint256 investorFracDenominator,
+    uint256 paidAmount
+  ) external pure returns (uint256 returneCumRemainingInvestorReturn);
 }
 
 contract DecentralisedInvestmentHelper is Interface {
@@ -37,23 +59,29 @@ contract DecentralisedInvestmentHelper is Interface {
     return investmentCeiling;
   }
 
-  function hasReachedInvestmentCeiling(uint256 cumReceivedInvestments, Tier[] memory tiers) public view returns (bool) {
-    return cumReceivedInvestments >= getInvestmentCeiling(tiers);
+  function hasReachedInvestmentCeiling(
+    uint256 cumReceivedInvestments,
+    Tier[] memory tiers
+  ) public view override returns (bool reachedInvestmentCeiling) {
+    reachedInvestmentCeiling = cumReceivedInvestments >= getInvestmentCeiling(tiers);
+    return reachedInvestmentCeiling;
   }
 
   function computeCurrentInvestmentTier(
     uint256 cumReceivedInvestments,
     Tier[] memory tiers
-  ) public view returns (Tier) {
+  ) public view override returns (Tier currentTier) {
     // Check for exceeding investment ceiling.
     if (hasReachedInvestmentCeiling(cumReceivedInvestments, tiers)) {
       revert ReachedInvestmentCeiling(cumReceivedInvestments, "Investment ceiling is reached.");
     }
 
     // Find the matching tier
-    for (uint256 i = 0; i < tiers.length; ++i) {
+    uint256 nrOfTiers = tiers.length;
+    for (uint256 i = 0; i < nrOfTiers; ++i) {
       if (tiers[i].getMinVal() <= cumReceivedInvestments && cumReceivedInvestments < tiers[i].getMaxVal()) {
-        return tiers[i];
+        currentTier = tiers[i];
+        return currentTier;
       }
     }
     // Should not reach here with valid tiers
@@ -70,22 +98,23 @@ contract DecentralisedInvestmentHelper is Interface {
 
   function getRemainingAmountInCurrentTier(
     uint256 cumReceivedInvestments,
-    Tier currentTier
-  ) public view returns (uint256) {
+    Tier someTier
+  ) public view override returns (uint256 remainingAmountInTier) {
     // TODO: Add assertion for current tier validation
 
     // Validate input values
     require(
-      currentTier.getMinVal() <= cumReceivedInvestments,
+      someTier.getMinVal() <= cumReceivedInvestments,
       "Error: Tier's minimum value exceeds received investments."
     );
     require(
-      currentTier.getMaxVal() > cumReceivedInvestments,
+      someTier.getMaxVal() > cumReceivedInvestments,
       "Error: Tier's maximum value is not larger than received investments."
     );
 
     // Calculate remaining amount
-    return currentTier.getMaxVal() - cumReceivedInvestments;
+    remainingAmountInTier = someTier.getMaxVal() - cumReceivedInvestments;
+    return remainingAmountInTier;
   }
 
   function computeRemainingInvestorPayout(
@@ -93,14 +122,15 @@ contract DecentralisedInvestmentHelper is Interface {
     uint256 investorFracNumerator,
     uint256 investorFracDenominator,
     uint256 paidAmount
-  ) public pure returns (uint256) {
+  ) public pure override returns (uint256 returneCumRemainingInvestorReturn) {
     require(
       investorFracDenominator >= investorFracNumerator,
       "investorFracNumerator is smaller than investorFracDenominator."
     );
 
     if (cumRemainingInvestorReturn == 0) {
-      return 0;
+      returneCumRemainingInvestorReturn = 0;
+      return returneCumRemainingInvestorReturn;
 
       // Check if the amount to be paid to the investor is smaller than the
       // amount the investors can receive based on the investorFraction and the
@@ -109,7 +139,8 @@ contract DecentralisedInvestmentHelper is Interface {
     } else if (cumRemainingInvestorReturn * investorFracDenominator < paidAmount * (investorFracNumerator)) {
       // In this case, the investors fraction of the SAAS payment is more than
       // what they still can get, so just return what they can still receive.
-      return cumRemainingInvestorReturn;
+      returneCumRemainingInvestorReturn = cumRemainingInvestorReturn;
+      return returneCumRemainingInvestorReturn;
     } else {
       // In this case, there is not enough SAAS payment received to make the
       // investors whole with this single payment, so instead they get their
@@ -119,7 +150,8 @@ contract DecentralisedInvestmentHelper is Interface {
       // during their last payout without requiring an additional 1 wei payout.
       uint256 numerator = paidAmount * investorFracNumerator;
       uint256 denominator = investorFracDenominator;
-      return numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+      returneCumRemainingInvestorReturn = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+      return returneCumRemainingInvestorReturn;
     }
   }
 }

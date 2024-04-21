@@ -6,11 +6,25 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
 
-contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
+interface Interface {
+  function setUp() external;
+
+  function testPayout0() external;
+
+  function testPayout1() external;
+
+  function testPayout2() external;
+
+  function testPayout3() external;
+
+  function testPayout4() external;
+}
+
+contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats, Interface {
   DecentralisedInvestmentHelper private _helper;
 
   /// @dev A function invoked before each test case is run.
-  function setUp() public virtual {
+  function setUp() public override {
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
   }
@@ -19,7 +33,7 @@ contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
    * Test the computeRemainingInvestorPayout function returns 0 correctly.
    *
    */
-  function testPayout0() public {
+  function testPayout0() public override {
     uint256 cumRemainingInvestorReturn = 0;
     uint256 investorFracNumerator = 4;
     uint256 investorFracDenominator = 10;
@@ -36,7 +50,7 @@ contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
     );
   }
 
-  function testPayout1() public {
+  function testPayout1() public override {
     uint256 cumRemainingInvestorReturn = 500;
     uint256 investorFracNumerator = 4;
     uint256 investorFracDenominator = 10;
@@ -55,7 +69,7 @@ contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
     );
   }
 
-  function testPayout2() public {
+  function testPayout2() public override {
     uint256 cumRemainingInvestorReturn = 79;
     uint256 investorFracNumerator = 4;
     uint256 investorFracDenominator = 10;
@@ -74,7 +88,7 @@ contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
     );
   }
 
-  function testPayout3() public {
+  function testPayout3() public override {
     uint256 cumRemainingInvestorReturn = 1;
     uint256 investorFracNumerator = 4;
     uint256 investorFracDenominator = 10;
@@ -93,7 +107,7 @@ contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats {
     );
   }
 
-  function testPayout4() public {
+  function testPayout4() public override {
     uint256 cumRemainingInvestorReturn = 9900;
     uint256 investorFracNumerator = 3;
     uint256 investorFracDenominator = 7;

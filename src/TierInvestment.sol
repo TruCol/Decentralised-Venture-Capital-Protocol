@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
-contract TierInvestment {
+interface Interface {
+  function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) external;
+
+  function getInvestor() external view returns (address investor);
+
+  function getNewInvestmentAmount() external view returns (uint256 newInvestmentAmount);
+
+  function getRemainingReturn() external view returns (uint256 remainingReturn);
+}
+
+contract TierInvestment is Interface {
   address private _investor;
   uint256 private _newInvestmentAmount;
   Tier private _tier;
@@ -22,11 +30,20 @@ contract TierInvestment {
   address private _owner;
 
   /**
+   * Used to ensure only the owner/creator of the constructor of this contract is
+   *   able to call/use functions that use this function (modifier).
+   */
+  modifier onlyOwner() {
+    require(msg.sender == _owner, "The message is sent by someone other than the owner of this contract.");
+    _;
+  }
+
+  /**
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
    *
    */
-  constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) {
+  constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) public {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;
 
@@ -42,31 +59,22 @@ contract TierInvestment {
    * Public counterpart of the _addPayee function, to add users that can withdraw
    *   funds after constructor initialisation.
    */
-  function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public onlyOwner {
+  function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public override onlyOwner {
     require(_investor == someInvestor, "Error, the new return is being set for the wrong investor.");
     _remainingReturn = _remainingReturn - newlyReturnedAmount;
   }
 
-  /**
-   * Used to ensure only the owner/creator of the constructor of this contract is
-   *   able to call/use functions that use this function (modifier).
-   */
-  modifier onlyOwner() {
-    require(msg.sender == _owner, "The message is sent by someone other than the owner of this contract.");
-    _;
-  }
-
-  function getInvestor() public view returns (address investor) {
+  function getInvestor() public view override returns (address investor) {
     investor = _investor;
     return investor;
   }
 
-  function getNewInvestmentAmount() public view returns (uint256 newInvestmentAmount) {
+  function getNewInvestmentAmount() public view override returns (uint256 newInvestmentAmount) {
     newInvestmentAmount = _newInvestmentAmount;
     return newInvestmentAmount;
   }
 
-  function getRemainingReturn() public view returns (uint256 remainingReturn) {
+  function getRemainingReturn() public view override returns (uint256 remainingReturn) {
     remainingReturn = _remainingReturn;
     return remainingReturn;
   }
