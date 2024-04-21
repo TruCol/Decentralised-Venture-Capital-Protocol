@@ -1,17 +1,34 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 import "@openzeppelin/contracts/utils/Strings.sol";
-// import { ITier } from "../src/ITier.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
-contract DecentralisedInvestmentManager {
-  event PaymentReceived(address from, uint256 amount);
-  event InvestmentReceived(address from, uint256 amount);
+interface Interface {
+  function receiveSaasPayment() external payable;
 
+  function receiveInvestment() external payable;
+
+  function withdraw(uint256 amount) external;
+
+  function getTierInvestmentLength() external returns (uint256 nrOfTierInvestments);
+
+  function increaseCurrentMultipleInstantly(uint256 newMultiple) external;
+
+  function getPaymentSplitter() external returns (CustomPaymentSplitter paymentSplitter);
+
+  function getCumReceivedInvestments() external returns (uint256 cumReceivedInvestments);
+
+  function getCumRemainingInvestorReturn() external returns (uint256 cumRemainingInvestorReturn);
+
+  function getCurrentTier() external returns (Tier currentTier);
+
+  function getProjectLeadFracNumerator() external returns (uint256 projectLeadFracNumerator);
+}
+
+contract DecentralisedInvestmentManager is Interface {
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   address private _saas;
@@ -30,6 +47,9 @@ contract DecentralisedInvestmentManager {
   DecentralisedInvestmentHelper private _helper;
   TierInvestment[] private _tierInvestments;
 
+  event PaymentReceived(address indexed from, uint256 indexed amount);
+  event InvestmentReceived(address indexed from, uint256 indexed amount);
+
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
@@ -40,7 +60,7 @@ contract DecentralisedInvestmentManager {
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     address projectLead
-  ) {
+  ) public {
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
@@ -58,7 +78,8 @@ contract DecentralisedInvestmentManager {
     require(tiers.length > 0, "You must provide at least one tier.");
 
     // Iterate through the tiers and potentially perform additional checks
-    for (uint256 i = 0; i < tiers.length; i++) {
+    uint256 nrOfTiers = tiers.length;
+    for (uint256 i = 0; i < nrOfTiers; ++i) {
       // You can access tier properties using _tiers[i].getMinVal(), etc.
       if (i > 0) {
         require(
@@ -76,16 +97,10 @@ contract DecentralisedInvestmentManager {
     }
   }
 
-  function _initialiseCustomPaymentSplitter(address projectLead) private returns (CustomPaymentSplitter) {
-    _withdrawers.push(projectLead);
-    _owedDai.push(0);
-    return new CustomPaymentSplitter(_withdrawers, _owedDai);
-  }
-
   /**
   @notice When a saaspayment is received, the total amount the investors may
   still receive, is calculated and stored in cumRemainingInvestorReturn. */
-  function receiveSaasPayment() external payable {
+  function receiveSaasPayment() external payable override {
     require(msg.value > 0, "The SAAS payment was not larger than 0.");
 
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
@@ -124,12 +139,53 @@ contract DecentralisedInvestmentManager {
 
     if (saasRevenueForInvestors > 0) {
       _distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
-    } else {}
+    }
 
     // Perform transaction and administration for project lead (if applicable)
     _performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
     emit PaymentReceived(msg.sender, msg.value);
+  }
+
+  /**
+  @notice when an investor makes an investment with its investmentWallet, this
+  contract checks whether the contract is full, or whether it still takes in
+  new investments. If the investment ceiling is reached it reverts the
+  investment back to the investor. Otherwise it takes it in, and fills up the
+  investment tiers that are still open until the whole investment amount is
+  allocated or until Investment ceiling is reached. The remaining
+  investment amount is then reverted.
+
+  To allocate the investment over the investment tiers, first the
+  allocateInvestment function finds the lowest tier that is still open/not
+  full. The lowest tier has the highest multiple. The allocateInvestment
+  function then distributes the investment over the first tier, and then
+  recursively calls itself until the whole investment is distributed, or the
+  investment ceiling is reached. In case of the latter, the remaining
+  investment amount is returned.
+
+
+   */
+  function receiveInvestment() external payable override {
+    require(msg.value > 0, "The amount invested was not larger than 0.");
+
+    require(
+      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
+      "The investor ceiling is not reached."
+    );
+
+    _allocateInvestment(msg.value, msg.sender);
+
+    emit InvestmentReceived(msg.sender, msg.value);
+  }
+
+  function _initialiseCustomPaymentSplitter(
+    address projectLead
+  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
+    _withdrawers.push(projectLead);
+    _owedDai.push(0);
+    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
+    return customPaymentSplitter;
   }
 
   function _distributeSaasPaymentFractionToInvestors(
@@ -139,7 +195,8 @@ contract DecentralisedInvestmentManager {
     uint256 cumulativePayout = 0;
 
     bool hasRoundedUp = false;
-    for (uint256 i = 0; i < _tierInvestments.length; i++) {
+    uint256 nrOfTierInvestments = _tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // Compute how much an investor receives for its investment in this tier.
       (uint256 investmentReturn, bool returnHasRoundedUp) = _computeInvestmentReturn(
         _tierInvestments[i].getRemainingReturn(),
@@ -194,38 +251,6 @@ contract DecentralisedInvestmentManager {
   }
 
   /**
-  @notice when an investor makes an investment with its investmentWallet, this
-  contract checks whether the contract is full, or whether it still takes in
-  new investments. If the investment ceiling is reached it reverts the
-  investment back to the investor. Otherwise it takes it in, and fills up the
-  investment tiers that are still open until the whole investment amount is
-  allocated or until Investment ceiling is reached. The remaining
-  investment amount is then reverted.
-
-  To allocate the investment over the investment tiers, first the
-  allocateInvestment function finds the lowest tier that is still open/not
-  full. The lowest tier has the highest multiple. The allocateInvestment
-  function then distributes the investment over the first tier, and then
-  recursively calls itself until the whole investment is distributed, or the
-  investment ceiling is reached. In case of the latter, the remaining
-  investment amount is returned.
-
-
-   */
-  function receiveInvestment() external payable {
-    require(msg.value > 0, "The amount invested was not larger than 0.");
-
-    require(
-      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
-      "The investor ceiling is not reached."
-    );
-
-    _allocateInvestment(msg.value, msg.sender);
-
-    emit InvestmentReceived(msg.sender, msg.value);
-  }
-
-  /**
   @notice If the investment ceiling is not reached, it finds the lowest open
   investment tier, and then computes how much can still be invested in that
   investment tier. If the investment amount is larger than the amount remaining
@@ -267,7 +292,7 @@ contract DecentralisedInvestmentManager {
         _tierInvestments.push(tierInvestment);
       }
     } else {
-      // TODO: ensure the remaining funds are returned to the investor.
+      revert("Temaining funds should be returned if the investment ceiling is reached.");
     }
   }
 
@@ -294,8 +319,8 @@ contract DecentralisedInvestmentManager {
     uint256 remainingReturn,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
-    bool hasRoundedUp
-  ) private pure returns (uint256, bool) {
+    bool incomingHasRoundedUp
+  ) private pure returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
 
@@ -304,19 +329,20 @@ contract DecentralisedInvestmentManager {
     // Default Solidity division is rounddown.
     uint256 roundDown = numerator / denominator;
     // uint256 investmentReturn = numerator / denominator;
-    uint256 investmentReturn;
-    if (_isWholeDivision(withRoundUp, roundDown) && !hasRoundedUp) {
+
+    if (_isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
       investmentReturn = withRoundUp;
-      hasRoundedUp = true;
+      returnedHasRoundedUp = true;
     } else {
       investmentReturn = roundDown;
     }
 
-    return (investmentReturn, hasRoundedUp);
+    return (investmentReturn, returnedHasRoundedUp);
   }
 
-  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool) {
-    return withRounding != roundDown;
+  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
+    isWholeDivision = withRounding != roundDown;
+    return isWholeDivision;
   }
 
   /**
@@ -330,13 +356,13 @@ contract DecentralisedInvestmentManager {
     address investorWallet,
     Tier currentTier,
     uint256 newInvestmentAmount
-  ) private returns (TierInvestment) {
-    TierInvestment newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+  ) private returns (TierInvestment newTierInvestment) {
+    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
     _cumReceivedInvestments += newInvestmentAmount;
     return newTierInvestment;
   }
 
-  function increaseCurrentMultipleInstantly(uint256 newMultiple) public {
+  function increaseCurrentMultipleInstantly(uint256 newMultiple) public override {
     require(
       msg.sender == _projectLead,
       "Increasing the current investment tier multiple attempted by someone other than project lead."
@@ -347,7 +373,7 @@ contract DecentralisedInvestmentManager {
   }
 
   // Allow project lead to retrieve the investment.
-  function withdraw(uint256 amount) public {
+  function withdraw(uint256 amount) public override {
     // Ensure only the project lead can retrieve funds in this contract. The
     // funds in this contract are those coming from investments. Saaspayments are
     // automatically transfured into the CustomPaymentSplitter and retrieved from
@@ -362,31 +388,31 @@ contract DecentralisedInvestmentManager {
   }
 
   // Assuming there's an internal function to get tier investment length
-  function getTierInvestmentLength() public view returns (uint256 nrOfTierInvestments) {
+  function getTierInvestmentLength() public view override returns (uint256 nrOfTierInvestments) {
     nrOfTierInvestments = _tierInvestments.length;
     return nrOfTierInvestments;
   }
 
-  function getPaymentSplitter() public view returns (CustomPaymentSplitter paymentSplitter) {
+  function getPaymentSplitter() public view override returns (CustomPaymentSplitter paymentSplitter) {
     paymentSplitter = _paymentSplitter;
     return paymentSplitter;
   }
 
-  function getCumReceivedInvestments() public view returns (uint256 cumReceivedInvestments) {
+  function getCumReceivedInvestments() public view override returns (uint256 cumReceivedInvestments) {
     cumReceivedInvestments = _cumReceivedInvestments;
     return cumReceivedInvestments;
   }
 
-  function getCumRemainingInvestorReturn() public view returns (uint256 cumRemainingInvestorReturn) {
+  function getCumRemainingInvestorReturn() public view override returns (uint256 cumRemainingInvestorReturn) {
     return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
   }
 
-  function getCurrentTier() public view returns (Tier currentTier) {
+  function getCurrentTier() public view override returns (Tier currentTier) {
     currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
     return currentTier;
   }
 
-  function getProjectLeadFracNumerator() public view returns (uint256 projectLeadFracNumerator) {
+  function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
     projectLeadFracNumerator = _projectLeadFracNumerator;
     return projectLeadFracNumerator;
   }

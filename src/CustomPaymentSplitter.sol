@@ -35,7 +35,8 @@ contract CustomPaymentSplitter {
 
     _amountsOwed = amountsOwed;
     _owner = msg.sender;
-    for (uint256 i = 0; i < payees.length; i++) {
+    uint256 nrOfPayees = payees.length;
+    for (uint256 i = 0; i < nrOfPayees; ++i) {
       _addPayee(payees[i], _amountsOwed[i]);
     }
   }
@@ -126,13 +127,16 @@ contract CustomPaymentSplitter {
     emit SharesAdded(account, dai);
   }
 
-  function isPayee(address account) public view returns (bool) {
-    for (uint256 i = 0; i < _payees.length; i++) {
+  function isPayee(address account) public view returns (bool accountIsPayee) {
+    uint256 nrOfPayees = _payees.length;
+    accountIsPayee = false;
+    for (uint256 i = 0; i < nrOfPayees; ++i) {
       if (_payees[i] == account) {
-        return true;
+        accountIsPayee = true;
+        return accountIsPayee;
       }
     }
-    return false;
+    return accountIsPayee;
   }
 
   /**
