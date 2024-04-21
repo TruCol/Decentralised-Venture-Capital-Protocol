@@ -3,6 +3,7 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
+error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
 interface Interface {
   function computeCumRemainingInvestorReturn(
@@ -19,8 +20,8 @@ contract DecentralisedInvestmentHelper is Interface {
     cumRemainingInvestorReturn = 0;
     uint256 nrOfTierInvestments = tierInvestments.length;
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
-      // TODO: assert tierInvestments[i].remainingReturn() >= 0.
-      cumRemainingInvestorReturn += tierInvestments[i].remainingReturn();
+      // TODO: assert tierInvestments[i].getRemainingReturn() >= 0.
+      cumRemainingInvestorReturn += tierInvestments[i].getRemainingReturn();
     }
     // TODO: assert no integer overvlow has occurred.
     return cumRemainingInvestorReturn;
@@ -31,7 +32,7 @@ contract DecentralisedInvestmentHelper is Interface {
 
     uint256 lastIndex = tiers.length - 1;
 
-    investmentCeiling = tiers[lastIndex].maxVal();
+    investmentCeiling = tiers[lastIndex].getMaxVal();
 
     return investmentCeiling;
   }
@@ -45,12 +46,13 @@ contract DecentralisedInvestmentHelper is Interface {
     Tier[] memory tiers
   ) public view returns (Tier) {
     // Check for exceeding investment ceiling.
-
-    require(!hasReachedInvestmentCeiling(cumReceivedInvestments, tiers), "Investment ceiling is reached.");
+    if (hasReachedInvestmentCeiling(cumReceivedInvestments, tiers)) {
+      revert ReachedInvestmentCeiling(cumReceivedInvestments, "Investment ceiling is reached.");
+    }
 
     // Find the matching tier
     for (uint256 i = 0; i < tiers.length; ++i) {
-      if (tiers[i].minVal() <= cumReceivedInvestments && cumReceivedInvestments < tiers[i].maxVal()) {
+      if (tiers[i].getMinVal() <= cumReceivedInvestments && cumReceivedInvestments < tiers[i].getMaxVal()) {
         return tiers[i];
       }
     }
@@ -74,16 +76,16 @@ contract DecentralisedInvestmentHelper is Interface {
 
     // Validate input values
     require(
-      currentTier.minVal() <= cumReceivedInvestments,
+      currentTier.getMinVal() <= cumReceivedInvestments,
       "Error: Tier's minimum value exceeds received investments."
     );
     require(
-      currentTier.maxVal() > cumReceivedInvestments,
+      currentTier.getMaxVal() > cumReceivedInvestments,
       "Error: Tier's maximum value is not larger than received investments."
     );
 
     // Calculate remaining amount
-    return currentTier.maxVal() - cumReceivedInvestments;
+    return currentTier.getMaxVal() - cumReceivedInvestments;
   }
 
   function computeRemainingInvestorPayout(

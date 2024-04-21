@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
-import { console2 } from "forge-std/src/console2.sol";
 import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
@@ -12,15 +11,20 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 // Import the paymentsplitter that has the shares for the investors.
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
-// Import contract that is an attribute of main contract to test the attribute.
-import { TierInvestment } from "../../src/TierInvestment.sol";
+interface Interface {
+  function setUp() external;
 
-/// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
-/// https://book.getfoundry.sh/forge/writing-tests
-contract MultipleInvestmentTest is PRBTest, StdCheats {
+  function testIncreaseMultipleIndirectly() external;
+
+  function followUpSecondInvestment() external;
+
+  function followUpSecondSaasPayment() external;
+}
+
+contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLeadAddress;
-  address payable _investorWallet0;
-  address payable _investorWallet1;
+  address payable private _investorWallet0;
+  address payable private _investorWallet1;
   address private _userWallet;
   Tier[] private _tiers;
   uint256 private _investmentAmount0;
@@ -32,7 +36,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.
-  function setUp() public virtual {
+  function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
     _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     _projectLeadFracNumerator = 4;
@@ -77,7 +81,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: _investmentAmount0 }();
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
-    uint256 startBalance = _investorWallet0.balance;
   }
 
   /**
@@ -87,11 +90,11 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
   ether.
    */
 
-  function testIncreaseMultipleIndirectly() public {
+  function testIncreaseMultipleIndirectly() public virtual override {
     // Assert project lead can increase multiple.
     vm.prank(_projectLeadAddress);
     _dim.increaseCurrentMultipleInstantly(20);
-    assertEq(_dim.getCurrentTier().multiple(), 20, "The multiple was not 20.");
+    assertEq(_dim.getCurrentTier().getMultiple(), 20, "The multiple was not 20.");
 
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 20 ether;
@@ -131,7 +134,7 @@ tier is 4 ether, and 0.5 has already been invested, and 5 ether has already
 been paid out, so the cumulative remaining return becomes 3.5*20 +0.5*5 (5 is
 the multiple of the xecond tier) = 72.5 ether.
 */
-  function followUpSecondInvestment() public {
+  function followUpSecondInvestment() public virtual override {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
       // _investmentAmount0*10, // Tier 0 has a multiple of 10.
@@ -165,7 +168,7 @@ the multiple of the xecond tier) = 72.5 ether.
     followUpSecondSaasPayment();
   }
 
-  function followUpSecondSaasPayment() public {
+  function followUpSecondSaasPayment() public virtual override {
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 1 ether;
     // Set the msg.sender address to that of the _userWallet for the next call.

@@ -5,14 +5,14 @@ import { Tier } from "../src/Tier.sol";
 import { console2 } from "forge-std/src/console2.sol";
 
 contract TierInvestment {
-  address public investor;
+  address private _investor;
   uint256 private _newInvestmentAmount;
   Tier private _tier;
 
   /**
    * The amount of DAI that is still to be returned for this investment.
    */
-  uint256 public remainingReturn;
+  uint256 private _remainingReturn;
 
   /**
    * The amount of DAI that the investor can collect as ROI.
@@ -30,12 +30,12 @@ contract TierInvestment {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;
 
-    investor = someInvestor;
+    _investor = someInvestor;
     _newInvestmentAmount = newInvestmentAmount;
     _tier = tier;
 
     // Initialise default value.
-    remainingReturn = _newInvestmentAmount * tier.multiple();
+    _remainingReturn = _newInvestmentAmount * tier.getMultiple();
   }
 
   /**
@@ -43,7 +43,8 @@ contract TierInvestment {
    *   funds after constructor initialisation.
    */
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public onlyOwner {
-    remainingReturn = remainingReturn - newlyReturnedAmount;
+    require(_investor == someInvestor, "Error, the new return is being set for the wrong investor.");
+    _remainingReturn = _remainingReturn - newlyReturnedAmount;
   }
 
   /**
@@ -55,11 +56,18 @@ contract TierInvestment {
     _;
   }
 
-  function getInvestor() public view returns (address) {
+  function getInvestor() public view returns (address investor) {
+    investor = _investor;
     return investor;
   }
 
-  function getNewInvestmentAmount() public view returns (uint256) {
-    return _newInvestmentAmount;
+  function getNewInvestmentAmount() public view returns (uint256 newInvestmentAmount) {
+    newInvestmentAmount = _newInvestmentAmount;
+    return newInvestmentAmount;
+  }
+
+  function getRemainingReturn() public view returns (uint256 remainingReturn) {
+    remainingReturn = _remainingReturn;
+    return remainingReturn;
   }
 }

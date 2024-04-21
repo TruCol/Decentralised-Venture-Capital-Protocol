@@ -63,9 +63,6 @@ contract CustomPaymentSplitter {
   function release(address payable account) public {
     require(_dai[account] > 0, "The dai for account, was not larger than 0.");
 
-    // Compute how much can be distributed.
-    uint256 totalReceived = address(this).balance + (_totalReleased);
-
     // The amount the payee may receive is equal to the amount of outstanding
     // DAI, subtracted by the amount that has been released to that account.
     uint256 payment = _dai[account] - _released[account];

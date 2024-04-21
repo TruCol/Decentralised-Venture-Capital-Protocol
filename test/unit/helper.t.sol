@@ -39,8 +39,13 @@ contract HelperTest is PRBTest, StdCheats {
   }
 
   function testExceedInvestmentCeiling() public {
-    // vm.prank(address(_validTierInvestment));
-    vm.expectRevert(bytes("Investment ceiling is reached."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "ReachedInvestmentCeiling(uint256,string)",
+        30 ether + 1 wei,
+        "Investment ceiling is reached."
+      )
+    );
     _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
   }
 
@@ -62,20 +67,20 @@ contract HelperTest is PRBTest, StdCheats {
 
   function testCanInvestInNextTier() public {
     // True True for tier 0.
-    assertEq(_helper.computeCurrentInvestmentTier(2 wei, _tiers).multiple(), 10);
+    assertEq(_helper.computeCurrentInvestmentTier(2 wei, _tiers).getMultiple(), 10);
 
     // False False for tier 0.
-    assertEq(_helper.computeCurrentInvestmentTier(10 ether + 1 wei, _tiers).multiple(), 5);
+    assertEq(_helper.computeCurrentInvestmentTier(10 ether + 1 wei, _tiers).getMultiple(), 5);
 
     // Hits investment ceiling
-    // assertEq(_helper.computeCurrentInvestmentTier(30 ether+1 wei, _tiers).multiple(), 2);
+    // assertEq(_helper.computeCurrentInvestmentTier(30 ether+1 wei, _tiers).getMultiple(), 2);
 
     // True True for tier 0, True True for tier 1 but tier 1 is not reached.,
-    assertEq(_helper.computeCurrentInvestmentTier(2 wei, _tiers).multiple(), 10);
+    assertEq(_helper.computeCurrentInvestmentTier(2 wei, _tiers).getMultiple(), 10);
 
     // Hits investment ceiling before this can reach Tier 0.
     // False True for tier 0, True True for tier 1
-    // assertEq(_helper.computeCurrentInvestmentTier(1 wei, _tiers).multiple(), 10);
+    // assertEq(_helper.computeCurrentInvestmentTier(1 wei, _tiers).getMultiple(), 10);
   }
 
   function testGetRemainingAmountInCurrentTierBelow() public {

@@ -22,9 +22,9 @@ contract TierTest is PRBTest, StdCheats {
    *
    */
   function testAttributes() public {
-    assertEq(_validTier.minVal(), 0, "The minVal was not as expected");
-    assertEq(_validTier.maxVal(), 10_000, "The maxVal was not as expected");
-    assertEq(_validTier.multiple(), 10, "The multiple was not as expected.");
+    assertEq(_validTier.getMinVal(), 0, "The minVal was not as expected");
+    assertEq(_validTier.getMaxVal(), 10_000, "The maxVal was not as expected");
+    assertEq(_validTier.getMultiple(), 10, "The multiple was not as expected.");
   }
 
   /**

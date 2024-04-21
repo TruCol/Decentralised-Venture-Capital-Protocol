@@ -59,18 +59,18 @@ contract DecentralisedInvestmentManager {
 
     // Iterate through the tiers and potentially perform additional checks
     for (uint256 i = 0; i < tiers.length; i++) {
-      // You can access tier properties using _tiers[i].minVal(), etc.
+      // You can access tier properties using _tiers[i].getMinVal(), etc.
       if (i > 0) {
         require(
-          tiers[i - 1].maxVal() == tiers[i].minVal(),
+          tiers[i - 1].getMaxVal() == tiers[i].getMinVal(),
           "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
         );
       }
 
       // Recreate the Tier objects because this contract should be the owner.
-      uint256 someMin = tiers[i].minVal();
-      uint256 someMax = tiers[i].maxVal();
-      uint256 someMultiple = tiers[i].multiple();
+      uint256 someMin = tiers[i].getMinVal();
+      uint256 someMax = tiers[i].getMaxVal();
+      uint256 someMultiple = tiers[i].getMultiple();
       Tier tierOwnedByThisContract = new Tier(someMin, someMax, someMultiple);
       _tiers.push(tierOwnedByThisContract);
     }
@@ -141,8 +141,8 @@ contract DecentralisedInvestmentManager {
     bool hasRoundedUp = false;
     for (uint256 i = 0; i < _tierInvestments.length; i++) {
       // Compute how much an investor receives for its investment in this tier.
-      (uint256 investmentReturn, bool returnHasRoundedUp) = computeInvestmentReturn(
-        _tierInvestments[i].remainingReturn(),
+      (uint256 investmentReturn, bool returnHasRoundedUp) = _computeInvestmentReturn(
+        _tierInvestments[i].getRemainingReturn(),
         saasRevenueForInvestors,
         cumRemainingInvestorReturn,
         hasRoundedUp
@@ -290,12 +290,12 @@ contract DecentralisedInvestmentManager {
   difference of +- wei is considederd negligible w.r.t. to the investor return,
   yet critical in the safe evaluation of this contract.
   */
-  function computeInvestmentReturn(
+  function _computeInvestmentReturn(
     uint256 remainingReturn,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
     bool hasRoundedUp
-  ) public returns (uint256, bool) {
+  ) private pure returns (uint256, bool) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
 
@@ -305,7 +305,7 @@ contract DecentralisedInvestmentManager {
     uint256 roundDown = numerator / denominator;
     // uint256 investmentReturn = numerator / denominator;
     uint256 investmentReturn;
-    if (isWholeDivision(withRoundUp, roundDown) && !hasRoundedUp) {
+    if (_isWholeDivision(withRoundUp, roundDown) && !hasRoundedUp) {
       investmentReturn = withRoundUp;
       hasRoundedUp = true;
     } else {
@@ -315,7 +315,7 @@ contract DecentralisedInvestmentManager {
     return (investmentReturn, hasRoundedUp);
   }
 
-  function isWholeDivision(uint256 withRounding, uint256 roundDown) public returns (bool) {
+  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool) {
     return withRounding != roundDown;
   }
 
@@ -342,7 +342,7 @@ contract DecentralisedInvestmentManager {
       "Increasing the current investment tier multiple attempted by someone other than project lead."
     );
     Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-    require(newMultiple > currentTier.multiple(), "The new multiple was not larger than the old multiple.");
+    require(newMultiple > currentTier.getMultiple(), "The new multiple was not larger than the old multiple.");
     currentTier.increaseMultiple(newMultiple);
   }
 
@@ -362,28 +362,32 @@ contract DecentralisedInvestmentManager {
   }
 
   // Assuming there's an internal function to get tier investment length
-  function getTierInvestmentLength() public view returns (uint256) {
-    return _tierInvestments.length;
+  function getTierInvestmentLength() public view returns (uint256 nrOfTierInvestments) {
+    nrOfTierInvestments = _tierInvestments.length;
+    return nrOfTierInvestments;
   }
 
-  function getPaymentSplitter() public view returns (CustomPaymentSplitter) {
-    return _paymentSplitter;
+  function getPaymentSplitter() public view returns (CustomPaymentSplitter paymentSplitter) {
+    paymentSplitter = _paymentSplitter;
+    return paymentSplitter;
   }
 
-  function getCumReceivedInvestments() public view returns (uint256) {
-    return _cumReceivedInvestments;
+  function getCumReceivedInvestments() public view returns (uint256 cumReceivedInvestments) {
+    cumReceivedInvestments = _cumReceivedInvestments;
+    return cumReceivedInvestments;
   }
 
-  function getCumRemainingInvestorReturn() public view returns (uint256) {
+  function getCumRemainingInvestorReturn() public view returns (uint256 cumRemainingInvestorReturn) {
     return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
   }
 
-  function getCurrentTier() public view returns (Tier) {
-    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+  function getCurrentTier() public view returns (Tier currentTier) {
+    currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
     return currentTier;
   }
 
-  function get_projectLeadFracNumerator() public view returns (uint256) {
-    return _projectLeadFracNumerator;
+  function getProjectLeadFracNumerator() public view returns (uint256 projectLeadFracNumerator) {
+    projectLeadFracNumerator = _projectLeadFracNumerator;
+    return projectLeadFracNumerator;
   }
 }

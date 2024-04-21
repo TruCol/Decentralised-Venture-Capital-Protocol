@@ -2,5 +2,13 @@
   "extends": [
     "solhint:all"
   ],
-  "plugins": []
+  "plugins": [],
+  "rules": {
+    "foundry-test-functions": [
+      "off"
+    ],
+    "gas-small-strings": [
+      "off"
+    ]
+  }
 }

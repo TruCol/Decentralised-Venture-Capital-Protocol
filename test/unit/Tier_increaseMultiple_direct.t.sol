@@ -6,10 +6,18 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../src/Tier.sol";
 
+error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
+
 interface Interface {
   function setUp() external;
 
   function testTierDirectly() external;
+
+  function testTierDirectlyWithOtherAddress() external;
+
+  function testTierDirectlyEqualMultiple() external;
+
+  function testTierDirectlySmallerMultiple() external;
 }
 
 contract TierTest is PRBTest, StdCheats, Interface {
@@ -26,21 +34,21 @@ contract TierTest is PRBTest, StdCheats, Interface {
    */
   function testTierDirectly() public override {
     _validTier.increaseMultiple(11);
-    assertEq(_validTier.multiple(), 11, "The multiple was not 11.");
+    assertEq(_validTier.getMultiple(), 11, "The multiple was not 11.");
   }
 
-  function testTierDirectlyWithOtherAddress() public {
+  function testTierDirectlyWithOtherAddress() public override {
     vm.prank(address(1));
     vm.expectRevert(bytes("Increasing the Tier object multiple attempted by someone other than project lead."));
     _validTier.increaseMultiple(11);
   }
 
-  function testTierDirectlyEqualMultiple() public {
+  function testTierDirectlyEqualMultiple() public override {
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
     _validTier.increaseMultiple(10);
   }
 
-  function testTierDirectlySmallerMultiple() public {
+  function testTierDirectlySmallerMultiple() public override {
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
     _validTier.increaseMultiple(4);
   }

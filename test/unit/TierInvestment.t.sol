@@ -7,14 +7,22 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
-contract TierInvestmentTest is PRBTest, StdCheats {
+interface Interface {
+  function setUp() external;
+
+  function testTierInvestmentAttributes() external;
+
+  function testPublicSetRemainingReturn() external;
+}
+
+contract TierInvestmentTest is PRBTest, StdCheats, Interface {
   TierInvestment internal _validTierInvestment;
   address private _testAddress;
   uint256 private _investmentAmount;
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
-  function setUp() public virtual {
+  function setUp() public virtual override {
     _validTier = new Tier(0, 10_000, 10);
     _testAddress = address(1);
     _investmentAmount = 5;
@@ -22,9 +30,9 @@ contract TierInvestmentTest is PRBTest, StdCheats {
     _validTierInvestment = new TierInvestment(_testAddress, _investmentAmount, _validTier);
   }
 
-  function testTierInvestmentAttributes() public {
+  function testTierInvestmentAttributes() public virtual override {
     // assertEq(_validTierInvestment._owner(), address(0), "The owner was not as expected");
-    assertEq(_validTierInvestment.investor(), _testAddress, "The investor was not as expected");
+    assertEq(_validTierInvestment.getInvestor(), _testAddress, "The investor was not as expected");
     assertEq(
       _validTierInvestment.getNewInvestmentAmount(),
       _investmentAmount,
@@ -32,7 +40,7 @@ contract TierInvestmentTest is PRBTest, StdCheats {
     );
   }
 
-  function testPublicSetRemainingReturn() public {
+  function testPublicSetRemainingReturn() public virtual override {
     vm.prank(address(_validTierInvestment));
     vm.expectRevert(bytes("The message is sent by someone other than the owner of this contract."));
     _validTierInvestment.publicSetRemainingReturn(_testAddress, 10);

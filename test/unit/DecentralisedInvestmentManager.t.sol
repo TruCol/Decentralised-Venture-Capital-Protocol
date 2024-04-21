@@ -60,6 +60,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats {
 
   /// @dev Test to simulate a larger balance using `deal`.
   function test_projectLeadFracNumerator() public {
-    assertEq(_dim.get_projectLeadFracNumerator(), _projectLeadFracNumerator);
+    assertEq(_dim.getProjectLeadFracNumerator(), _projectLeadFracNumerator);
   }
 }
