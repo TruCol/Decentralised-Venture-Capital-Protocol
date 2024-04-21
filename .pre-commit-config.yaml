@@ -71,12 +71,17 @@ repos:
            "-rn", # Only display messages
            "-sn", # Don't display the score
          ]
-     - id: run-solhint
-       name: run-solhint
-       language: script
-       entry: .pre-commit/run_solhint.sh
-       types: [ file, solidity ]
-       require_serial: true
+     - id: solhint
+       name: Checks Solidity Style Guide convention compliance.
+       entry: solhint
+       language: node
+       verbose: true
+       #files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
+       files: ^(|src/|script/|test/)
+       args:
+         [
+           "--fix", # Automatically fix those issues that can be auto-fixed.
+         ]
 
 # Runs additional tests that are created by the pre-commit software itself.
  - repo: https://github.com/pre-commit/pre-commit-hooks

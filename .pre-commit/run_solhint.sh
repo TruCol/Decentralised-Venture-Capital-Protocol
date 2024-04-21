@@ -8,5 +8,8 @@ if ! which solhint 1>/dev/null || [[ $(solhint --version) != "$VERSION" ]]; then
   echo "Installing solhint@$VERSION"
   npm install -g solhint@$VERSION
 fi
+
+TMPFILE=$(mktemp)
 solhint $@
-echo "$(solhint $@)" >
+echo "$(solhint $@)" > "$TMPFILE"
+rm "$TMPFILE"
