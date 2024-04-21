@@ -7,7 +7,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { Tier } from "../../src/Tier.sol";
 
 contract TierTest is PRBTest, StdCheats {
-  Tier internal validTier;
+  Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {

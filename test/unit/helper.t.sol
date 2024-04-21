@@ -8,12 +8,12 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
 contract HelperTest is PRBTest, StdCheats {
-  TierInvestment internal validTierInvestment;
+  TierInvestment internal _validTierInvestment;
 
-  uint256 private cumReceivedInvestments;
+  uint256 private _cumReceivedInvestments;
 
   Tier[] private _tiers;
-  Tier[] private someTiers;
+  Tier[] private _someTiers;
   DecentralisedInvestmentHelper private _helper;
 
   /// @dev A function invoked before each test case is run.

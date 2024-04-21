@@ -18,12 +18,12 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats {
-  address internal projectLeadAddress;
+  address internal _projectLeadAddress;
   address payable _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
-  uint256 private projectLeadFracNumerator;
+  uint256 private _projectLeadFracNumerator;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {

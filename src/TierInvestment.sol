@@ -7,7 +7,7 @@ import { console2 } from "forge-std/src/console2.sol";
 contract TierInvestment {
   address public investor;
   uint256 public newInvestmentAmount;
-  Tier private tier;
+  Tier private _tier;
 
   /**
    * The amount of DAI that is still to be returned for this investment.

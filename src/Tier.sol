@@ -14,7 +14,7 @@ contract Tier is ITier {
   uint256 public minVal;
   uint256 public maxVal;
   uint256 public multiple;
-  address private owner;
+  address private _owner;
 
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
@@ -43,8 +43,6 @@ contract Tier is ITier {
   }
 
   function increaseMultiple(uint256 newMultiple) public {
-    console2.log("msg.sender in Tier=", msg.sender);
-    console2.log("owner=", owner);
     require(msg.sender == owner, "Increasing the Tier object multiple attempted by someone other than project lead.");
     require(newMultiple > multiple, "The new multiple was not larger than the old multiple.");
     multiple = newMultiple;

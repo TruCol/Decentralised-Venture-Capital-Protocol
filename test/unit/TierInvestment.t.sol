@@ -8,10 +8,10 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
 contract TierInvestmentTest is PRBTest, StdCheats {
-  TierInvestment internal validTierInvestment;
-  address private testAddress;
-  uint256 private investmentAmount;
-  Tier internal validTier;
+  TierInvestment internal _validTierInvestment;
+  address private _testAddress;
+  uint256 private _investmentAmount;
+  Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {

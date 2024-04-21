@@ -12,12 +12,12 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract TierTest is PRBTest, StdCheats {
-  Tier internal validTier;
-  ITier internal some;
-  address internal testAddress;
-  Tier internal tierInterface;
+  Tier internal _validTier;
+  ITier internal _some;
+  address internal _testAddress;
+  Tier internal _tierInterface;
 
-  TierInvestment internal tierInvestment;
+  TierInvestment internal _tierInvestment;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual {

@@ -14,7 +14,7 @@ contract DecentralisedInvestmentManager {
 
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
-  address private saas;
+  address private _saas;
   address private _projectLead;
 
   //
@@ -76,7 +76,7 @@ contract DecentralisedInvestmentManager {
     }
   }
 
-  function initialiseCustomPaymentSplitter(address projectLead) private returns (CustomPaymentSplitter) {
+  function _initialiseCustomPaymentSplitter(address projectLead) private returns (CustomPaymentSplitter) {
     _withdrawers.push(projectLead);
     _owedDai.push(0);
     return new CustomPaymentSplitter(_withdrawers, _owedDai);
@@ -121,13 +121,10 @@ contract DecentralisedInvestmentManager {
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
 
     // Distribute remaining amount to investors (if applicable)Store
-    console2.log("saasRevenueForProjectLead=", saasRevenueForProjectLead);
-    console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
+
     if (saasRevenueForInvestors > 0) {
       distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
-    } else {
-      console2.log("Investor does not receive money.");
-    }
+    } else {}
 
     // Perform transaction and administration for project lead (if applicable)
     performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
@@ -135,7 +132,7 @@ contract DecentralisedInvestmentManager {
     emit PaymentReceived(msg.sender, msg.value);
   }
 
-  function distributeSaasPaymentFractionToInvestors(
+  function _distributeSaasPaymentFractionToInvestors(
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
   ) private {
@@ -177,7 +174,7 @@ contract DecentralisedInvestmentManager {
   }
 
   // TODO: include safe handling of gas costs.
-  function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
+  function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
 
@@ -241,7 +238,7 @@ contract DecentralisedInvestmentManager {
 
 
   */
-  function allocateInvestment(
+  function _allocateInvestment(
     uint256 investmentAmount,
     // uint256 remainingAmountInTier,
     address investorWallet // Tier currentTier
@@ -270,7 +267,6 @@ contract DecentralisedInvestmentManager {
         _tierInvestments.push(tierInvestment);
       }
     } else {
-      console2.log("REACHED investment ceiling");
       // TODO: ensure the remaining funds are returned to the investor.
     }
   }
@@ -312,15 +308,10 @@ contract DecentralisedInvestmentManager {
     if (isWholeDivision(withRoundUp, roundDown) && !hasRoundedUp) {
       investmentReturn = withRoundUp;
       hasRoundedUp = true;
-      console2.log("PERFORMED ROUNDUP.");
     } else {
       investmentReturn = roundDown;
-      console2.log("Without Rounding.");
     }
-    console2.log("_tierInvestments[i].remainingReturn()=", remainingReturn);
-    console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
-    console2.log("investmentReturn=", investmentReturn);
-    console2.log("\n");
+
     return (investmentReturn, hasRoundedUp);
   }
 
@@ -335,7 +326,7 @@ contract DecentralisedInvestmentManager {
   much investment this contract has received in total using
   _cumReceivedInvestments.
    */
-  function addInvestmentToCurrentTier(
+  function _addInvestmentToCurrentTier(
     address investorWallet,
     Tier currentTier,
     uint256 newInvestmentAmount
@@ -346,8 +337,6 @@ contract DecentralisedInvestmentManager {
   }
 
   function increaseCurrentMultipleInstantly(uint256 newMultiple) public {
-    console2.log("_projectLead=", _projectLead);
-    console2.log("msg.sender in Manager=", msg.sender);
     require(
       msg.sender == _projectLead,
       "Increasing the current investment tier multiple attempted by someone other than project lead."
@@ -358,7 +347,7 @@ contract DecentralisedInvestmentManager {
   }
 
   // Allow project lead to retrieve the investment.
-  function withdraw(uint amount) public {
+  function withdraw(uint256 amount) public {
     // Ensure only the project lead can retrieve funds in this contract. The
     // funds in this contract are those coming from investments. Saaspayments are
     // automatically transfured into the CustomPaymentSplitter and retrieved from

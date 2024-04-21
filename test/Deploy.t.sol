@@ -8,7 +8,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { Deploy } from "../../script/Deploy.s.sol";
 
 contract TestDeploy is PRBTest {
-  Deploy deploy;
+  Deploy _deploy;
 
   function setUp() public {
     deploy = new Deploy();

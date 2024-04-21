@@ -18,12 +18,12 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract MultipleInvestmentTest is PRBTest, StdCheats {
-  address internal projectLeadAddress;
+  address internal _projectLeadAddress;
   address payable _investorWallet0;
   address payable _investorWallet1;
   address private _userWallet;
   Tier[] private _tiers;
-  uint256 private investmentAmount0;
+  uint256 private _investmentAmount0;
 
   DecentralisedInvestmentManager private _dim;
 
@@ -65,9 +65,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats {
     deal(_userWallet, 100 ether);
 
     // Print the addresses to console.
-    console2.log("projectLeadAddress=    ", projectLeadAddress);
-    console2.log("_investorWallet0=       ", _investorWallet0);
-    console2.log("_userWallet=           ", _userWallet, "\n");
 
     investmentAmount0 = 0.5 ether;
 

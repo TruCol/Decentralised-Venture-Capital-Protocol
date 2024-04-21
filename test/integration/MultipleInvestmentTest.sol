@@ -22,7 +22,7 @@ interface Interface {
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
-  address internal projectLeadAddress;
+  address internal _projectLeadAddress;
   address payable _investorWallet0;
   address payable _investorWallet1;
   address private _userWallet;
@@ -65,9 +65,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     deal(_userWallet, 100 ether);
 
     // Print the addresses to console.
-    console2.log("projectLeadAddress=    ", projectLeadAddress);
-    console2.log("_investorWallet0=       ", _investorWallet0);
-    console2.log("_userWallet=           ", _userWallet, "\n");
   }
 
   /// @dev Test to simulate a larger balance using `deal`.

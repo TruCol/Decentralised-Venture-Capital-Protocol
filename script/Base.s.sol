@@ -5,16 +5,16 @@ import { Script } from "forge-std/src/Script.sol";
 
 abstract contract BaseScript is Script {
   /// @dev Included to enable compilation of the script without a $MNEMONIC environment variable.
-  string internal constant TEST_MNEMONIC = "test test test test test test test test test test test junk";
+  string internal constant _TEST_MNEMONIC = "test test test test test test test test test test test junk";
 
   /// @dev Needed for the deterministic deployments.
-  bytes32 internal constant ZERO_SALT = bytes32(0);
+  bytes32 internal constant _ZERO_SALT = bytes32(0);
 
   /// @dev The address of the transaction broadcaster.
-  address internal broadcaster;
+  address internal _broadcaster;
 
   /// @dev Used to derive the broadcaster's address if $ETH_FROM is not defined.
-  string internal mnemonic;
+  string internal _mnemonic;
 
   /// @dev Initializes the transaction broadcaster like this:
   ///

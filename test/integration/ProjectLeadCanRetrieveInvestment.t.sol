@@ -18,7 +18,7 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
-  address internal projectLeadAddress;
+  address internal _projectLeadAddress;
   address payable _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
@@ -56,16 +56,12 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats {
     deal(_userWallet, 100 ether);
 
     // Print the addresses to console.
-    console2.log("projectLeadAddress=    ", projectLeadAddress);
-    console2.log("_investorWallet=       ", _investorWallet);
-    console2.log("_userWallet=           ", _userWallet, "\n");
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
   function testInvestorGetsSaasRevenue() public {
     uint256 investmentAmount = 0.5 ether;
 
-    console2.log("_dim balance before=", address(_dim).balance);
     // Set the msg.sender address to that of the _investorWallet for the next call.
     vm.prank(address(_investorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.

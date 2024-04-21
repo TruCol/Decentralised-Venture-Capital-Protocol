@@ -83,22 +83,14 @@ source ~/.bashrc
 foundryup
 forge build
 
-# Install SolHint (Solidity Style Guide Linter)
+# Install SolHint (Solidity style guide linterm with autofix.)
 sudo apt install npm -y
 sudo npm install nodejs
 sudo npm install -g solhint
 solhint --version
-cd .pre-commit
-chmod +x run_solhint.sh
-cd ..
 
+# Install prettier
 npm install --save-dev --save-exact prettier
-
-
-# Install markdownlint
-# npm install markdownlint --save-dev
-# sudo gem install mdl
-# /sudo npm install -g markdownlint-cli
 
 # Install pre-commit
 pre-commit install

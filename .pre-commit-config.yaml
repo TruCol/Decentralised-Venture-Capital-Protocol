@@ -72,15 +72,15 @@ repos:
            "-sn", # Don't display the score
          ]
      - id: solhint
-       name: Checks Solidity Style Guide convention compliance.
+       name: Solidity style guide compliance.
        entry: solhint
        language: node
        verbose: true
-       #files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
-       files: ^(|src/|script/|test/)
+       files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
        args:
          [
            "--fix", # Automatically fix those issues that can be auto-fixed.
+           "--noPrompt", # Do not ask for backup before fix.
          ]
 
 # Runs additional tests that are created by the pre-commit software itself.
