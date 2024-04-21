@@ -12,6 +12,8 @@ interface Interface {
 
   function getInvestmentCeiling(Tier[] memory tiers) external view returns (uint256 investmentCeiling);
 
+  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) external view returns (bool inRange);
+
   function hasReachedInvestmentCeiling(
     uint256 cumReceivedInvestments,
     Tier[] memory tiers
@@ -39,13 +41,17 @@ contract DecentralisedInvestmentHelper is Interface {
   function computeCumRemainingInvestorReturn(
     TierInvestment[] memory tierInvestments
   ) public view override returns (uint256 cumRemainingInvestorReturn) {
-    cumRemainingInvestorReturn = 0;
+    // Initialise cumRemainingInvestorReturn.
+    // cumRemainingInvestorReturn = 0;
+
+    // Sum the returns of all tiers.
     uint256 nrOfTierInvestments = tierInvestments.length;
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // TODO: assert tierInvestments[i].getRemainingReturn() >= 0.
       cumRemainingInvestorReturn += tierInvestments[i].getRemainingReturn();
     }
-    // TODO: assert no integer overvlow has occurred.
+
+    // TODO: assert no integer overflow has occurred.
     return cumRemainingInvestorReturn;
   }
 
@@ -67,19 +73,32 @@ contract DecentralisedInvestmentHelper is Interface {
     return reachedInvestmentCeiling;
   }
 
+  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public view override returns (bool inRange) {
+    if (minVal <= someVal && someVal < maxVal) {
+      inRange = true;
+    } else {
+      inRange = false;
+    }
+    return inRange;
+  }
+
   function computeCurrentInvestmentTier(
     uint256 cumReceivedInvestments,
     Tier[] memory tiers
   ) public view override returns (Tier currentTier) {
+    uint256 nrOfTiers = tiers.length;
+    require(nrOfTiers > 0, "There were no investmentTiers received.");
+
     // Check for exceeding investment ceiling.
     if (hasReachedInvestmentCeiling(cumReceivedInvestments, tiers)) {
       revert ReachedInvestmentCeiling(cumReceivedInvestments, "Investment ceiling is reached.");
     }
 
     // Find the matching tier
-    uint256 nrOfTiers = tiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {
-      if (tiers[i].getMinVal() <= cumReceivedInvestments && cumReceivedInvestments < tiers[i].getMaxVal()) {
+      uint256 minVal = tiers[i].getMinVal();
+      uint256 maxVal = tiers[i].getMaxVal();
+      if (isInRange(minVal, maxVal, cumReceivedInvestments)) {
         currentTier = tiers[i];
         return currentTier;
       }

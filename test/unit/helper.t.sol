@@ -16,6 +16,8 @@ interface Interface {
 
   function testCanInvestInNextTier() external;
 
+  function testGetRemainingAmountInCurrentTier() external;
+
   function testGetRemainingAmountInCurrentTierBelow() external;
 
   function testGetRemainingAmountInCurrentTierAbove() external;
@@ -23,6 +25,10 @@ interface Interface {
   function testComputeRemainingInvestorPayoutNegativeFraction() external;
 
   function testGetInvestmentCeiling() external;
+
+  function testComputeCumRemainingInvestorReturn() external;
+
+  function testHasReachedInvestmentCeiling() external;
 }
 
 contract HelperTest is PRBTest, StdCheats, Interface {
@@ -86,19 +92,33 @@ contract HelperTest is PRBTest, StdCheats, Interface {
   function testCanInvestInNextTier() public override {
     // True True for tier 0.
     assertEq(_helper.computeCurrentInvestmentTier(2 wei, _tiers).getMultiple(), 10);
+    assertTrue(_helper.isInRange(1, 3, 2));
 
     // False False for tier 0.
     assertEq(_helper.computeCurrentInvestmentTier(10 ether + 1 wei, _tiers).getMultiple(), 5);
+    assertFalse(_helper.isInRange(1, 2, 4));
 
     // Hits investment ceiling
     // assertEq(_helper.computeCurrentInvestmentTier(30 ether+1 wei, _tiers).getMultiple(), 2);
 
     // True True for tier 0, True True for tier 1 but tier 1 is not reached.,
     assertEq(_helper.computeCurrentInvestmentTier(2 wei, _tiers).getMultiple(), 10);
+    assertFalse(_helper.isInRange(1, 2, 0));
+    assertFalse(_helper.isInRange(3, 2, 1));
 
     // Hits investment ceiling before this can reach Tier 0.
     // False True for tier 0, True True for tier 1
     // assertEq(_helper.computeCurrentInvestmentTier(1 wei, _tiers).getMultiple(), 10);
+
+    // Try empty tier.
+
+    vm.expectRevert(bytes("There were no investmentTiers received."));
+    _helper.computeCurrentInvestmentTier(2 wei, _someTiers);
+    // assertEq(_helper.computeCurrentInvestmentTier(2 wei, _someTiers).getMultiple(), 10);
+  }
+
+  function testGetRemainingAmountInCurrentTier() public override {
+    assertEq(_helper.getRemainingAmountInCurrentTier(4 wei, _tiers[0]), 3999999999999999996 wei);
   }
 
   function testGetRemainingAmountInCurrentTierBelow() public override {
@@ -120,5 +140,15 @@ contract HelperTest is PRBTest, StdCheats, Interface {
     // vm.prank(address(_validTierInvestment));
 
     assertEq(_helper.getInvestmentCeiling(_tiers), 30 ether);
+  }
+
+  function testComputeCumRemainingInvestorReturn() public override {
+    // Assert 0 is returned for empty list.
+    TierInvestment[] memory emptyTierInvestments;
+    assertEq(_helper.computeCumRemainingInvestorReturn(emptyTierInvestments), 0);
+  }
+
+  function testHasReachedInvestmentCeiling() public override {
+    assertTrue(_helper.hasReachedInvestmentCeiling(400 ether, _tiers));
   }
 }

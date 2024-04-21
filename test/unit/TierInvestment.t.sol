@@ -13,6 +13,8 @@ interface Interface {
   function testTierInvestmentAttributes() external;
 
   function testPublicSetRemainingReturn() external;
+
+  function testGetInvestor() external;
 }
 
 contract TierInvestmentTest is PRBTest, StdCheats, Interface {
@@ -41,8 +43,26 @@ contract TierInvestmentTest is PRBTest, StdCheats, Interface {
   }
 
   function testPublicSetRemainingReturn() public virtual override {
-    vm.prank(address(_validTierInvestment));
+    vm.prank(address(_validTierInvestment)); // Simulating setting the investment from another address.
     vm.expectRevert(bytes("The message is sent by someone other than the owner of this contract."));
     _validTierInvestment.publicSetRemainingReturn(_testAddress, 10);
+
+    // Assert setting amount for wrong investor is detected.
+    vm.expectRevert(bytes("Error, the new return is being set for the wrong investor."));
+    _validTierInvestment.publicSetRemainingReturn(address(2), 10);
+
+    // Assert the remaining return is set correctly.
+    _validTierInvestment.publicSetRemainingReturn(_testAddress, 10);
+    assertEq(_validTierInvestment.getRemainingReturn(), 40);
+  }
+
+  function testGetInvestor() public virtual override {
+    // assertEq(_validTierInvestment._owner(), address(0), "The owner was not as expected");
+
+    address investor = _validTierInvestment.getInvestor();
+    assertEq(investor, _testAddress, "The investor was not as expected");
+
+    assertEq(_validTierInvestment.getInvestor(), _testAddress, "The investor was not as expected");
+    assertNotEq(_validTierInvestment.getInvestor(), address(2), "The investor was something else");
   }
 }
