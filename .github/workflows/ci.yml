@@ -62,12 +62,12 @@ jobs:
 
       - name: "Run the tests"
         run: "forge test"
-      - name: "Get the code coverage percentage of the branches"
-        run: code_coverage=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")
-      - name: "Get the code coverage percentage of the branches as ENV"
-        run: echo "CODE_COVERAGE=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")" >> $GITHUB_ENV
-      - name: "Get the branch coverage percentage of the branches"
-        run: branch_coverage=$(awk '/^\| Total/ {print $10}' <<< "$(forge coverage)")
+      #- name: "Get the code coverage percentage of the branches"
+      #  run: code_coverage=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")
+      #- name: "Get the code coverage percentage of the branches as ENV"
+      #  run: echo "CODE_COVERAGE=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")" >> $GITHUB_ENV
+      #- name: "Get the branch coverage percentage of the branches"
+      #  run: branch_coverage=$(awk '/^\| Total/ {print $10}' <<< "$(forge coverage)")
       - name: "Get the branch coverage percentage of the branches as ENV"
         run: echo "BRANCH_COVERAGE=$(awk '/^\| Total/ {print $10}' <<< "$(forge coverage)")" >> $GITHUB_ENV
 
@@ -84,10 +84,9 @@ jobs:
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: c58317c4d6983cacf14e0466cb1d2438
-          filename: Decentralised-Saas-Investment-Protocol_coverage_two.json
-          label: Coverage
-          message: ${{ env.CODE_COVERAGE }}
-          # message: ${{ env.BRANCH_COVERAGE }}
+          filename: Decentralised-Saas-Investment-Protocol_coverage.json
+          label: coverage
+          message: ${{ env.BRANCH_COVERAGE }}
+          namedLogo: jest
           color: green
-          namedLogo: vitest
-          forceUpdate: true
+          logoColor: lightblue

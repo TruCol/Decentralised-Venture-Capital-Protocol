@@ -63,6 +63,8 @@ jobs:
             echo $BRANCH_NAME
             # process.env.BRANCH = 'pull_27';
             echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
+       - name: "Get the code coverage percentage of the branches as ENV"
+         run: echo "CODE_COVERAGE=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")" >> $GITHUB_ENV
        - name: Create Coverage Badge
          uses: schneegans/dynamic-badges-action@v1.1.0
          with:
@@ -70,7 +72,7 @@ jobs:
            gistID: c58317c4d6983cacf14e0466cb1d2438
            filename: Decentralised-Saas-Investment-Protocol_coverage.json
            label: coverage
-           message: ${{ env.COVERAGE }}
+           message: ${{ env.CODE_COVERAGE }}
            namedLogo: jest
            color: blue
            logoColor: lightblue
