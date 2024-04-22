@@ -13,6 +13,20 @@ interface Interface {
   function setUp() external;
 
   function testProjectLeadFracNumerator() external;
+
+  function testEmptyTiers() external;
+
+  function testReturnFunds() external;
+
+  function testTierGap() external;
+
+  function testZeroSAASPayment() external;
+
+  function testReachedCeiling() external;
+
+  function testIncreaseCurrentMultipleInstantly() external;
+
+  function testWithdraw() external;
 }
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
@@ -52,6 +66,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       _projectLeadAddress
     );
 
+    // Assert the _cumReceivedInvestments is 0 after Initialisation.
+    assertEq(_dim.getCumReceivedInvestments(), 0);
+
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet, 3 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
@@ -61,5 +78,87 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   /// @dev Test to simulate a larger balance using `deal`.
   function testProjectLeadFracNumerator() public override {
     assertEq(_dim.getProjectLeadFracNumerator(), _projectLeadFracNumerator);
+  }
+
+  function testEmptyTiers() public override {
+    // Test empty tiers are not allowed.
+    Tier[] memory emptyTiers;
+    vm.expectRevert(bytes("You must provide at least one tier."));
+    new DecentralisedInvestmentManager(
+      emptyTiers,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
+    );
+  }
+
+  function testReturnFunds() public override {
+    // Test empty tiers are not allowed.
+    Tier[] memory emptyTiers;
+    vm.expectRevert(bytes("Temaining funds should be returned if the investment ceiling is reached."));
+    _dim.receiveInvestment{ value: 5555 ether }();
+
+    vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    _dim.receiveInvestment{ value: 0 ether }();
+  }
+
+  function testTierGap() public override {
+    // storage Tier[] gappedTiers;`
+    Tier[] memory gappedTiers = new Tier[](3); // Assuming maximum of 2 tiers
+
+    Tier tier0 = new Tier(0, 5, 10);
+    Tier tier1 = new Tier(6, 15, 5);
+    Tier tier2 = new Tier(20, 25, 6);
+
+    gappedTiers[0] = tier0;
+    gappedTiers[1] = tier1;
+    gappedTiers[2] = tier2;
+
+    vm.expectRevert(
+      bytes("Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier.")
+    );
+    _dim = new DecentralisedInvestmentManager(
+      gappedTiers,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
+    );
+  }
+
+  function testZeroSAASPayment() public override {
+    vm.expectRevert(bytes("The SAAS payment was not larger than 0."));
+    // vm.prank(address(_userWallet));
+    // Directly call the function on the deployed contract.
+    _dim.receiveSaasPayment{ value: 0 }();
+  }
+
+  function testReachedCeiling() public override {
+    _dim.receiveInvestment{ value: 30 ether }();
+    vm.expectRevert(bytes("The investor ceiling is not reached."));
+    _dim.receiveInvestment{ value: 22 ether }();
+  }
+
+  function testIncreaseCurrentMultipleInstantly() public override {
+    _dim.receiveInvestment{ value: 20 ether }();
+    vm.prank(address(0));
+    vm.expectRevert(
+      bytes("Increasing the current investment tier multiple attempted by someone other than project lead.")
+    );
+    _dim.increaseCurrentMultipleInstantly(1);
+
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
+    _dim.increaseCurrentMultipleInstantly(1);
+  }
+
+  function testWithdraw() public override {
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert(bytes("Insufficient contract balance"));
+    _dim.withdraw(500 ether);
+
+    _dim.receiveInvestment{ value: 20 ether }();
+
+    vm.expectRevert(bytes("Withdraw attempted by someone other than project lead."));
+    _dim.withdraw(1);
   }
 }

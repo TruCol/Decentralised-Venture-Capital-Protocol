@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function deposit() external payable;
@@ -55,8 +56,9 @@ contract CustomPaymentSplitter is Interface {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
     require(payees.length > 0, "There are not more than 0 payees.");
 
-    _amountsOwed = amountsOwed;
     _owner = msg.sender;
+    _amountsOwed = amountsOwed;
+
     uint256 nrOfPayees = payees.length;
     for (uint256 i = 0; i < nrOfPayees; ++i) {
       _addPayee(payees[i], _amountsOwed[i]);
@@ -98,7 +100,7 @@ contract CustomPaymentSplitter is Interface {
    *   funds after constructor initialisation.
    */
   function publicAddPayee(address account, uint256 dai_) public override onlyOwner {
-    require(account != address(0), "This account is equal to the address of this account.");
+    require(account != address(this), "This account is equal to the address of this account.");
     require(dai_ > 0, "The number of incoming dai is not larger than 0.");
     require(_dai[account] == 0, "This account already has some currency.");
 

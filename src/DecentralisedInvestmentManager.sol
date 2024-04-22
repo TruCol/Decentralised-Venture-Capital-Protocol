@@ -34,7 +34,6 @@ contract DecentralisedInvestmentManager is Interface {
   address private _saas;
   address private _projectLead;
 
-  //
   address[] private _withdrawers;
   uint256[] private _owedDai;
 

@@ -57,8 +57,6 @@ contract TierInvestmentTest is PRBTest, StdCheats, Interface {
   }
 
   function testGetInvestor() public virtual override {
-    // assertEq(_validTierInvestment._owner(), address(0), "The owner was not as expected");
-
     address investor = _validTierInvestment.getInvestor();
     assertEq(investor, _testAddress, "The investor was not as expected");
 
