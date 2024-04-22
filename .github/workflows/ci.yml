@@ -67,3 +67,18 @@ jobs:
         run: |
           echo "## Tests result" >> $GITHUB_STEP_SUMMARY
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Get coverage output
+        id: coverage
+        run: echo "value=$(jq -r '.total.lines.pct|tostring + "%"' coverage/coverage-summary.json)" >> $GITHUB_OUTPUT
+      - name: Update coverage badge JSON gist
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: c58317c4d6983cacf14e0466cb1d2438
+          filename: Decentralised-Saas-Investment-Protocol_coverage_two.json
+          label: Coverage
+          message: ${{ steps.coverage.outputs.value }}
+          color: green
+          namedLogo: vitest
+          forceUpdate: true
