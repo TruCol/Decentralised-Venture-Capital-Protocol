@@ -119,14 +119,6 @@ Delete the build artifacts and cache directories:
 forge clean
 ```
 
-## Compile
-
-Compile the contracts:
-
-```sh
-forge build
-```
-
 ## Test
 
 Run the tests:

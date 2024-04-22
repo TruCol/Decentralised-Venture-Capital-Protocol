@@ -67,3 +67,16 @@ jobs:
         run: |
           echo "## Tests result" >> $GITHUB_STEP_SUMMARY
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+# coverage:
+  stage: coverage
+  script:
+
+    # - cp -rT cache/dep-cache/ /;
+    # - apt update
+    # - apt install -y doxygen clang libclang-dev lcov
+    # - cd build-gcc-release/
+    # - cmake --build cache/build-gcc-debug/ --target coverage
+    # - cmake --build $CACHE_PATH/build-gcc-debug --target coverage
+    - cache/node_modules/.bin/lcov-badge-generator cache/build-gcc-debug/coverage.capture
+    # - cp badge.svg cache/build-gcc-debug/coverage/
+    # - mv $CACHE_PATH/build-gcc-debug/coverage-lcov public/
