@@ -44,7 +44,11 @@ jobs:
        - name: Run unit tests with coverage
          run: |
            SUMMARY="$(npm test -- --coverage --coverageReporters=text-summary | tail -3 | head -1)"
+           # The above command ran npm test, and then fetched some -- --coverage
+           # output text from that command, and then got the tail and head
+           # to get a summary of the code coverage report.
            TOKENS=($SUMMARY)
+           # Filter the summary to get the pure coverage percentage.
             echo "COVERAGE=$(echo ${TOKENS[2]})" >> $GITHUB_ENV
 
             # var REF = 'refs/pull/27/merge.json';
