@@ -1,4 +1,6 @@
-# Decentralised SAAS Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license] [![Coverage badge description][coverage-badge-icon]][local_coverage_report_link]
+# Decentralised SAAS Investment Protocol \[!\[Open in Gitpod\]\[gitpod-badge\]\]\[gitpod\] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license] [![Code coverage badge description][code-coverage-badge-icon]][coverage_report_link_local]
+
+[![Branch coverage badge description][branch-coverage-badge-icon]][coverage_report_link_local]
 
 <img src="Images/laser_eyes_3.jpg" alt="A description of the image content"
 style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
@@ -198,13 +200,12 @@ linted and tested on every push and pull request made to the `main` branch.
 You can edit the CI script in
 [.github/workflows/ci.yml](./.github/workflows/ci.yml).
 
-[coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_two.json
+[branch-coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_branch_coverage.json
+[code-coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_line_coverage.json
+[coverage_report_link_local]: report/index.html
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 [gha]: https://github.com/TruCol/foundry-template/actions
 [gha-badge]: https://github.com/TruCol/foundry-template/actions/workflows/ci.yml/badge.svg
-[gitpod]: https://gitpod.io/#https://github.com/TruCol/foundry-template
-[gitpod-badge]: https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-FFB45B?logo=gitpod
 [license]: https://opensource.org/licenses/MIT
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
-[local_coverage_report_link]: report/index.html
