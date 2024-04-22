@@ -3,6 +3,8 @@
 <img src="Images/laser_eyes_3.jpg" alt="A description of the image content"
 style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
 
+![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/%3CYourUsername%3E/%3Cgist_id%3E/raw/%3Cyour-repo%3E__pull_##.json)
+
 This is a decentralised investment protocol for SAAS applications. Investors
 can see what the project lead proposes to do with the investment, along with
 the proposed multiple ROI (e.g. `20` times the initial investment amount).
