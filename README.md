@@ -5,6 +5,14 @@ style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
 
 ![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/%3CYourUsername%3E/%3Cgist_id%3E/raw/%3Cyour-repo%3E__pull_##.json)
 
+<!-- Change the ## to your pull request number -->
+
+![other Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol__pull_3.json)
+
+filler
+
+![Retry Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage.json)
+
 This is a decentralised investment protocol for SAAS applications. Investors
 can see what the project lead proposes to do with the investment, along with
 the proposed multiple ROI (e.g. `20` times the initial investment amount).
