@@ -93,8 +93,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   }
 
   function testReturnFunds() public override {
-    // Test empty tiers are not allowed.
-    Tier[] memory emptyTiers;
     vm.expectRevert(bytes("Temaining funds should be returned if the investment ceiling is reached."));
     _dim.receiveInvestment{ value: 5555 ether }();
 

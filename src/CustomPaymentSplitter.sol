@@ -115,7 +115,7 @@ contract CustomPaymentSplitter is Interface {
    *   funds after constructor initialisation.
    */
   function publicAddSharesToPayee(address account, uint256 dai) public override onlyOwner {
-    require(dai > 0, "There was 0 dai incoming.");
+    require(dai > 0, "There were 0 dai shares incoming.");
 
     // TODO: assert account is in _dai array.
 
