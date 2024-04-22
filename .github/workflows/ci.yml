@@ -67,6 +67,3 @@ jobs:
         run: |
           echo "## Tests result" >> $GITHUB_STEP_SUMMARY
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
-
-      - name: "Create coverage badge."
-        run: "cache/node_modules/.bin/lcov-badge-generator cache/build-gcc-debug/coverage.capture"

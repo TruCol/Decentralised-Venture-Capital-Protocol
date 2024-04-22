@@ -13,6 +13,7 @@
   "devDependencies": {
     "@prb/test": "^0.6.4",
     "forge-std": "github:foundry-rs/forge-std#v1.7.5",
+    "lcov-badge-generator": "^1.0.5",
     "prettier": "^3.0.0",
     "solhint": "^3.6.2"
   },
@@ -28,6 +29,7 @@
   "name": "@TruCol/foundry-template",
   "private": true,
   "scripts": {
+    "badge": "lcov-badge-generator ./coverage/lcov.info -o coverage/badge.svg",
     "build": "forge build",
     "clean": "rm -rf cache out",
     "lint": "bun run lint:sol && bun run prettier:check",
