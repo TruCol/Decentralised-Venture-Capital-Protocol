@@ -71,6 +71,7 @@ jobs:
       - name: "Get the code coverage percentage of the branches as ENV"
         run: echo "LINE_COVERAGE=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")" >> $GITHUB_ENV
       - name: "Get the branch coverage percentage of the branches as ENV"
+        # No need to run this twice, you could store the first output.
         run: echo "BRANCH_COVERAGE=$(awk '/^\| Total/ {print $10}' <<< "$(forge coverage)")" >> $GITHUB_ENV
 
       - name: Get coverage output

@@ -1,6 +1,7 @@
-# Decentralised SAAS Investment Protocol \[!\[Open in Gitpod\]\[gitpod-badge\]\]\[gitpod\] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license] [![Code coverage badge description][code-coverage-badge-icon]][coverage_report_link_local]
+# Decentralised SAAS Investment Protocol [![Github Actions][gha-badge]][gha] [![Branch coverage badge description][branch-coverage-badge-icon]][coverage_report_link_local] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
-[![Branch coverage badge description][branch-coverage-badge-icon]][coverage_report_link_local]
+<!-- [![Code coverage badge description]
+[code-coverage-badge-icon]][coverage_report_link_local] -->
 
 <img src="Images/laser_eyes_3.jpg" alt="A description of the image content"
 style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
@@ -200,8 +201,7 @@ linted and tested on every push and pull request made to the `main` branch.
 You can edit the CI script in
 [.github/workflows/ci.yml](./.github/workflows/ci.yml).
 
-[branch-coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_branch_coverage.json
-[code-coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_line_coverage.json
+[branch-coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_branch_coverage.json
 [coverage_report_link_local]: report/index.html
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
