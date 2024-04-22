@@ -67,3 +67,36 @@ jobs:
         run: |
           echo "## Tests result" >> $GITHUB_STEP_SUMMARY
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+      - name: "Get the code coverage percentage of the branches as ENV"
+        run: echo "LINE_COVERAGE=$(awk '/^\| Total/ {print $4}' <<< "$(forge coverage)")" >> $GITHUB_ENV
+      - name: "Get the branch coverage percentage of the branches as ENV"
+        # No need to run this twice, you could store the first output.
+        run: echo "BRANCH_COVERAGE=$(awk '/^\| Total/ {print $10}' <<< "$(forge coverage)")" >> $GITHUB_ENV
+
+      - name: Get coverage output
+        id: coverage
+        run: echo "value=$(jq -r '.total.lines.pct|tostring + "%"' coverage/coverage-summary.json)" >> $GITHUB_OUTPUT
+      - name: Update code coverage badge JSON gist
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: c58317c4d6983cacf14e0466cb1d2438
+          filename: Decentralised-Saas-Investment-Protocol_line_coverage.json
+          label: Line Coverage
+          message: ${{ env.LINE_COVERAGE }}
+          namedLogo: jest
+          color: green
+          logoColor: lightblue
+
+      - name: Update branch coverage badge JSON gist
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: c58317c4d6983cacf14e0466cb1d2438
+          filename: Decentralised-Saas-Investment-Protocol_branch_coverage.json
+          label: Branch Coverage
+          message: ${{ env.BRANCH_COVERAGE }}
+          namedLogo: jest
+          color: green
+          logoColor: lightblue

@@ -1,28 +1,23 @@
 {
-  "extends": "solhint:recommended",
+  "extends": [
+    "solhint:all"
+  ],
+  "plugins": [],
   "rules": {
-    "code-complexity": [
-      "error",
-      8
+    "foundry-test-functions": [
+      "off"
     ],
-    "compiler-version": [
-      "error",
-      ">=0.8.23"
+    "gas-custom-errors": [
+      "off"
     ],
-    "func-name-mixedcase": "off",
-    "func-visibility": [
-      "error",
-      {
-        "ignoreConstructors": true
-      }
+    "gas-small-strings": [
+      "off"
     ],
-    "max-line-length": [
-      "error",
-      120
+    "gas-strict-inequalities": [
+      "off"
     ],
-    "named-parameters-mapping": "warn",
-    "no-console": "off",
-    "not-rely-on-time": "off",
-    "one-contract-per-file": "off"
+    "reason-string": [
+      "off"
+    ]
   }
 }

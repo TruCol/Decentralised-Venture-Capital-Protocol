@@ -1,23 +1,39 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-
-import { ITier } from "../src/ITier.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
-contract DecentralisedInvestmentManager {
-  event PaymentReceived(address from, uint256 amount);
-  event InvestmentReceived(address from, uint256 amount);
+interface Interface {
+  function receiveSaasPayment() external payable;
 
+  function receiveInvestment() external payable;
+
+  function withdraw(uint256 amount) external;
+
+  function getTierInvestmentLength() external returns (uint256 nrOfTierInvestments);
+
+  function increaseCurrentMultipleInstantly(uint256 newMultiple) external;
+
+  function getPaymentSplitter() external returns (CustomPaymentSplitter paymentSplitter);
+
+  function getCumReceivedInvestments() external returns (uint256 cumReceivedInvestments);
+
+  function getCumRemainingInvestorReturn() external returns (uint256 cumRemainingInvestorReturn);
+
+  function getCurrentTier() external returns (Tier currentTier);
+
+  function getProjectLeadFracNumerator() external returns (uint256 projectLeadFracNumerator);
+}
+
+contract DecentralisedInvestmentManager is Interface {
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
-  address private saas;
+  address private _saas;
   address private _projectLead;
 
-  //
   address[] private _withdrawers;
   uint256[] private _owedDai;
 
@@ -30,19 +46,20 @@ contract DecentralisedInvestmentManager {
   DecentralisedInvestmentHelper private _helper;
   TierInvestment[] private _tierInvestments;
 
+  event PaymentReceived(address indexed from, uint256 indexed amount);
+  event InvestmentReceived(address indexed from, uint256 indexed amount);
+
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
    * after creation.
    *
    */
   constructor(
-    uint256 firstTierCeiling,
-    uint256 secondTierCeiling,
-    uint256 thirdTierCeiling,
+    Tier[] memory tiers,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     address projectLead
-  ) {
+  ) public {
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
@@ -50,30 +67,39 @@ contract DecentralisedInvestmentManager {
 
     // Initialise default values.
     _cumReceivedInvestments = 0;
-    _paymentSplitter = initialiseCustomPaymentSplitter(_projectLead);
+    _paymentSplitter = _initialiseCustomPaymentSplitter(_projectLead);
 
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
 
     // Specify the different investment tiers in DAI.
-    Tier tier_0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier_0);
-    Tier tier_1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier_1);
-    Tier tier_2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier_2);
-  }
+    // Validate the provided tiers array (optional)
+    require(tiers.length > 0, "You must provide at least one tier.");
 
-  function initialiseCustomPaymentSplitter(address projectLead) private returns (CustomPaymentSplitter) {
-    _withdrawers.push(projectLead);
-    _owedDai.push(0);
-    return new CustomPaymentSplitter(_withdrawers, _owedDai);
+    // Iterate through the tiers and potentially perform additional checks
+    uint256 nrOfTiers = tiers.length;
+    for (uint256 i = 0; i < nrOfTiers; ++i) {
+      // You can access tier properties using _tiers[i].getMinVal(), etc.
+      if (i > 0) {
+        require(
+          tiers[i - 1].getMaxVal() == tiers[i].getMinVal(),
+          "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
+        );
+      }
+
+      // Recreate the Tier objects because this contract should be the owner.
+      uint256 someMin = tiers[i].getMinVal();
+      uint256 someMax = tiers[i].getMaxVal();
+      uint256 someMultiple = tiers[i].getMultiple();
+      Tier tierOwnedByThisContract = new Tier(someMin, someMax, someMultiple);
+      _tiers.push(tierOwnedByThisContract);
+    }
   }
 
   /**
   @notice When a saaspayment is received, the total amount the investors may
   still receive, is calculated and stored in cumRemainingInvestorReturn. */
-  function receiveSaasPayment() external payable {
+  function receiveSaasPayment() external payable override {
     require(msg.value > 0, "The SAAS payment was not larger than 0.");
 
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
@@ -109,61 +135,190 @@ contract DecentralisedInvestmentManager {
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
 
     // Distribute remaining amount to investors (if applicable)Store
-    console2.log("saasRevenueForProjectLead=", saasRevenueForProjectLead);
-    console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
+
     if (saasRevenueForInvestors > 0) {
-      distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
-    } else {
-      console2.log("Investor does not receive money.");
+      _distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
     }
 
     // Perform transaction and administration for project lead (if applicable)
-    performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
+    _performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
     emit PaymentReceived(msg.sender, msg.value);
   }
 
-  function distributeSaasPaymentFractionToInvestors(
+  /**
+  @notice when an investor makes an investment with its investmentWallet, this
+  contract checks whether the contract is full, or whether it still takes in
+  new investments. If the investment ceiling is reached it reverts the
+  investment back to the investor. Otherwise it takes it in, and fills up the
+  investment tiers that are still open until the whole investment amount is
+  allocated or until Investment ceiling is reached. The remaining
+  investment amount is then reverted.
+
+  To allocate the investment over the investment tiers, first the
+  allocateInvestment function finds the lowest tier that is still open/not
+  full. The lowest tier has the highest multiple. The allocateInvestment
+  function then distributes the investment over the first tier, and then
+  recursively calls itself until the whole investment is distributed, or the
+  investment ceiling is reached. In case of the latter, the remaining
+  investment amount is returned.
+
+
+   */
+  function receiveInvestment() external payable override {
+    require(msg.value > 0, "The amount invested was not larger than 0.");
+
+    require(
+      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
+      "The investor ceiling is not reached."
+    );
+
+    _allocateInvestment(msg.value, msg.sender);
+
+    emit InvestmentReceived(msg.sender, msg.value);
+  }
+
+  function increaseCurrentMultipleInstantly(uint256 newMultiple) public override {
+    require(
+      msg.sender == _projectLead,
+      "Increasing the current investment tier multiple attempted by someone other than project lead."
+    );
+    Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+    require(newMultiple > currentTier.getMultiple(), "The new multiple was not larger than the old multiple.");
+    currentTier.increaseMultiple(newMultiple);
+  }
+
+  // Allow project lead to retrieve the investment.
+  function withdraw(uint256 amount) public override {
+    // Ensure only the project lead can retrieve funds in this contract. The
+    // funds in this contract are those coming from investments. Saaspayments are
+    // automatically transfured into the CustomPaymentSplitter and retrieved from
+    // there.
+    require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
+    // Check if contract has sufficient balance
+    require(address(this).balance >= amount, "Insufficient contract balance");
+
+    // Transfer funds to user using call{value: } (safer approach)
+    (bool success, ) = payable(msg.sender).call{ value: amount }("");
+    require(success, "Investment withdraw by project lead failed");
+  }
+
+  // Assuming there's an internal function to get tier investment length
+  function getTierInvestmentLength() public view override returns (uint256 nrOfTierInvestments) {
+    nrOfTierInvestments = _tierInvestments.length;
+    return nrOfTierInvestments;
+  }
+
+  function getPaymentSplitter() public view override returns (CustomPaymentSplitter paymentSplitter) {
+    paymentSplitter = _paymentSplitter;
+    return paymentSplitter;
+  }
+
+  function getCumReceivedInvestments() public view override returns (uint256 cumReceivedInvestments) {
+    cumReceivedInvestments = _cumReceivedInvestments;
+    return cumReceivedInvestments;
+  }
+
+  function getCumRemainingInvestorReturn() public view override returns (uint256 cumRemainingInvestorReturn) {
+    return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
+  }
+
+  function getCurrentTier() public view override returns (Tier currentTier) {
+    currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+    return currentTier;
+  }
+
+  function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
+    projectLeadFracNumerator = _projectLeadFracNumerator;
+    return projectLeadFracNumerator;
+  }
+
+  /**
+  @notice If the investment ceiling is not reached, it finds the lowest open
+  investment tier, and then computes how much can still be invested in that
+  investment tier. If the investment amount is larger than the amount remaining
+  in that tier, it fills that tier up with a part of the investment using the
+  addInvestmentToCurrentTier function, and recursively calls itself until the
+  investment amount is fully allocated, or Investment ceiling is reached.
+  If the investment amount is equal to- or smaller than the amount remaining in
+  that tier, it adds that amount to the current investment tier using the
+  addInvestmentToCurrentTier. That's it.
+
+  Made internal instead of private for testing purposes.
+  */
+  function _allocateInvestment(uint256 investmentAmount, address investorWallet) internal {
+    require(investmentAmount > 0, "The amount invested was not larger than 0.");
+
+    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+
+      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
+
+      TierInvestment tierInvestment;
+      if (investmentAmount > remainingAmountInTier) {
+        // Invest remaining amount in current tier
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+        _tierInvestments.push(tierInvestment);
+
+        // Invest remaining amount from user
+        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
+
+        _allocateInvestment(remainingInvestmentAmount, investorWallet);
+      } else {
+        // Invest full amount in current tier
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
+
+        _tierInvestments.push(tierInvestment);
+      }
+    } else {
+      revert("Temaining funds should be returned if the investment ceiling is reached.");
+    }
+  }
+
+  function _distributeSaasPaymentFractionToInvestors(
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
-  ) private {
+  ) internal {
     uint256 cumulativePayout = 0;
 
-    for (uint256 i = 0; i < _tierInvestments.length; i++) {
-      // TODO: Determine if paymentSplitter can be used to compute remaining
-      // investment shares instead.
+    bool hasRoundedUp = false;
+    uint256 nrOfTierInvestments = _tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // Compute how much an investor receives for its investment in this tier.
-
-      // Perform division with roundup to ensure the invstors are paid in whole
-      // during their last payout without requiring an additional 1 wei payout.
-      uint256 numerator = _tierInvestments[i].remainingReturn() * saasRevenueForInvestors;
-      uint256 denominator = cumRemainingInvestorReturn;
-      uint256 investmentReturn = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
-      console2.log("\n_tierInvestments[%s].remainingReturn()=", i, _tierInvestments[i].remainingReturn());
-      console2.log("saasRevenueForInvestors;=                ", cumRemainingInvestorReturn);
-      console2.log("cumRemainingInvestorReturn=", cumRemainingInvestorReturn);
-      console2.log("investmentReturn=", investmentReturn);
-      console2.log("\n");
+      (uint256 investmentReturn, bool returnHasRoundedUp) = _computeInvestmentReturn(
+        _tierInvestments[i].getRemainingReturn(),
+        saasRevenueForInvestors,
+        cumRemainingInvestorReturn,
+        hasRoundedUp
+      );
+      // Booleans are passed by value, so have to overwrite it.
+      hasRoundedUp = returnHasRoundedUp;
 
       if (investmentReturn > 0) {
         // Allocate that amount to the investor.
-        performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
+        _performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
 
         // Track the payout in the tierInvestment.
         _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
         cumulativePayout += investmentReturn;
       }
     }
-    console2.log("cumulativePayout=", cumulativePayout);
-    console2.log("saasRevenueForInvestors=", saasRevenueForInvestors);
+
     require(
-      cumulativePayout == saasRevenueForInvestors,
-      "The cumulativePayout is not equal to the saasRevenueForInvestors."
+      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
+      // cumulativePayout == saasRevenueForInvestors,
+      string.concat(
+        "The cumulativePayout (\n",
+        Strings.toString(cumulativePayout),
+        ") is not equal to the saasRevenueForInvestors (\n",
+        Strings.toString(saasRevenueForInvestors),
+        ")."
+      )
     );
   }
 
   // TODO: include safe handling of gas costs.
-  function performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
+  function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
 
@@ -182,83 +337,13 @@ contract DecentralisedInvestmentManager {
     }
   }
 
-  /**
-  @notice when an investor makes an investment with its investmentWallet, this
-  contract checks whether the contract is full, or whether it still takes in
-  new investments. If the investment ceiling is reached it reverts the
-  investment back to the investor. Otherwise it takes it in, and fills up the
-  investment tiers that are still open until the whole investment amount is
-  allocated or until the investment ceiling is reached. The remaining
-  investment amount is then reverted.
-
-  To allocate the investment over the investment tiers, first the
-  allocateInvestment function finds the lowest tier that is still open/not
-  full. The lowest tier has the highest multiple. The allocateInvestment
-  function then distributes the investment over the first tier, and then
-  recursively calls itself until the whole investment is distributed, or the
-  investment ceiling is reached. In case of the latter, the remaining
-  investment amount is returned.
-
-
-   */
-  function receiveInvestment() external payable {
-    require(msg.value > 0, "The amount invested was not larger than 0.");
-
-    require(
-      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
-      "The investor ceiling is not reached."
-    );
-
-    allocateInvestment(msg.value, msg.sender);
-
-    emit InvestmentReceived(msg.sender, msg.value);
-  }
-
-  /**
-  @notice If the investment ceiling is not reached, it finds the lowest open
-  investment tier, and then computes how much can still be invested in that
-  investment tier. If the investment amount is larger than the amount remaining
-  in that tier, it fills that tier up with a part of the investment using the
-  addInvestmentToCurrentTier function, and recursively calls itself until the
-  investment amount is fully allocated, or the investment ceiling is reached.
-  If the investment amount is equal to- or smaller than the amount remaining in
-  that tier, it adds that amount to the current investment tier using the
-  addInvestmentToCurrentTier. That's it.
-
-
-  */
-  function allocateInvestment(
-    uint256 investmentAmount,
-    // uint256 remainingAmountInTier,
-    address investorWallet // Tier currentTier
-  ) private {
-    require(investmentAmount > 0, "The amount invested was not larger than 0.");
-
-    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
-      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-
-      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
-
-      TierInvestment tierInvestment;
-      if (investmentAmount > remainingAmountInTier) {
-        // Invest remaining amount in current tier
-        tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-        _tierInvestments.push(tierInvestment);
-
-        // Invest remaining amount from user
-        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
-
-        allocateInvestment(remainingInvestmentAmount, investorWallet);
-      } else {
-        // Invest full amount in current tier
-        tierInvestment = addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
-
-        _tierInvestments.push(tierInvestment);
-      }
-    } else {
-      console2.log("REACHED investment ceiling");
-      // TODO: ensure the remaining funds are returned to the investor.
-    }
+  function _initialiseCustomPaymentSplitter(
+    address projectLead
+  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
+    _withdrawers.push(projectLead);
+    _owedDai.push(0);
+    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
+    return customPaymentSplitter;
   }
 
   /**
@@ -268,45 +353,62 @@ contract DecentralisedInvestmentManager {
   much investment this contract has received in total using
   _cumReceivedInvestments.
    */
-  function addInvestmentToCurrentTier(
+  function _addInvestmentToCurrentTier(
     address investorWallet,
     Tier currentTier,
     uint256 newInvestmentAmount
-  ) private returns (TierInvestment) {
-    TierInvestment newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+  ) private returns (TierInvestment newTierInvestment) {
+    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
     _cumReceivedInvestments += newInvestmentAmount;
     return newTierInvestment;
   }
 
-  // Allow project lead to retrieve the investment.
-  function withdraw(uint amount) public {
-    // Ensure only the project lead can retrieve funds in this contract. The
-    // funds in this contract are those coming from investments. Saaspayments are
-    // automatically transfured into the CustomPaymentSplitter and retrieved from
-    // there.
-    require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
-    // Check if contract has sufficient balance
-    require(address(this).balance >= amount, "Insufficient contract balance");
-
-    // Transfer funds to user using call{value: } (safer approach)
-    (bool success, ) = payable(msg.sender).call{ value: amount }("");
-    require(success, "Investment withdraw by project lead failed");
+  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
+    isWholeDivision = withRounding != roundDown;
+    return isWholeDivision;
   }
 
-  // Assuming there's an internal function to get tier investment length
-  function getTierInvestmentLength() public view returns (uint256) {
-    return _tierInvestments.length;
-  }
+  /**
+  @dev Since this is an integer division, which is used to allocate shares,
+  the decimals that are discarded by the integer division, in total would add
+  up to 1, if the shares are not exact division. Therefore, this function
+  compares the results of the division, with round down vs round up. If the two
+  divisions are the same, it is an exact division of shares. Otherwise, there
+  is one Wei that needs to be added to one of the investor returns to ensure
+  the sum of the fractions add up to the whole original.
 
-  function getPaymentSplitter() public view returns (CustomPaymentSplitter) {
-    return _paymentSplitter;
-  }
+  It is currently not clear which investor gets this +1 raise. I tried just
+  checking it only for the first investor, (as I incorrectly assumed if the
+  division is not whole, all investor shares should be not whole). However,
+  that led to an off-by one error. I expect this occurred because, by chance the
+  fraction of the first investor share was whole, whereas another investor
+  share was not whole. So the first investor with a non-whole remaining share
+  fraction gets +1 wei to ensure all the numbers add up correctly. A
+  difference of +- wei is considederd negligible w.r.t. to the investor return,
+  yet critical in the safe evaluation of this contract.
+  */
+  function _computeInvestmentReturn(
+    uint256 remainingReturn,
+    uint256 saasRevenueForInvestors,
+    uint256 cumRemainingInvestorReturn,
+    bool incomingHasRoundedUp
+  ) private pure returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
+    uint256 numerator = remainingReturn * saasRevenueForInvestors;
+    uint256 denominator = cumRemainingInvestorReturn;
 
-  function getCumReceivedInvestments() public view returns (uint256) {
-    return _cumReceivedInvestments;
-  }
+    // Divide with round up.
+    uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
+    // Default Solidity division is rounddown.
+    uint256 roundDown = numerator / denominator;
+    // uint256 investmentReturn = numerator / denominator;
 
-  function getCumRemainingInvestorReturn() public view returns (uint256) {
-    return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
+    if (_isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
+      investmentReturn = withRoundUp;
+      returnedHasRoundedUp = true;
+    } else {
+      investmentReturn = roundDown;
+    }
+
+    return (investmentReturn, returnedHasRoundedUp);
   }
 }

@@ -5,16 +5,22 @@ import { Script } from "forge-std/src/Script.sol";
 
 abstract contract BaseScript is Script {
   /// @dev Included to enable compilation of the script without a $MNEMONIC environment variable.
-  string internal constant TEST_MNEMONIC = "test test test test test test test test test test test junk";
+  string internal constant _TEST_MNEMONIC = "test test test test test test test test test test test junk";
 
   /// @dev Needed for the deterministic deployments.
-  bytes32 internal constant ZERO_SALT = bytes32(0);
+  bytes32 internal constant _ZERO_SALT = bytes32(0);
 
   /// @dev The address of the transaction broadcaster.
-  address internal broadcaster;
+  address internal _broadcaster;
 
   /// @dev Used to derive the broadcaster's address if $ETH_FROM is not defined.
-  string internal mnemonic;
+  string internal _mnemonic;
+
+  modifier broadcast() {
+    vm.startBroadcast(_broadcaster);
+    _;
+    vm.stopBroadcast();
+  }
 
   /// @dev Initializes the transaction broadcaster like this:
   ///
@@ -26,16 +32,13 @@ abstract contract BaseScript is Script {
   constructor() {
     address from = vm.envOr({ name: "ETH_FROM", defaultValue: address(0) });
     if (from != address(0)) {
-      broadcaster = from;
+      _broadcaster = from;
     } else {
-      mnemonic = vm.envOr({ name: "MNEMONIC", defaultValue: TEST_MNEMONIC });
-      (broadcaster, ) = deriveRememberKey({ mnemonic: mnemonic, index: 0 });
+      _mnemonic = vm.envOr({ name: "MNEMONIC", defaultValue: _TEST_MNEMONIC });
+      (_broadcaster, ) = deriveRememberKey({ mnemonic: _mnemonic, index: 0 });
     }
   }
 
-  modifier broadcast() {
-    vm.startBroadcast(broadcaster);
-    _;
-    vm.stopBroadcast();
-  }
+  // To make forge coverage skip this file.
+  function test() public virtual {}
 }

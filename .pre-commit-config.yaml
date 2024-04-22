@@ -8,7 +8,7 @@
 repos:
 # Test if the python code is formatted according to the Black standard.
  - repo: https://github.com/Quantco/pre-commit-mirrors-black
-   rev: 24.3.0
+   rev: 24.4.0
    hooks:
      - id: black-conda
        args:
@@ -71,10 +71,21 @@ repos:
            "-rn", # Only display messages
            "-sn", # Don't display the score
          ]
+     - id: solhint
+       name: Solidity style guide compliance.
+       entry: solhint
+       language: node
+       verbose: true
+       files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
+       args:
+         [
+           "--fix", # Automatically fix those issues that can be auto-fixed.
+           "--noPrompt", # Do not ask for backup before fix.
+         ]
 
 # Runs additional tests that are created by the pre-commit software itself.
  - repo: https://github.com/pre-commit/pre-commit-hooks
-   rev: v4.5.0
+   rev: v4.6.0
    hooks:
     # Check user did not add large files.
     #- id: check-added-large-files

@@ -1,4 +1,7 @@
-# Decentralised SAAS Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+# Decentralised SAAS Investment Protocol [![Github Actions][gha-badge]][gha] [![Branch coverage badge description][branch-coverage-badge-icon]][coverage_report_link_local] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+
+<!-- [![Code coverage badge description]
+[code-coverage-badge-icon]][coverage_report_link_local] -->
 
 <img src="Images/laser_eyes_3.jpg" alt="A description of the image content"
 style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
@@ -83,6 +86,15 @@ source ~/.bashrc
 foundryup
 forge build
 
+# Install SolHint (Solidity style guide linterm with autofix.)
+sudo apt install npm -y
+sudo npm install nodejs
+sudo npm install -g solhint
+solhint --version
+
+# Install prettier
+npm install --save-dev --save-exact prettier
+
 # Install pre-commit
 pre-commit install
 git add -A && pre-commit run --all
@@ -110,14 +122,6 @@ Delete the build artifacts and cache directories:
 forge clean
 ```
 
-## Compile
-
-Compile the contracts:
-
-```sh
-forge build
-```
-
 ## Test
 
 Run the tests:
@@ -140,8 +144,7 @@ assertions, in the CLI. Otherwise it just says: "test failed".
 Get a test coverage report:
 
 ```sh
-forge coverage --report lcov
-genhtml -o report --branch-coverage lcov.info
+clear && forge coverage --report lcov && genhtml -o report --branch-coverage lcov.info
 ```
 
 ## Gas Usage
@@ -198,11 +201,11 @@ linted and tested on every push and pull request made to the `main` branch.
 You can edit the CI script in
 [.github/workflows/ci.yml](./.github/workflows/ci.yml).
 
+[branch-coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_branch_coverage.json
+[coverage_report_link_local]: report/index.html
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 [gha]: https://github.com/TruCol/foundry-template/actions
 [gha-badge]: https://github.com/TruCol/foundry-template/actions/workflows/ci.yml/badge.svg
-[gitpod]: https://gitpod.io/#https://github.com/TruCol/foundry-template
-[gitpod-badge]: https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-FFB45B?logo=gitpod
 [license]: https://opensource.org/licenses/MIT
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
