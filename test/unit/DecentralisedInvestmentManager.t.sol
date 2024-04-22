@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
@@ -8,6 +9,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 // Import the main contract that is being tested.
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
+import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 
 interface Interface {
   function setUp() external;
@@ -27,6 +29,12 @@ interface Interface {
   function testIncreaseCurrentMultipleInstantly() external;
 
   function testWithdraw() external;
+
+  function testAllocateDoesNotAcceptZeroAmountAllocation() external;
+
+  function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() external;
+
+  function testPerformSaasRevenueAllocation() external;
 }
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
@@ -158,5 +166,64 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
     vm.expectRevert(bytes("Withdraw attempted by someone other than project lead."));
     _dim.withdraw(1);
+  }
+
+  function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
+    ExposedDecentralisedInvestmentManager exposed_dim = new ExposedDecentralisedInvestmentManager(
+      _tiers,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
+    );
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    exposed_dim.allocateInvestment(0, address(0));
+  }
+
+  function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() public override {
+    ExposedDecentralisedInvestmentManager exposed_dim = new ExposedDecentralisedInvestmentManager(
+      _tiers,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
+    );
+
+    uint256 saasRevenueForInvestors = 2;
+    uint256 cumRemainingInvestorReturn0;
+
+    vm.expectRevert(
+      bytes(
+        string.concat(
+          "The cumulativePayout (\n",
+          Strings.toString(cumRemainingInvestorReturn0),
+          ") is not equal to the saasRevenueForInvestors (\n",
+          Strings.toString(saasRevenueForInvestors),
+          ")."
+        )
+      )
+    );
+
+    exposed_dim.distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn0);
+
+    // Verify you can also do 0, 0 without error.
+    exposed_dim.distributeSaasPaymentFractionToInvestors(0, 0);
+  }
+
+  function testPerformSaasRevenueAllocation() public override {
+    ExposedDecentralisedInvestmentManager exposed_dim = new ExposedDecentralisedInvestmentManager(
+      _tiers,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
+    );
+
+    uint256 amountAboveContractBalance = 1;
+    address receivingWallet = address(0);
+
+    vm.expectRevert(bytes("Error: Insufficient contract balance."));
+    exposed_dim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
+
+    vm.expectRevert(bytes("The SAAS revenue allocation amount was not larger than 0."));
+    exposed_dim.performSaasRevenueAllocation(0, receivingWallet);
   }
 }

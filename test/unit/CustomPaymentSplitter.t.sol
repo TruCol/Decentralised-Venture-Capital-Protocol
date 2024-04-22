@@ -12,6 +12,8 @@ interface Interface {
 
   function testOnlyOwnerCanAddPayee() external;
 
+  function testOnlyOwnerCanAddSharesToPayee() external;
+
   function testContractCannotAddItselfAsPayee() external;
 
   function testPayeeAmountOfZeroReverts() external;
@@ -64,9 +66,12 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     vm.prank(address(15));
     vm.expectRevert(bytes("The sender of this message is not the owner."));
     _paymentSplitter.publicAddPayee(address(_paymentSplitter), 20);
+  }
 
-    //. Also add valid address.
-    _paymentSplitter.publicAddPayee(address(0), 20);
+  function testOnlyOwnerCanAddSharesToPayee() public override {
+    vm.prank(address(15));
+    vm.expectRevert(bytes("The sender of this message is not the owner."));
+    _paymentSplitter.publicAddSharesToPayee(address(_paymentSplitter), 20);
   }
 
   function testContractCannotAddItselfAsPayee() public override {

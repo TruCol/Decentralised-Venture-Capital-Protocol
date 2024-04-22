@@ -233,19 +233,52 @@ contract DecentralisedInvestmentManager is Interface {
     return projectLeadFracNumerator;
   }
 
-  function _initialiseCustomPaymentSplitter(
-    address projectLead
-  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
-    _withdrawers.push(projectLead);
-    _owedDai.push(0);
-    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
-    return customPaymentSplitter;
+  /**
+  @notice If the investment ceiling is not reached, it finds the lowest open
+  investment tier, and then computes how much can still be invested in that
+  investment tier. If the investment amount is larger than the amount remaining
+  in that tier, it fills that tier up with a part of the investment using the
+  addInvestmentToCurrentTier function, and recursively calls itself until the
+  investment amount is fully allocated, or Investment ceiling is reached.
+  If the investment amount is equal to- or smaller than the amount remaining in
+  that tier, it adds that amount to the current investment tier using the
+  addInvestmentToCurrentTier. That's it.
+
+  Made internal instead of private for testing purposes.
+  */
+  function _allocateInvestment(uint256 investmentAmount, address investorWallet) internal {
+    require(investmentAmount > 0, "The amount invested was not larger than 0.");
+
+    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+
+      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
+
+      TierInvestment tierInvestment;
+      if (investmentAmount > remainingAmountInTier) {
+        // Invest remaining amount in current tier
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+        _tierInvestments.push(tierInvestment);
+
+        // Invest remaining amount from user
+        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
+
+        _allocateInvestment(remainingInvestmentAmount, investorWallet);
+      } else {
+        // Invest full amount in current tier
+        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
+
+        _tierInvestments.push(tierInvestment);
+      }
+    } else {
+      revert("Temaining funds should be returned if the investment ceiling is reached.");
+    }
   }
 
   function _distributeSaasPaymentFractionToInvestors(
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
-  ) private {
+  ) internal {
     uint256 cumulativePayout = 0;
 
     bool hasRoundedUp = false;
@@ -284,25 +317,8 @@ contract DecentralisedInvestmentManager is Interface {
     );
   }
 
-  /**
-  @notice This creates a tierInvestment object/contract for the current tier.
-  Since it takes in the current tier, it stores the multiple used for that tier
-  to specify how much the investor may retrieve. Furthermore, it tracks how
-  much investment this contract has received in total using
-  _cumReceivedInvestments.
-   */
-  function _addInvestmentToCurrentTier(
-    address investorWallet,
-    Tier currentTier,
-    uint256 newInvestmentAmount
-  ) private returns (TierInvestment newTierInvestment) {
-    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
-    _cumReceivedInvestments += newInvestmentAmount;
-    return newTierInvestment;
-  }
-
   // TODO: include safe handling of gas costs.
-  function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) private {
+  function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
 
@@ -321,48 +337,30 @@ contract DecentralisedInvestmentManager is Interface {
     }
   }
 
+  function _initialiseCustomPaymentSplitter(
+    address projectLead
+  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
+    _withdrawers.push(projectLead);
+    _owedDai.push(0);
+    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
+    return customPaymentSplitter;
+  }
+
   /**
-  @notice If the investment ceiling is not reached, it finds the lowest open
-  investment tier, and then computes how much can still be invested in that
-  investment tier. If the investment amount is larger than the amount remaining
-  in that tier, it fills that tier up with a part of the investment using the
-  addInvestmentToCurrentTier function, and recursively calls itself until the
-  investment amount is fully allocated, or Investment ceiling is reached.
-  If the investment amount is equal to- or smaller than the amount remaining in
-  that tier, it adds that amount to the current investment tier using the
-  addInvestmentToCurrentTier. That's it.
-  */
-  function _allocateInvestment(
-    uint256 investmentAmount,
-    // uint256 remainingAmountInTier,
-    address investorWallet // Tier currentTier
-  ) private {
-    require(investmentAmount > 0, "The amount invested was not larger than 0.");
-
-    if (!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
-      Tier currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-
-      uint256 remainingAmountInTier = _helper.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
-
-      TierInvestment tierInvestment;
-      if (investmentAmount > remainingAmountInTier) {
-        // Invest remaining amount in current tier
-        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
-        _tierInvestments.push(tierInvestment);
-
-        // Invest remaining amount from user
-        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
-
-        _allocateInvestment(remainingInvestmentAmount, investorWallet);
-      } else {
-        // Invest full amount in current tier
-        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
-
-        _tierInvestments.push(tierInvestment);
-      }
-    } else {
-      revert("Temaining funds should be returned if the investment ceiling is reached.");
-    }
+  @notice This creates a tierInvestment object/contract for the current tier.
+  Since it takes in the current tier, it stores the multiple used for that tier
+  to specify how much the investor may retrieve. Furthermore, it tracks how
+  much investment this contract has received in total using
+  _cumReceivedInvestments.
+   */
+  function _addInvestmentToCurrentTier(
+    address investorWallet,
+    Tier currentTier,
+    uint256 newInvestmentAmount
+  ) private returns (TierInvestment newTierInvestment) {
+    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+    _cumReceivedInvestments += newInvestmentAmount;
+    return newTierInvestment;
   }
 
   function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
