@@ -1,20 +1,7 @@
-# Decentralised SAAS Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license] [![Coverage][coverage-badge]][coverage]
+# Decentralised SAAS Investment Protocol [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license] [![Coverage badge description][coverage-badge-icon]][local_coverage_report_link]
 
 <img src="Images/laser_eyes_3.jpg" alt="A description of the image content"
 style="display:block;float:none;margin-left:auto;margin-right:auto;width:50%">
-
-![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/%3CYourUsername%3E/%3Cgist_id%3E/raw/%3Cyour-repo%3E__pull_##.json)
-
-<!-- Change the ## to your pull request number -->
-
-![other Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol__pull_3.json)
-
-filler
-
-![Retry Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage.json)
-anotherfiller
-
-![Retry Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_two.json)
 
 This is a decentralised investment protocol for SAAS applications. Investors
 can see what the project lead proposes to do with the investment, along with
@@ -211,8 +198,7 @@ linted and tested on every push and pull request made to the `main` branch.
 You can edit the CI script in
 [.github/workflows/ci.yml](./.github/workflows/ci.yml).
 
-[coverage]: report/index.html
-[coverage-badge]: coverage/badge.svg
+[coverage-badge-icon]: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/a-t-0/c58317c4d6983cacf14e0466cb1d2438/raw/Decentralised-Saas-Investment-Protocol_coverage_two.json
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
 [gha]: https://github.com/TruCol/foundry-template/actions
@@ -221,3 +207,4 @@ You can edit the CI script in
 [gitpod-badge]: https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-FFB45B?logo=gitpod
 [license]: https://opensource.org/licenses/MIT
 [license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+[local_coverage_report_link]: report/index.html
