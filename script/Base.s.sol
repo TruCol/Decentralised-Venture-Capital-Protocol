@@ -38,4 +38,7 @@ abstract contract BaseScript is Script {
       (_broadcaster, ) = deriveRememberKey({ mnemonic: _mnemonic, index: 0 });
     }
   }
+
+  // To make forge coverage skip this file.
+  function test() public virtual {}
 }

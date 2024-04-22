@@ -10,4 +10,7 @@ contract Deploy is BaseScript {
   function runTier() public broadcast returns (Tier tier) {
     tier = new Tier(0, 10_000, 10);
   }
+
+  // To make forge coverage skip this file.
+  function test() public override {}
 }
