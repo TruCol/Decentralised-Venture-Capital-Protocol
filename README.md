@@ -193,6 +193,19 @@ For instructions on how to deploy to a testnet or mainnet, check out the
 [Solidity Scripting](https://book.getfoundry.sh/tutorials/solidity-scripting.html)
 tutorial.
 
+## Generate PlantUML graph of code
+
+To visualise how the code works you can generate a PlantUML graph of the
+contracts using:
+
+```sh
+npm link sol2uml --only=production # Install sol2uml
+sol2uml src/
+```
+
+This will create the `classDiagram.svg` diagram of the code:
+![Class Diagram](classDiagram.svg)
+
 ## GitHub Actions
 
 This template comes with GitHub Actions pre-configured. Your contracts will be

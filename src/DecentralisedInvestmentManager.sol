@@ -97,6 +97,27 @@ contract DecentralisedInvestmentManager is Interface {
   }
 
   /**
+  Permit counter offer. Allows investors to propose a counter offer that locks
+  up their funds during a period they choose, for a potential ROI multiple that
+  they desire. Within this period, the project lead can decide whether to accept,
+  reject or ignore this offer. If the project lead accepts the offer, it will be
+  added as a tierInvestment. If the project lead rejects the offer, the funds are
+  returned to the investor. If the project lead ignores the offer, the funds are
+  returned to the investor after the lockup period has ended.
+
+  If the proposed ROI multiple is below the current ROI and the investment ceiling
+  has not yet been reached, the offer is accepted automatically at the proposed
+  ROI multiple up to the amount to reach the investment ceiling, or up to the tier
+  whose multiple is lower than the proposed multiple. The remaining investment amount
+  above the investment ceiling will be returned automatically, the remaining investment
+  amount in a tier with a lower multiple than the proposed multiple will be up for
+  acceptance/rejection/ignore for the project lead for the lockup duration,
+  after which the funds will be automatically returned to the investor, if the
+  proposal is not accepted.
+  */
+  function _receiveCounterOffer() {}
+
+  /**
   @notice When a saaspayment is received, the total amount the investors may
   still receive, is calculated and stored in cumRemainingInvestorReturn. */
   function receiveSaasPayment() external payable override {
@@ -162,8 +183,6 @@ contract DecentralisedInvestmentManager is Interface {
   recursively calls itself until the whole investment is distributed, or the
   investment ceiling is reached. In case of the latter, the remaining
   investment amount is returned.
-
-
    */
   function receiveInvestment() external payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
