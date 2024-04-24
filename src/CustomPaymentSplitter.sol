@@ -52,11 +52,11 @@ contract CustomPaymentSplitter is Interface {
   /**
    * @dev Constructor
    */
-  constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
+  constructor(address owner, address[] memory payees, uint256[] memory amountsOwed) public payable {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
     require(payees.length > 0, "There are not more than 0 payees.");
 
-    _owner = msg.sender;
+    _owner = owner;
     _amountsOwed = amountsOwed;
 
     uint256 nrOfPayees = payees.length;

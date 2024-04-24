@@ -3,6 +3,7 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
+import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
 interface Interface {
@@ -172,5 +173,19 @@ contract DecentralisedInvestmentHelper is Interface {
       returneCumRemainingInvestorReturn = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
       return returneCumRemainingInvestorReturn;
     }
+  }
+
+  /**
+  TODO: assert the address[] private _withdrawers; is passed by reference, meaning
+  it is updated after the function is completed, without returning the value.
+  Same for dai.*/
+
+  function initialiseCustomPaymentSplitter(
+    address[] memory withdrawers,
+    uint256[] memory owedDai,
+    address projectLead
+  ) public returns (CustomPaymentSplitter customPaymentSplitter) {
+    customPaymentSplitter = new CustomPaymentSplitter(msg.sender, withdrawers, owedDai);
+    return customPaymentSplitter;
   }
 }

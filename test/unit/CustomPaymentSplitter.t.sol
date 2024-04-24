@@ -49,7 +49,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
   function setUp() public override {
     _withdrawers.push(_projectLead);
     _owedDai.push(0);
-    _paymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
+    _paymentSplitter = new CustomPaymentSplitter(address(this), _withdrawers, _owedDai);
   }
 
   /**
@@ -149,7 +149,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     somePayees[1] = address(11);
 
     vm.expectRevert(bytes("The nr of payees is not equal to the nr of amounts owed."));
-    _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
+    _paymentSplitter = new CustomPaymentSplitter(address(this), somePayees, someOwedDai);
   }
 
   function testCannotInitialiseConstructorWithoutPayees() public override {
@@ -160,7 +160,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     // someOwedDai[1] = 11;
 
     vm.expectRevert(bytes("There are not more than 0 payees."));
-    _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
+    _paymentSplitter = new CustomPaymentSplitter(address(this), somePayees, someOwedDai);
   }
 
   function testCannotAddInvestorTwiceInConstructor() public override {
@@ -172,7 +172,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     someOwedDai[1] = 10;
 
     vm.expectRevert(bytes("This account already is owed some currency."));
-    _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
+    _paymentSplitter = new CustomPaymentSplitter(address(this), somePayees, someOwedDai);
   }
 
   function testCanInitialiseConstructorWithMultiplePayees() public override {
@@ -183,7 +183,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     somePayees[1] = address(11);
     someOwedDai[1] = 11;
 
-    _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
+    _paymentSplitter = new CustomPaymentSplitter(address(this), somePayees, someOwedDai);
   }
 
   function testCannotInitialisePayeeWithZeroAmount() public override {
@@ -194,6 +194,6 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     somePayees[1] = address(11);
     someOwedDai[1] = 0;
 
-    _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
+    _paymentSplitter = new CustomPaymentSplitter(address(this), somePayees, someOwedDai);
   }
 }

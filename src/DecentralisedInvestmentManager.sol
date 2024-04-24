@@ -65,12 +65,16 @@ contract DecentralisedInvestmentManager is Interface {
     _projectLeadFracDenominator = projectLeadFracDenominator;
     _projectLead = projectLead;
 
-    // Initialise default values.
-    _cumReceivedInvestments = 0;
-    _paymentSplitter = _initialiseCustomPaymentSplitter(_projectLead);
-
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
+
+    // Initialise default values.
+    _cumReceivedInvestments = 0;
+
+    // Add the project lead to the withdrawers and set its amount owed to 0.
+    _withdrawers.push(projectLead);
+    _owedDai.push(0);
+    _paymentSplitter = _helper.initialiseCustomPaymentSplitter(_withdrawers, _owedDai, _projectLead);
 
     // Specify the different investment tiers in DAI.
     // Validate the provided tiers array (optional)
@@ -115,7 +119,7 @@ contract DecentralisedInvestmentManager is Interface {
   after which the funds will be automatically returned to the investor, if the
   proposal is not accepted.
   */
-  function _receiveCounterOffer() {}
+  // function _receiveCounterOffer() {}
 
   /**
   @notice When a saaspayment is received, the total amount the investors may
@@ -354,15 +358,6 @@ contract DecentralisedInvestmentManager is Interface {
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
-  }
-
-  function _initialiseCustomPaymentSplitter(
-    address projectLead
-  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
-    _withdrawers.push(projectLead);
-    _owedDai.push(0);
-    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
-    return customPaymentSplitter;
   }
 
   /**
