@@ -23,11 +23,32 @@ interface Interface {
     uint256 cumRemainingInvestorReturn,
     bool incomingHasRoundedUp
   ) external returns (uint256 investmentReturn, bool returnedHasRoundedUp);
+
+  function addInvestmentToCurrentTier(
+    uint256 cumReceivedInvestments,
+    address investorWallet,
+    Tier currentTier,
+    uint256 newInvestmentAmount
+  ) external returns (uint256, TierInvestment newTierInvestment);
 }
 
 contract SaasPaymentProcessor is Interface {
   TierInvestment[] private _returnTiers;
   uint256[] private _returnAmounts;
+
+  address private _owner;
+  /**
+   * Used to ensure only the owner/creator of the constructor of this contract is
+   *   able to call/use functions that use this function (modifier).
+   */
+  modifier onlyOwner() {
+    require(msg.sender == _owner, "The sender of this message is not the owner.");
+    _;
+  }
+
+  constructor() public {
+    _owner = msg.sender;
+  }
 
   function computeInvestorReturns(
     CustomPaymentSplitter _paymentSplitter,
@@ -129,5 +150,23 @@ contract SaasPaymentProcessor is Interface {
     }
 
     return (investmentReturn, returnedHasRoundedUp);
+  }
+
+  /**
+  @notice This creates a tierInvestment object/contract for the current tier.
+  Since it takes in the current tier, it stores the multiple used for that tier
+  to specify how much the investor may retrieve. Furthermore, it tracks how
+  much investment this contract has received in total using
+  _cumReceivedInvestments.
+   */
+  function addInvestmentToCurrentTier(
+    uint256 cumReceivedInvestments,
+    address investorWallet,
+    Tier currentTier,
+    uint256 newInvestmentAmount
+  ) public override onlyOwner returns (uint256, TierInvestment newTierInvestment) {
+    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+    cumReceivedInvestments += newInvestmentAmount;
+    return (cumReceivedInvestments, newTierInvestment);
   }
 }

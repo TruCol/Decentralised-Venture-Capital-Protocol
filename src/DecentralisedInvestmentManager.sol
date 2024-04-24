@@ -3,7 +3,7 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 import "@openzeppelin/contracts/utils/Strings.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
-import { InvestmentProcessor } from "../src/InvestmentProcessor.sol";
+
 import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
@@ -47,7 +47,7 @@ contract DecentralisedInvestmentManager is Interface {
   Tier[] private _tiers;
 
   DecentralisedInvestmentHelper private _helper;
-  InvestmentProcessor private _investmentProcessor;
+
   SaasPaymentProcessor private _saasPaymentProcessor;
   TierInvestment[] private _tierInvestments;
 
@@ -73,7 +73,6 @@ contract DecentralisedInvestmentManager is Interface {
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
     _saasPaymentProcessor = new SaasPaymentProcessor();
-    _investmentProcessor = new InvestmentProcessor();
 
     // Initialise default values.
     _cumReceivedInvestments = 0;
@@ -298,14 +297,14 @@ contract DecentralisedInvestmentManager is Interface {
       TierInvestment tierInvestment;
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
-        (_cumReceivedInvestments, tierInvestment) = _investmentProcessor.addInvestmentToCurrentTier(
+        (_cumReceivedInvestments, tierInvestment) = _saasPaymentProcessor.addInvestmentToCurrentTier(
           _cumReceivedInvestments,
           investorWallet,
           currentTier,
           remainingAmountInTier
         );
         require(
-          tierInvestment.getOwner() == address(_investmentProcessor),
+          tierInvestment.getOwner() == address(_saasPaymentProcessor),
           "The TierInvestment was not created through this contract 0."
         );
         _tierInvestments.push(tierInvestment);
@@ -316,14 +315,14 @@ contract DecentralisedInvestmentManager is Interface {
         _allocateInvestment(remainingInvestmentAmount, investorWallet);
       } else {
         // Invest full amount in current tier
-        (_cumReceivedInvestments, tierInvestment) = _investmentProcessor.addInvestmentToCurrentTier(
+        (_cumReceivedInvestments, tierInvestment) = _saasPaymentProcessor.addInvestmentToCurrentTier(
           _cumReceivedInvestments,
           investorWallet,
           currentTier,
           investmentAmount
         );
         require(
-          tierInvestment.getOwner() == address(_investmentProcessor),
+          tierInvestment.getOwner() == address(_saasPaymentProcessor),
           "The TierInvestment was not created through this contract 1."
         );
         _tierInvestments.push(tierInvestment);
@@ -338,7 +337,16 @@ contract DecentralisedInvestmentManager is Interface {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
 
-    require(msg.sender == address(this), "Someone other than main contract tried allocating saas revenue.");
+    string memory someMessage = string(
+      abi.encodePacked(
+        "msg.sender=",
+        abi.encodePacked(msg.sender),
+        "address(this)=",
+        abi.encodePacked(address(this)),
+        "Someone other than main contract tried allocating saas revenue."
+      )
+    );
+    require(msg.sender == address(this), someMessage);
 
     // Transfer the amount to the PaymentSplitter contract
     (bool success, ) = address(_paymentSplitter).call{ value: amount }(
