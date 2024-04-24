@@ -188,4 +188,9 @@ contract DecentralisedInvestmentHelper is Interface {
     customPaymentSplitter = new CustomPaymentSplitter(msg.sender, withdrawers, owedDai);
     return customPaymentSplitter;
   }
+
+  function isWholeDivision(uint256 withRounding, uint256 roundDown) public view returns (bool isWholeDivision) {
+    isWholeDivision = withRounding != roundDown;
+    return isWholeDivision;
+  }
 }

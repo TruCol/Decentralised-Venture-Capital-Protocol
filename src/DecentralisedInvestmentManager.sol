@@ -377,11 +377,6 @@ contract DecentralisedInvestmentManager is Interface {
     return newTierInvestment;
   }
 
-  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
-    isWholeDivision = withRounding != roundDown;
-    return isWholeDivision;
-  }
-
   /**
   @dev Since this is an integer division, which is used to allocate shares,
   the decimals that are discarded by the integer division, in total would add
@@ -406,7 +401,7 @@ contract DecentralisedInvestmentManager is Interface {
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
     bool incomingHasRoundedUp
-  ) private pure returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
+  ) private view returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
 
@@ -416,7 +411,7 @@ contract DecentralisedInvestmentManager is Interface {
     uint256 roundDown = numerator / denominator;
     // uint256 investmentReturn = numerator / denominator;
 
-    if (_isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
+    if (_helper.isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
       investmentReturn = withRoundUp;
       returnedHasRoundedUp = true;
     } else {
