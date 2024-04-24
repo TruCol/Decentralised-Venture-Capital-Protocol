@@ -74,7 +74,7 @@ contract DecentralisedInvestmentHelper is Interface {
     return reachedInvestmentCeiling;
   }
 
-  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public view override returns (bool inRange) {
+  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public pure override returns (bool inRange) {
     if (minVal <= someVal && someVal < maxVal) {
       inRange = true;
     } else {
@@ -185,12 +185,12 @@ contract DecentralisedInvestmentHelper is Interface {
     uint256[] memory owedDai,
     address projectLead
   ) public returns (CustomPaymentSplitter customPaymentSplitter) {
-    customPaymentSplitter = new CustomPaymentSplitter(msg.sender, withdrawers, owedDai);
+    customPaymentSplitter = new CustomPaymentSplitter(withdrawers, owedDai);
     return customPaymentSplitter;
   }
 
-  function isWholeDivision(uint256 withRounding, uint256 roundDown) public view returns (bool isWholeDivision) {
-    isWholeDivision = withRounding != roundDown;
-    return isWholeDivision;
+  function isWholeDivision(uint256 withRounding, uint256 roundDown) public pure returns (bool boolIsWholeDivision) {
+    boolIsWholeDivision = withRounding != roundDown;
+    return boolIsWholeDivision;
   }
 }

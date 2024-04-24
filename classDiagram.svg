@@ -142,7 +142,7 @@
 <text text-anchor="start" x="8" y="-344.7" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;_computeInvestmentReturn(remainingReturn: uint256, saasRevenueForInvestors: uint256, cumRemainingInvestorReturn: uint256, incomingHasRoundedUp: bool): (investmentReturn: uint256, returnedHasRoundedUp: bool)</text>
 <text text-anchor="start" x="8" y="-327.9" font-family="Times,serif" font-size="14.00">Internal:</text>
 <text text-anchor="start" x="8" y="-311.1" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;_allocateInvestment(investmentAmount: uint256, investorWallet: address)</text>
-<text text-anchor="start" x="8" y="-294.3" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;_distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors: uint256, cumRemainingInvestorReturn: uint256)</text>
+<text text-anchor="start" x="8" y="-294.3" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;_computeInvestorReturnssaasRevenueForInvestors: uint256, cumRemainingInvestorReturn: uint256)</text>
 <text text-anchor="start" x="8" y="-277.5" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;_performSaasRevenueAllocation(amount: uint256, receivingWallet: address)</text>
 <text text-anchor="start" x="8" y="-260.7" font-family="Times,serif" font-size="14.00">External:</text>
 <text text-anchor="start" x="8" y="-243.9" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;&lt;&lt;payable&gt;&gt; receiveSaasPayment()</text>
