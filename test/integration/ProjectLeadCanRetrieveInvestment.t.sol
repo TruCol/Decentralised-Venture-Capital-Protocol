@@ -49,7 +49,9 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
-      _projectLeadAddress
+      _projectLeadAddress,
+      12 weeks,
+      0.4 ether
     );
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
@@ -71,9 +73,9 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
 
     // Assert project lead can retrieve investment.
     assertEq(_projectLeadAddress.balance, 0);
-    // vm.prank(address(_investorWallet)); // fail first test.
-    vm.prank(address(_projectLeadAddress)); // fail first test.
-    _dim.withdraw(investmentAmount); // fail first test.
+    // vm.prank(address(_investorWallet));
+    vm.prank(address(_projectLeadAddress));
+    _dim.withdraw(investmentAmount);
     assertEq(_projectLeadAddress.balance, 0.5 ether);
 
     // Assert can make saas payment.

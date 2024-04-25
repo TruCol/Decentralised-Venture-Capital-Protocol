@@ -86,7 +86,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
-      _projectLeadAddress
+      _projectLeadAddress,
+      12 weeks,
+      3 ether
     );
 
     // Assert the _cumReceivedInvestments is 0 after Initialisation.
@@ -102,7 +104,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
-      _projectLeadAddress
+      _projectLeadAddress,
+      12 weeks,
+      3 ether
     );
   }
 
@@ -119,7 +123,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       emptyTiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
-      _projectLeadAddress
+      _projectLeadAddress,
+      12 weeks,
+      3 ether
     );
   }
 
@@ -150,7 +156,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       gappedTiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
-      _projectLeadAddress
+      _projectLeadAddress,
+      12 weeks,
+      3 ether
     );
   }
 

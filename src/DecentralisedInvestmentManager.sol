@@ -51,6 +51,10 @@ contract DecentralisedInvestmentManager is Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   TierInvestment[] private _tierInvestments;
 
+  uint256 private _startTime;
+  uint32 private _raisePeriod;
+  uint256 private _investmentTarget;
+
   event PaymentReceived(address indexed from, uint256 indexed amount);
   event InvestmentReceived(address indexed from, uint256 indexed amount);
 
@@ -63,7 +67,9 @@ contract DecentralisedInvestmentManager is Interface {
     Tier[] memory tiers,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
-    address projectLead
+    address projectLead,
+    uint32 raisePeriod,
+    uint256 investmentTarget
   ) public {
     // Store incoming arguments in contract.
     _projectLeadFracNumerator = projectLeadFracNumerator;
@@ -73,6 +79,10 @@ contract DecentralisedInvestmentManager is Interface {
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
     _saasPaymentProcessor = new SaasPaymentProcessor();
+
+    _startTime = block.timestamp;
+    _raisePeriod = raisePeriod;
+    _investmentTarget = investmentTarget;
 
     // Initialise default values.
     _cumReceivedInvestments = 0;
@@ -104,6 +114,13 @@ contract DecentralisedInvestmentManager is Interface {
       Tier tierOwnedByThisContract = new Tier(someMin, someMax, someMultiple);
       _tiers.push(tierOwnedByThisContract);
     }
+  }
+
+  // Modifier to check if the delay has passed and investment target is unmet
+  modifier onlyAfterDelayAndUnderTarget() {
+    require(block.timestamp >= _startTime + _raisePeriod, "The fund raising period has not passed yet.");
+    require(_cumReceivedInvestments < _investmentTarget, "Investment target reached!");
+    _; // Allows execution of the decorated (triggerReturnAll) function.
   }
 
   /**
@@ -234,6 +251,7 @@ contract DecentralisedInvestmentManager is Interface {
     require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
     // Check if contract has sufficient balance
     require(address(this).balance >= amount, "Insufficient contract balance");
+    require(_cumReceivedInvestments >= _investmentTarget, "Investment target is not yet reached.");
 
     // Transfer funds to user using call{value: } (safer approach)
     (bool success, ) = payable(msg.sender).call{ value: amount }("");
@@ -362,5 +380,16 @@ contract DecentralisedInvestmentManager is Interface {
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
+  }
+
+  // Function that can be called externally to trigger returnAll if conditions are met
+  function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
+    // TODO: return all investments.
+    uint256 nrOfTierInvestments = _tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
+      // Transfer the amount to the PaymentSplitter contract
+      payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
+    }
+    require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
   }
 }
