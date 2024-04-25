@@ -2,7 +2,6 @@
 pragma solidity >=0.8.23;
 
 import { Tier } from "../../src/Tier.sol";
-import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import "forge-std/src/console2.sol"; // Import the console library
 

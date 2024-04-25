@@ -44,7 +44,7 @@ contract CustomPaymentSplitter is Interface {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "The sender of this message is not the owner.");
+    require(msg.sender == _owner, "CustomPaymentSplitter: The sender of this message is not the owner.");
     _;
   }
 

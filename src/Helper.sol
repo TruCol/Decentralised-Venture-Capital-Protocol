@@ -3,7 +3,6 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
-import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
 interface Interface {
@@ -14,6 +13,8 @@ interface Interface {
   function getInvestmentCeiling(Tier[] memory tiers) external view returns (uint256 investmentCeiling);
 
   function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) external view returns (bool inRange);
+
+  function isWholeDivision(uint256 withRounding, uint256 roundDown) external view returns (bool boolIsWholeDivision);
 
   function hasReachedInvestmentCeiling(
     uint256 cumReceivedInvestments,
@@ -72,15 +73,6 @@ contract DecentralisedInvestmentHelper is Interface {
   ) public view override returns (bool reachedInvestmentCeiling) {
     reachedInvestmentCeiling = cumReceivedInvestments >= getInvestmentCeiling(tiers);
     return reachedInvestmentCeiling;
-  }
-
-  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public pure override returns (bool inRange) {
-    if (minVal <= someVal && someVal < maxVal) {
-      inRange = true;
-    } else {
-      inRange = false;
-    }
-    return inRange;
   }
 
   function computeCurrentInvestmentTier(
@@ -175,22 +167,20 @@ contract DecentralisedInvestmentHelper is Interface {
     }
   }
 
-  /**
-  TODO: assert the address[] private _withdrawers; is passed by reference, meaning
-  it is updated after the function is completed, without returning the value.
-  Same for dai.*/
-
-  function initialiseCustomPaymentSplitter(
-    address[] memory withdrawers,
-    uint256[] memory owedDai,
-    address projectLead
-  ) public returns (CustomPaymentSplitter customPaymentSplitter) {
-    customPaymentSplitter = new CustomPaymentSplitter(withdrawers, owedDai);
-    return customPaymentSplitter;
-  }
-
-  function isWholeDivision(uint256 withRounding, uint256 roundDown) public pure returns (bool boolIsWholeDivision) {
+  function isWholeDivision(
+    uint256 withRounding,
+    uint256 roundDown
+  ) public pure override returns (bool boolIsWholeDivision) {
     boolIsWholeDivision = withRounding != roundDown;
     return boolIsWholeDivision;
+  }
+
+  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public pure override returns (bool inRange) {
+    if (minVal <= someVal && someVal < maxVal) {
+      inRange = true;
+    } else {
+      inRange = false;
+    }
+    return inRange;
   }
 }

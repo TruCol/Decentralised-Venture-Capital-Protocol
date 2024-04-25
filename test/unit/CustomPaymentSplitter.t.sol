@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
-import "forge-std/src/console2.sol"; // Import the console library
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
@@ -64,13 +63,13 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
 
   function testOnlyOwnerCanAddPayee() public override {
     vm.prank(address(15));
-    vm.expectRevert(bytes("The sender of this message is not the owner."));
+    vm.expectRevert(bytes("CustomPaymentSplitter: The sender of this message is not the owner."));
     _paymentSplitter.publicAddPayee(address(_paymentSplitter), 20);
   }
 
   function testOnlyOwnerCanAddSharesToPayee() public override {
     vm.prank(address(15));
-    vm.expectRevert(bytes("The sender of this message is not the owner."));
+    vm.expectRevert(bytes("CustomPaymentSplitter: The sender of this message is not the owner."));
     _paymentSplitter.publicAddSharesToPayee(address(_paymentSplitter), 20);
   }
 

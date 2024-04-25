@@ -172,3 +172,19 @@ forge test --vv
 ```
 
 to show check up to where the print statements were printed.
+
+## msg.sender
+
+- If function `foo` in contract `Hello` is called from a contract `Caller`,
+  calls another function `bar` in contract `Hello`: they both have
+  `msg.sender=caller`.
+- If function `foo` in contract `Hello` is called from a contract `Caller`,
+  calls another function `some` in contract `Clouds`: they the
+  `msg.sender=caller` in `foo`, and `msg.sender=hello` in `some`.
+
+In essence, the message.sender refers to the contract that calls the function,
+not to the function that calls the function. So you can have 3
+nested/sequential calls in with the same `msg.sender` in the same contract, but
+as soon as one function is in another contract, the `msg.sender` is that of the
+contract that called that function (still the same if the first call of the
+chain was also in that first contract).

@@ -80,7 +80,7 @@ contract DecentralisedInvestmentManager is Interface {
     // Add the project lead to the withdrawers and set its amount owed to 0.
     _withdrawers.push(projectLead);
     _owedDai.push(0);
-    _paymentSplitter = _helper.initialiseCustomPaymentSplitter(_withdrawers, _owedDai, _projectLead);
+    _paymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
 
     // Specify the different investment tiers in DAI.
     // Validate the provided tiers array (optional)
@@ -166,23 +166,20 @@ contract DecentralisedInvestmentManager is Interface {
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
 
     // Distribute remaining amount to investors (if applicable)Store
-
     if (saasRevenueForInvestors > 0) {
       (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) = _saasPaymentProcessor
-        .computeInvestorReturns(
-          _paymentSplitter,
-          _helper,
-          _tierInvestments,
-          saasRevenueForInvestors,
-          cumRemainingInvestorReturn
-        );
+        .computeInvestorReturns(_helper, _tierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn);
+
       // Perform the allocations.
       for (uint256 i = 0; i < returnTiers.length; i++) {
-        _performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+        if (returnAmounts[i] > 0) {
+          _performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+        }
       }
     }
 
     // Perform transaction and administration for project lead (if applicable)
+
     _performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
     emit PaymentReceived(msg.sender, msg.value);
@@ -303,6 +300,7 @@ contract DecentralisedInvestmentManager is Interface {
           currentTier,
           remainingAmountInTier
         );
+
         require(
           tierInvestment.getOwner() == address(_saasPaymentProcessor),
           "The TierInvestment was not created through this contract 0."
@@ -328,26 +326,29 @@ contract DecentralisedInvestmentManager is Interface {
         _tierInvestments.push(tierInvestment);
       }
     } else {
-      revert("Temaining funds should be returned if the investment ceiling is reached.");
+      revert("Remaining funds should be returned if the investment ceiling is reached.");
     }
   }
 
-  // TODO: include safe handling of gas costs.
+  /**
+  This contract does not check who calls it, which sounds risky, but it is an internal contract,
+  which means it can only be called by this contract or contracts that derive from this one.
+  I assume contracts that derive from this contract are contracts that are initialised within this
+  contract. So as long as this, and those contracts do not allow calling this function with
+  values that are not consistent with the proper use of this function, it is safe.
+  In essence, other functions should not allow calling this function with an amount or
+  wallet address that did not correspond to a SAAS payment. Since this function is only
+  called by receiveSaasPayment function (w.r.t. non-test functions), which contains the
+   logic to only call this if a avlid SAAS payment is received, this is safe.
+
+   Ideally one would make it private instead of internal, such that only this contract is
+   able to call this function, however, to also allow tests to reach this contract, it is
+   made internal.
+  TODO: include safe handling of gas costs.
+   */
   function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
-
-    string memory someMessage = string(
-      abi.encodePacked(
-        "msg.sender=",
-        abi.encodePacked(msg.sender),
-        "address(this)=",
-        abi.encodePacked(address(this)),
-        "Someone other than main contract tried allocating saas revenue."
-      )
-    );
-    require(msg.sender == address(this), someMessage);
-
     // Transfer the amount to the PaymentSplitter contract
     (bool success, ) = address(_paymentSplitter).call{ value: amount }(
       abi.encodeWithSignature("deposit()", receivingWallet)

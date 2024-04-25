@@ -4,11 +4,10 @@ import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function computeInvestorReturns(
-    CustomPaymentSplitter _paymentSplitter,
     DecentralisedInvestmentHelper helper,
     TierInvestment[] memory tierInvestments,
     uint256 saasRevenueForInvestors,
@@ -16,7 +15,6 @@ interface Interface {
   ) external returns (TierInvestment[] memory, uint256[] memory);
 
   function computeInvestmentReturn(
-    CustomPaymentSplitter _paymentSplitter,
     DecentralisedInvestmentHelper helper,
     uint256 remainingReturn,
     uint256 saasRevenueForInvestors,
@@ -33,16 +31,13 @@ interface Interface {
 }
 
 contract SaasPaymentProcessor is Interface {
-  TierInvestment[] private _returnTiers;
-  uint256[] private _returnAmounts;
-
   address private _owner;
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "The sender of this message is not the owner.");
+    require(msg.sender == _owner, "SaasPaymentProcessor: The sender of this message is not the owner.");
     _;
   }
 
@@ -51,41 +46,38 @@ contract SaasPaymentProcessor is Interface {
   }
 
   function computeInvestorReturns(
-    CustomPaymentSplitter _paymentSplitter,
     DecentralisedInvestmentHelper helper,
     TierInvestment[] memory tierInvestments,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
   ) public override returns (TierInvestment[] memory, uint256[] memory) {
-    uint256 cumulativePayout = 0;
-
-    bool hasRoundedUp = false;
+    require(saasRevenueForInvestors > 0, "saasRevenueForInvestors is not larger than 0.");
     uint256 nrOfTierInvestments = tierInvestments.length;
 
-    // TierInvestment[] memory returnTiers = new TierInvestment[](0);
-    // address[] memory returnAddresses = new address[](0);
+    uint256[] memory _returnAmounts = new uint256[](nrOfTierInvestments);
+    TierInvestment[] memory _returnTiers = new TierInvestment[](nrOfTierInvestments);
+
+    uint256 cumulativePayout = 0;
+    bool hasRoundedUp = false;
 
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // Compute how much an investor receives for its investment in this tier.
+
       (uint256 investmentReturn, bool returnHasRoundedUp) = computeInvestmentReturn(
-        _paymentSplitter,
         helper,
         tierInvestments[i].getRemainingReturn(),
         saasRevenueForInvestors,
         cumRemainingInvestorReturn,
         hasRoundedUp
       );
+
       // Booleans are passed by value, so have to overwrite it.
       hasRoundedUp = returnHasRoundedUp;
 
       if (investmentReturn > 0) {
-        // InvestmentReturn memory returnStruct = InvestmentReturn(investmentReturn, tierInvestments[i].getInvestor());
-        // _investmentReturns.push(returnStruct);
         // Allocate that amount to the investor.
-        // performSaasRevenueAllocation(_paymentSplitter, investmentReturn, tierInvestments[i].getInvestor());
-        _returnTiers.push(tierInvestments[i]);
-        _returnAmounts.push(investmentReturn);
-
+        _returnAmounts[i] = investmentReturn;
+        _returnTiers[i] = tierInvestments[i];
         // Track the payout in the tierInvestment.
         tierInvestments[i].publicSetRemainingReturn(tierInvestments[i].getInvestor(), investmentReturn);
         cumulativePayout += investmentReturn;
@@ -104,6 +96,24 @@ contract SaasPaymentProcessor is Interface {
       )
     );
     return (_returnTiers, _returnAmounts);
+  }
+
+  /**
+  @notice This creates a tierInvestment object/contract for the current tier.
+  Since it takes in the current tier, it stores the multiple used for that tier
+  to specify how much the investor may retrieve. Furthermore, it tracks how
+  much investment this contract has received in total using
+  _cumReceivedInvestments.
+   */
+  function addInvestmentToCurrentTier(
+    uint256 cumReceivedInvestments,
+    address investorWallet,
+    Tier currentTier,
+    uint256 newInvestmentAmount
+  ) public override onlyOwner returns (uint256, TierInvestment newTierInvestment) {
+    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+    cumReceivedInvestments += newInvestmentAmount;
+    return (cumReceivedInvestments, newTierInvestment);
   }
 
   /**
@@ -126,15 +136,15 @@ contract SaasPaymentProcessor is Interface {
   yet critical in the safe evaluation of this contract.
   */
   function computeInvestmentReturn(
-    CustomPaymentSplitter _paymentSplitter,
     DecentralisedInvestmentHelper helper,
     uint256 remainingReturn,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
     bool incomingHasRoundedUp
-  ) public view returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
+  ) public view override returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
+    require(denominator > 0, "Denominator not larger than 0");
 
     // Divide with round up.
     uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
@@ -150,23 +160,5 @@ contract SaasPaymentProcessor is Interface {
     }
 
     return (investmentReturn, returnedHasRoundedUp);
-  }
-
-  /**
-  @notice This creates a tierInvestment object/contract for the current tier.
-  Since it takes in the current tier, it stores the multiple used for that tier
-  to specify how much the investor may retrieve. Furthermore, it tracks how
-  much investment this contract has received in total using
-  _cumReceivedInvestments.
-   */
-  function addInvestmentToCurrentTier(
-    uint256 cumReceivedInvestments,
-    address investorWallet,
-    Tier currentTier,
-    uint256 newInvestmentAmount
-  ) public override onlyOwner returns (uint256, TierInvestment newTierInvestment) {
-    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
-    cumReceivedInvestments += newInvestmentAmount;
-    return (cumReceivedInvestments, newTierInvestment);
   }
 }
