@@ -51,7 +51,9 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
-      _projectLeadAddress
+      _projectLeadAddress,
+      12 weeks,
+      3 ether
     );
 
     _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));

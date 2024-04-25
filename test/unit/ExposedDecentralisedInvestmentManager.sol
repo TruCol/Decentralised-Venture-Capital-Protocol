@@ -14,10 +14,19 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
     Tier[] memory tiers,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
-    address projectLeadAddress
+    address projectLeadAddress,
+    uint32 _raisePeriod,
+    uint256 _investmentTarget
   )
     public
-    DecentralisedInvestmentManager(tiers, projectLeadFracNumerator, projectLeadFracDenominator, projectLeadAddress)
+    DecentralisedInvestmentManager(
+      tiers,
+      projectLeadFracNumerator,
+      projectLeadFracDenominator,
+      projectLeadAddress,
+      _raisePeriod,
+      _investmentTarget
+    )
   {
     // Additional logic for ExposedDecentralisedInvestmentManager if needed
   }
