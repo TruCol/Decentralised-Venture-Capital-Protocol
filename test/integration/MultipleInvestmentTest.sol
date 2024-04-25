@@ -4,7 +4,6 @@ import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-
 // Import the main contract that is being tested.
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
@@ -115,6 +114,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 20 ether;
     // Set the msg.sender address to that of the _userWallet for the next call.
+
     vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
     _dim.receiveSaasPayment{ value: saasPaymentAmount }();
@@ -138,9 +138,11 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
+
     paymentSplitter.release(_investorWallet0);
     assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
     assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
+
     followUpSecondInvestment();
   }
 
@@ -198,6 +200,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
     assertTrue(paymentSplitter.isPayee(_investorWallet1), "The _investorWallet0 is not recognised as payee.");
+
     assertEq(
       _dim.getCumReceivedInvestments(),
       _investmentAmount0 + _investmentAmount1,
@@ -212,11 +215,13 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
     // Assert investor can retrieve saas revenue fraction.
     paymentSplitter.release(_investorWallet1);
+
     assertEq(
       paymentSplitter.released(_investorWallet1),
       0.6 ether,
       "The amount released was unexpected for investorWallet1."
     );
+
     assertEq(
       _investorWallet1.balance,
       4 ether - 4 ether + 0.6 ether,

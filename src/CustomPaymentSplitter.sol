@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function deposit() external payable;
@@ -45,7 +44,7 @@ contract CustomPaymentSplitter is Interface {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "The sender of this message is not the owner.");
+    require(msg.sender == _owner, "CustomPaymentSplitter: The sender of this message is not the owner.");
     _;
   }
 

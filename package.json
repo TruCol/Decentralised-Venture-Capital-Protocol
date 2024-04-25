@@ -6,7 +6,8 @@
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.1",
     "gulp": "^5.0.0",
-    "markdownlint-cli": "^0.39.0"
+    "markdownlint-cli": "^0.39.0",
+    "sol2uml": "^2.5.20"
   },
   "description": "",
   "devDependencies": {

@@ -14,6 +14,8 @@ interface Interface {
 
   function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) external view returns (bool inRange);
 
+  function isWholeDivision(uint256 withRounding, uint256 roundDown) external view returns (bool boolIsWholeDivision);
+
   function hasReachedInvestmentCeiling(
     uint256 cumReceivedInvestments,
     Tier[] memory tiers
@@ -71,15 +73,6 @@ contract DecentralisedInvestmentHelper is Interface {
   ) public view override returns (bool reachedInvestmentCeiling) {
     reachedInvestmentCeiling = cumReceivedInvestments >= getInvestmentCeiling(tiers);
     return reachedInvestmentCeiling;
-  }
-
-  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public view override returns (bool inRange) {
-    if (minVal <= someVal && someVal < maxVal) {
-      inRange = true;
-    } else {
-      inRange = false;
-    }
-    return inRange;
   }
 
   function computeCurrentInvestmentTier(
@@ -172,5 +165,22 @@ contract DecentralisedInvestmentHelper is Interface {
       returneCumRemainingInvestorReturn = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
       return returneCumRemainingInvestorReturn;
     }
+  }
+
+  function isWholeDivision(
+    uint256 withRounding,
+    uint256 roundDown
+  ) public pure override returns (bool boolIsWholeDivision) {
+    boolIsWholeDivision = withRounding != roundDown;
+    return boolIsWholeDivision;
+  }
+
+  function isInRange(uint256 minVal, uint256 maxVal, uint256 someVal) public pure override returns (bool inRange) {
+    if (minVal <= someVal && someVal < maxVal) {
+      inRange = true;
+    } else {
+      inRange = false;
+    }
+    return inRange;
   }
 }

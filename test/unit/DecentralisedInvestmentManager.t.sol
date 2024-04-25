@@ -10,6 +10,10 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 // Import the main contract that is being tested.
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
+import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
+import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
+import { TierInvestment } from "../../src/TierInvestment.sol";
+import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
 interface Interface {
   function setUp() external;
@@ -35,6 +39,8 @@ interface Interface {
   function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() external;
 
   function testPerformSaasRevenueAllocation() external;
+
+  function testPerformSaasRevenueAllocationToNonPayee() external;
 }
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
@@ -47,6 +53,15 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   DecentralisedInvestmentManager private _dim;
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
+  SaasPaymentProcessor private _saasPaymentProcessor;
+  DecentralisedInvestmentHelper private _helper;
+  TierInvestment[] private _tierInvestments;
+  ExposedDecentralisedInvestmentManager private _exposed_dim;
+  address payable private _investorWallet1;
+  uint256 private _investmentAmount1;
+
+  address[] private _withdrawers;
+  uint256[] private _owedDai;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
@@ -81,6 +96,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     deal(_investorWallet, 3 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
+
+    // Initialise exposed dim.
+    _exposed_dim = new ExposedDecentralisedInvestmentManager(
+      _tiers,
+      _projectLeadFracNumerator,
+      _projectLeadFracDenominator,
+      _projectLeadAddress
+    );
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
@@ -101,7 +124,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   }
 
   function testReturnFunds() public override {
-    vm.expectRevert(bytes("Temaining funds should be returned if the investment ceiling is reached."));
+    vm.expectRevert(bytes("Remaining funds should be returned if the investment ceiling is reached."));
     _dim.receiveInvestment{ value: 5555 ether }();
 
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
@@ -151,7 +174,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       bytes("Increasing the current investment tier multiple attempted by someone other than project lead.")
     );
     _dim.increaseCurrentMultipleInstantly(1);
-
     vm.prank(_projectLeadAddress);
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
     _dim.increaseCurrentMultipleInstantly(1);
@@ -169,24 +191,13 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   }
 
   function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
-    ExposedDecentralisedInvestmentManager exposed_dim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress
-    );
     vm.prank(_projectLeadAddress);
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
-    exposed_dim.allocateInvestment(0, address(0));
+    _exposed_dim.allocateInvestment(0, address(0));
   }
 
   function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() public override {
-    ExposedDecentralisedInvestmentManager exposed_dim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress
-    );
+    _saasPaymentProcessor = new SaasPaymentProcessor();
 
     uint256 saasRevenueForInvestors = 2;
     uint256 cumRemainingInvestorReturn0;
@@ -203,27 +214,46 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       )
     );
 
-    exposed_dim.distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn0);
+    (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) = _saasPaymentProcessor
+      .computeInvestorReturns(_helper, _tierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn0);
+    // Perform the allocations.
+    uint256 nrOfTiers = returnTiers.length;
+    for (uint256 i = 0; i < nrOfTiers; ++i) {
+      vm.prank(address(_dim));
+      _exposed_dim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+    }
 
-    // Verify you can also do 0, 0 without error.
-    exposed_dim.distributeSaasPaymentFractionToInvestors(0, 0);
+    // Perform the allocations.
+    nrOfTiers = returnTiers.length;
+    for (uint256 i = 0; i < nrOfTiers; ++i) {
+      vm.prank(address(_dim));
+      _exposed_dim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+    }
   }
 
   function testPerformSaasRevenueAllocation() public override {
-    ExposedDecentralisedInvestmentManager exposed_dim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress
-    );
+    _saasPaymentProcessor = new SaasPaymentProcessor();
+    _helper = new DecentralisedInvestmentHelper();
 
     uint256 amountAboveContractBalance = 1;
     address receivingWallet = address(0);
 
+    vm.prank(address(_dim));
     vm.expectRevert(bytes("Error: Insufficient contract balance."));
-    exposed_dim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
+    _exposed_dim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
 
+    vm.prank(address(_dim));
     vm.expectRevert(bytes("The SAAS revenue allocation amount was not larger than 0."));
-    exposed_dim.performSaasRevenueAllocation(0, receivingWallet);
+    _exposed_dim.performSaasRevenueAllocation(0, receivingWallet);
+  }
+
+  function testPerformSaasRevenueAllocationToNonPayee() public override {
+    _saasPaymentProcessor = new SaasPaymentProcessor();
+    _helper = new DecentralisedInvestmentHelper();
+
+    address receivingWallet = address(0);
+    deal(address(_exposed_dim), 20);
+    assertFalse(_exposed_dim.getPaymentSplitter().isPayee(receivingWallet));
+    _exposed_dim.performSaasRevenueAllocation(10, receivingWallet);
   }
 }

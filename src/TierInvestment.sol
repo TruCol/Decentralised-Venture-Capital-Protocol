@@ -10,6 +10,8 @@ interface Interface {
   function getNewInvestmentAmount() external view returns (uint256 newInvestmentAmount);
 
   function getRemainingReturn() external view returns (uint256 remainingReturn);
+
+  function getOwner() external view returns (address);
 }
 
 contract TierInvestment is Interface {
@@ -77,5 +79,9 @@ contract TierInvestment is Interface {
   function getRemainingReturn() public view override returns (uint256 remainingReturn) {
     remainingReturn = _remainingReturn;
     return remainingReturn;
+  }
+
+  function getOwner() public view override returns (address) {
+    return _owner;
   }
 }

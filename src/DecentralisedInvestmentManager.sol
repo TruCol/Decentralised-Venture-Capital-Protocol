@@ -3,8 +3,11 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 import "@openzeppelin/contracts/utils/Strings.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
+
+import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function receiveSaasPayment() external payable;
@@ -44,6 +47,8 @@ contract DecentralisedInvestmentManager is Interface {
   Tier[] private _tiers;
 
   DecentralisedInvestmentHelper private _helper;
+
+  SaasPaymentProcessor private _saasPaymentProcessor;
   TierInvestment[] private _tierInvestments;
 
   event PaymentReceived(address indexed from, uint256 indexed amount);
@@ -65,12 +70,17 @@ contract DecentralisedInvestmentManager is Interface {
     _projectLeadFracDenominator = projectLeadFracDenominator;
     _projectLead = projectLead;
 
-    // Initialise default values.
-    _cumReceivedInvestments = 0;
-    _paymentSplitter = _initialiseCustomPaymentSplitter(_projectLead);
-
     // Initialise contract helper.
     _helper = new DecentralisedInvestmentHelper();
+    _saasPaymentProcessor = new SaasPaymentProcessor();
+
+    // Initialise default values.
+    _cumReceivedInvestments = 0;
+
+    // Add the project lead to the withdrawers and set its amount owed to 0.
+    _withdrawers.push(projectLead);
+    _owedDai.push(0);
+    _paymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
 
     // Specify the different investment tiers in DAI.
     // Validate the provided tiers array (optional)
@@ -95,6 +105,27 @@ contract DecentralisedInvestmentManager is Interface {
       _tiers.push(tierOwnedByThisContract);
     }
   }
+
+  /**
+  Permit counter offer. Allows investors to propose a counter offer that locks
+  up their funds during a period they choose, for a potential ROI multiple that
+  they desire. Within this period, the project lead can decide whether to accept,
+  reject or ignore this offer. If the project lead accepts the offer, it will be
+  added as a tierInvestment. If the project lead rejects the offer, the funds are
+  returned to the investor. If the project lead ignores the offer, the funds are
+  returned to the investor after the lockup period has ended.
+
+  If the proposed ROI multiple is below the current ROI and the investment ceiling
+  has not yet been reached, the offer is accepted automatically at the proposed
+  ROI multiple up to the amount to reach the investment ceiling, or up to the tier
+  whose multiple is lower than the proposed multiple. The remaining investment amount
+  above the investment ceiling will be returned automatically, the remaining investment
+  amount in a tier with a lower multiple than the proposed multiple will be up for
+  acceptance/rejection/ignore for the project lead for the lockup duration,
+  after which the funds will be automatically returned to the investor, if the
+  proposal is not accepted.
+  */
+  // function _receiveCounterOffer() {}
 
   /**
   @notice When a saaspayment is received, the total amount the investors may
@@ -135,12 +166,20 @@ contract DecentralisedInvestmentManager is Interface {
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
 
     // Distribute remaining amount to investors (if applicable)Store
-
     if (saasRevenueForInvestors > 0) {
-      _distributeSaasPaymentFractionToInvestors(saasRevenueForInvestors, cumRemainingInvestorReturn);
+      (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) = _saasPaymentProcessor
+        .computeInvestorReturns(_helper, _tierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn);
+
+      // Perform the allocations.
+      for (uint256 i = 0; i < returnTiers.length; i++) {
+        if (returnAmounts[i] > 0) {
+          _performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+        }
+      }
     }
 
     // Perform transaction and administration for project lead (if applicable)
+
     _performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
 
     emit PaymentReceived(msg.sender, msg.value);
@@ -162,8 +201,6 @@ contract DecentralisedInvestmentManager is Interface {
   recursively calls itself until the whole investment is distributed, or the
   investment ceiling is reached. In case of the latter, the remaining
   investment amount is returned.
-
-
    */
   function receiveInvestment() external payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
@@ -257,7 +294,17 @@ contract DecentralisedInvestmentManager is Interface {
       TierInvestment tierInvestment;
       if (investmentAmount > remainingAmountInTier) {
         // Invest remaining amount in current tier
-        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, remainingAmountInTier);
+        (_cumReceivedInvestments, tierInvestment) = _saasPaymentProcessor.addInvestmentToCurrentTier(
+          _cumReceivedInvestments,
+          investorWallet,
+          currentTier,
+          remainingAmountInTier
+        );
+
+        require(
+          tierInvestment.getOwner() == address(_saasPaymentProcessor),
+          "The TierInvestment was not created through this contract 0."
+        );
         _tierInvestments.push(tierInvestment);
 
         // Invest remaining amount from user
@@ -266,62 +313,42 @@ contract DecentralisedInvestmentManager is Interface {
         _allocateInvestment(remainingInvestmentAmount, investorWallet);
       } else {
         // Invest full amount in current tier
-        tierInvestment = _addInvestmentToCurrentTier(investorWallet, currentTier, investmentAmount);
-
+        (_cumReceivedInvestments, tierInvestment) = _saasPaymentProcessor.addInvestmentToCurrentTier(
+          _cumReceivedInvestments,
+          investorWallet,
+          currentTier,
+          investmentAmount
+        );
+        require(
+          tierInvestment.getOwner() == address(_saasPaymentProcessor),
+          "The TierInvestment was not created through this contract 1."
+        );
         _tierInvestments.push(tierInvestment);
       }
     } else {
-      revert("Temaining funds should be returned if the investment ceiling is reached.");
+      revert("Remaining funds should be returned if the investment ceiling is reached.");
     }
   }
 
-  function _distributeSaasPaymentFractionToInvestors(
-    uint256 saasRevenueForInvestors,
-    uint256 cumRemainingInvestorReturn
-  ) internal {
-    uint256 cumulativePayout = 0;
+  /**
+  This contract does not check who calls it, which sounds risky, but it is an internal contract,
+  which means it can only be called by this contract or contracts that derive from this one.
+  I assume contracts that derive from this contract are contracts that are initialised within this
+  contract. So as long as this, and those contracts do not allow calling this function with
+  values that are not consistent with the proper use of this function, it is safe.
+  In essence, other functions should not allow calling this function with an amount or
+  wallet address that did not correspond to a SAAS payment. Since this function is only
+  called by receiveSaasPayment function (w.r.t. non-test functions), which contains the
+   logic to only call this if a avlid SAAS payment is received, this is safe.
 
-    bool hasRoundedUp = false;
-    uint256 nrOfTierInvestments = _tierInvestments.length;
-    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
-      // Compute how much an investor receives for its investment in this tier.
-      (uint256 investmentReturn, bool returnHasRoundedUp) = _computeInvestmentReturn(
-        _tierInvestments[i].getRemainingReturn(),
-        saasRevenueForInvestors,
-        cumRemainingInvestorReturn,
-        hasRoundedUp
-      );
-      // Booleans are passed by value, so have to overwrite it.
-      hasRoundedUp = returnHasRoundedUp;
-
-      if (investmentReturn > 0) {
-        // Allocate that amount to the investor.
-        _performSaasRevenueAllocation(investmentReturn, _tierInvestments[i].getInvestor());
-
-        // Track the payout in the tierInvestment.
-        _tierInvestments[i].publicSetRemainingReturn(_tierInvestments[i].getInvestor(), investmentReturn);
-        cumulativePayout += investmentReturn;
-      }
-    }
-
-    require(
-      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
-      // cumulativePayout == saasRevenueForInvestors,
-      string.concat(
-        "The cumulativePayout (\n",
-        Strings.toString(cumulativePayout),
-        ") is not equal to the saasRevenueForInvestors (\n",
-        Strings.toString(saasRevenueForInvestors),
-        ")."
-      )
-    );
-  }
-
-  // TODO: include safe handling of gas costs.
+   Ideally one would make it private instead of internal, such that only this contract is
+   able to call this function, however, to also allow tests to reach this contract, it is
+   made internal.
+  TODO: include safe handling of gas costs.
+   */
   function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
-
     // Transfer the amount to the PaymentSplitter contract
     (bool success, ) = address(_paymentSplitter).call{ value: amount }(
       abi.encodeWithSignature("deposit()", receivingWallet)
@@ -335,80 +362,5 @@ contract DecentralisedInvestmentManager is Interface {
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
-  }
-
-  function _initialiseCustomPaymentSplitter(
-    address projectLead
-  ) private returns (CustomPaymentSplitter customPaymentSplitter) {
-    _withdrawers.push(projectLead);
-    _owedDai.push(0);
-    customPaymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
-    return customPaymentSplitter;
-  }
-
-  /**
-  @notice This creates a tierInvestment object/contract for the current tier.
-  Since it takes in the current tier, it stores the multiple used for that tier
-  to specify how much the investor may retrieve. Furthermore, it tracks how
-  much investment this contract has received in total using
-  _cumReceivedInvestments.
-   */
-  function _addInvestmentToCurrentTier(
-    address investorWallet,
-    Tier currentTier,
-    uint256 newInvestmentAmount
-  ) private returns (TierInvestment newTierInvestment) {
-    newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
-    _cumReceivedInvestments += newInvestmentAmount;
-    return newTierInvestment;
-  }
-
-  function _isWholeDivision(uint256 withRounding, uint256 roundDown) private pure returns (bool isWholeDivision) {
-    isWholeDivision = withRounding != roundDown;
-    return isWholeDivision;
-  }
-
-  /**
-  @dev Since this is an integer division, which is used to allocate shares,
-  the decimals that are discarded by the integer division, in total would add
-  up to 1, if the shares are not exact division. Therefore, this function
-  compares the results of the division, with round down vs round up. If the two
-  divisions are the same, it is an exact division of shares. Otherwise, there
-  is one Wei that needs to be added to one of the investor returns to ensure
-  the sum of the fractions add up to the whole original.
-
-  It is currently not clear which investor gets this +1 raise. I tried just
-  checking it only for the first investor, (as I incorrectly assumed if the
-  division is not whole, all investor shares should be not whole). However,
-  that led to an off-by one error. I expect this occurred because, by chance the
-  fraction of the first investor share was whole, whereas another investor
-  share was not whole. So the first investor with a non-whole remaining share
-  fraction gets +1 wei to ensure all the numbers add up correctly. A
-  difference of +- wei is considederd negligible w.r.t. to the investor return,
-  yet critical in the safe evaluation of this contract.
-  */
-  function _computeInvestmentReturn(
-    uint256 remainingReturn,
-    uint256 saasRevenueForInvestors,
-    uint256 cumRemainingInvestorReturn,
-    bool incomingHasRoundedUp
-  ) private pure returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
-    uint256 numerator = remainingReturn * saasRevenueForInvestors;
-    uint256 denominator = cumRemainingInvestorReturn;
-
-    // Divide with round up.
-    uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);
-    // Default Solidity division is rounddown.
-    uint256 roundDown = numerator / denominator;
-    // uint256 investmentReturn = numerator / denominator;
-
-    if (_isWholeDivision(withRoundUp, roundDown) && !incomingHasRoundedUp) {
-      investmentReturn = withRoundUp;
-      returnedHasRoundedUp = true;
-    } else {
-      investmentReturn = roundDown;
-    }
-
-    return (investmentReturn, returnedHasRoundedUp);
   }
 }
