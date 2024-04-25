@@ -251,6 +251,7 @@ contract DecentralisedInvestmentManager is Interface {
     require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
     // Check if contract has sufficient balance
     require(address(this).balance >= amount, "Insufficient contract balance");
+    require(_cumReceivedInvestments >= _investmentTarget, "Investment target is not yet reached.");
 
     // Transfer funds to user using call{value: } (safer approach)
     (bool success, ) = payable(msg.sender).call{ value: amount }("");
