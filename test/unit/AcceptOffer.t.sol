@@ -10,9 +10,6 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 // Import the main contract that is being tested.
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
-// Import the paymentsplitter that has the shares for the investors.
-import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
-
 interface Interface {
   function setUp() external;
 

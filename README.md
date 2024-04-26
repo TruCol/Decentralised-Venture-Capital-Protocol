@@ -127,7 +127,7 @@ forge clean
 Run the tests:
 
 ```sh
-forge test -vvv
+clear && forge test -vvv
 ```
 
 Or to run a single test (function):

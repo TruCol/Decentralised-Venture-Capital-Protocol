@@ -7,12 +7,26 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
+import { Offer } from "../src/ReceiveCounterOffer.sol";
+
 import "forge-std/src/console2.sol"; // Import the console library
+
+// struct Offer {
+//   address payable _offerInvestor;
+//   uint256 _investmentAmount;
+//   uint16 _offerMultiplier;
+//   uint256 _offerDuration; // Time in seconds for project lead to decide
+//   uint256 _offerStartTime;
+//   bool _offerIsAccepted;
+// }
 
 interface Interface {
   function receiveSaasPayment() external payable;
 
   function receiveInvestment() external payable;
+
+  function receiveAcceptedOffer(address payable offerInvestor) external payable;
 
   function withdraw(uint256 amount) external;
 
@@ -46,6 +60,8 @@ contract DecentralisedInvestmentManager is Interface {
   // Custom attributes of the contract.
   Tier[] private _tiers;
 
+  ReceiveCounterOffer private _receiveCounterOffer;
+
   DecentralisedInvestmentHelper private _helper;
 
   SaasPaymentProcessor private _saasPaymentProcessor;
@@ -55,8 +71,21 @@ contract DecentralisedInvestmentManager is Interface {
   uint32 private _raisePeriod;
   uint256 private _investmentTarget;
 
+  uint256 private _offerInvestmentAmount;
+  uint16 private _offerMultiplier;
+  uint256 private _offerDuration; // Time in seconds for project lead to decide
+  uint256 private _offerStartTime;
+  bool private _offerIsAccepted;
+
   event PaymentReceived(address indexed from, uint256 indexed amount);
   event InvestmentReceived(address indexed from, uint256 indexed amount);
+
+  // Modifier to check if the delay has passed and investment target is unmet
+  modifier onlyAfterDelayAndUnderTarget() {
+    require(block.timestamp >= _startTime + _raisePeriod, "The fund raising period has not passed yet.");
+    require(_cumReceivedInvestments < _investmentTarget, "Investment target reached!");
+    _; // Allows execution of the decorated (triggerReturnAll) function.
+  }
 
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
@@ -114,13 +143,7 @@ contract DecentralisedInvestmentManager is Interface {
       Tier tierOwnedByThisContract = new Tier(someMin, someMax, someMultiple);
       _tiers.push(tierOwnedByThisContract);
     }
-  }
-
-  // Modifier to check if the delay has passed and investment target is unmet
-  modifier onlyAfterDelayAndUnderTarget() {
-    require(block.timestamp >= _startTime + _raisePeriod, "The fund raising period has not passed yet.");
-    require(_cumReceivedInvestments < _investmentTarget, "Investment target reached!");
-    _; // Allows execution of the decorated (triggerReturnAll) function.
+    _receiveCounterOffer = new ReceiveCounterOffer(projectLead);
   }
 
   /**
@@ -232,6 +255,19 @@ contract DecentralisedInvestmentManager is Interface {
     emit InvestmentReceived(msg.sender, msg.value);
   }
 
+  function receiveAcceptedOffer(address payable offerInvestor) public payable override {
+    require(msg.value > 0, "The amount invested was not larger than 0.");
+
+    require(
+      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
+      "The investor ceiling is not reached."
+    );
+
+    _allocateInvestment(msg.value, offerInvestor);
+
+    emit InvestmentReceived(offerInvestor, msg.value);
+  }
+
   function increaseCurrentMultipleInstantly(uint256 newMultiple) public override {
     require(
       msg.sender == _projectLead,
@@ -286,6 +322,17 @@ contract DecentralisedInvestmentManager is Interface {
   function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
     projectLeadFracNumerator = _projectLeadFracNumerator;
     return projectLeadFracNumerator;
+  }
+
+  // Function that can be called externally to trigger returnAll if conditions are met
+  function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
+    // TODO: return all investments.
+    uint256 nrOfTierInvestments = _tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
+      // Transfer the amount to the PaymentSplitter contract
+      payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
+    }
+    require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
   }
 
   /**
@@ -380,16 +427,5 @@ contract DecentralisedInvestmentManager is Interface {
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
-  }
-
-  // Function that can be called externally to trigger returnAll if conditions are met
-  function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
-    // TODO: return all investments.
-    uint256 nrOfTierInvestments = _tierInvestments.length;
-    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
-      // Transfer the amount to the PaymentSplitter contract
-      payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
-    }
-    require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
   }
 }
