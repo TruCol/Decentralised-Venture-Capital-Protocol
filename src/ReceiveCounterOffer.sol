@@ -12,7 +12,7 @@ struct Offer {
 }
 
 interface Interface {
-  function makeOffer(uint256 investmentAmount, uint16 multiplier, uint256 duration) external payable;
+  function makeOffer(uint16 multiplier, uint256 duration) external payable;
 
   function getOffer(uint256 offerId) external returns (Offer memory);
 
@@ -51,9 +51,7 @@ contract ReceiveCounterOffer is Interface {
     _projectLead = projectLead;
   }
 
-  function makeOffer(uint256 investmentAmount, uint16 multiplier, uint256 duration) external payable override {
-    require(msg.value == investmentAmount, "Investment amount mismatch");
-
+  function makeOffer(uint16 multiplier, uint256 duration) external payable override {
     offers.push(Offer(payable(msg.sender), msg.value, multiplier, duration, block.timestamp, false));
   }
 
@@ -76,10 +74,7 @@ contract ReceiveCounterOffer is Interface {
     if (accept) {
       offer._offerIsAccepted = true;
       DecentralisedInvestmentManager dim = DecentralisedInvestmentManager(_owner);
-      // address(_owner).receiveAcceptedOffer{ value: offer._investmentAmount }(offer._offerInvestor);
       dim.receiveAcceptedOffer{ value: offer._investmentAmount }(offer._offerInvestor);
-      // _owner.receiveSaasPayment{ value: offer._investmentAmount }();
-      // _owner.receiveSaasPayment.value(msg.value)(msg.sender);
 
       // the transaction is rejected e.g. because the investmentCeiling is reached.
     } else {

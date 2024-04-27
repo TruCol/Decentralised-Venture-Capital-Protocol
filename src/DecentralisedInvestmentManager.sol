@@ -43,6 +43,8 @@ interface Interface {
   function getCurrentTier() external returns (Tier currentTier);
 
   function getProjectLeadFracNumerator() external returns (uint256 projectLeadFracNumerator);
+
+  function getReceiveCounterOffer() external returns (ReceiveCounterOffer);
 }
 
 contract DecentralisedInvestmentManager is Interface {
@@ -322,6 +324,10 @@ contract DecentralisedInvestmentManager is Interface {
   function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
     projectLeadFracNumerator = _projectLeadFracNumerator;
     return projectLeadFracNumerator;
+  }
+
+  function getReceiveCounterOffer() public view override returns (ReceiveCounterOffer) {
+    return _receiveCounterOffer;
   }
 
   // Function that can be called externally to trigger returnAll if conditions are met
