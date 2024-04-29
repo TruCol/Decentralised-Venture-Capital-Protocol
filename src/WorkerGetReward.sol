@@ -1,33 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-struct Reward {
-  uint256 _reward;
-  uint256 _releaseDate;
-}
+import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
-  function getOwner() external view returns (address);
-
-  function addWorkerReward(address worker) external payable;
+  function addWorkerReward(address worker, uint256 retrievalDuration) external payable;
 
   function retreiveWorkerReward(uint256 amount) external;
+
+  function projectLeadRecoversRewards(uint256 amount) external;
 }
 
 contract WorkerGetReward is Interface {
   address private _projectLead;
-  address private _owner;
+
+  uint256 private _projectLeadCanRecoverFrom;
 
   uint256 private _minRetrievalDuration;
   mapping(address => uint256) private _rewards;
-
-  /**
-   * Used to ensure only the owner/creator of the constructor of this contract is
-   *   able to call/use functions that use this function (modifier).
-   */
-  modifier onlyOwner() {
-    require(msg.sender == _owner, "The message is sent by someone other than the owner of this contract.");
-    _;
-  }
 
   /**
    * Constructor for creating a Tier instance. The values cannot be changed
@@ -35,33 +24,45 @@ contract WorkerGetReward is Interface {
    *
    */
   constructor(address projectLead, uint256 minRetrievalDuration) public {
-    _owner = msg.sender;
     _projectLead = projectLead;
     _minRetrievalDuration = minRetrievalDuration;
-
+    _projectLeadCanRecoverFrom = block.timestamp + _minRetrievalDuration;
     // Create mapping of worker rewards.
   }
 
   /**
   TODO: add duration to set minimum projectLead Recover fund date. Ensure project lead cannot
   retrieve funds any earlier. */
-  function addWorkerReward(address worker) public payable override {
-    require(msg.sender == _owner);
+  function addWorkerReward(address worker, uint256 retrievalDuration) public payable override {
     require(msg.value > 0, "Tried to add 0 value to worker reward.");
+    require(retrievalDuration >= _minRetrievalDuration, "Tried to set retrievalDuratin below min.");
+    if (block.timestamp + retrievalDuration > _projectLeadCanRecoverFrom) {
+      _projectLeadCanRecoverFrom = block.timestamp + retrievalDuration;
+    }
     _rewards[worker] += msg.value;
   }
 
+  /**
+  TODO: ensure the worker cannot retrieve funds twice, and test it. */
   function retreiveWorkerReward(uint256 amount) public override {
+    require(amount > 0, "Amount not larger than 0.");
     require(_rewards[msg.sender] >= amount, "Asked more reward than worker can get.");
     require(address(this).balance >= amount, "Tried to payout more than the contract contains.");
 
     uint256 beforeBalance = msg.sender.balance;
     payable(msg.sender).transfer(amount);
+    _rewards[msg.sender] -= amount;
     uint256 afterBalance = msg.sender.balance;
-    require(afterBalance - beforeBalance == amount, "Worker reward not transferred successfully.");
+    require(afterBalance - beforeBalance == amount, "Worker reward not transferred succesxsfully.");
   }
 
-  function getOwner() public view override returns (address) {
-    return _owner;
+  function projectLeadRecoversRewards(uint256 amount) public override {
+    require(msg.sender == _projectLead, "Someone other than projectLead tried to recover rewards.");
+    require(address(this).balance >= amount, "Tried to recover more than the contract contains.");
+    require(
+      block.timestamp > _projectLeadCanRecoverFrom,
+      "ProjectLead tried to recover funds before workers got the chance."
+    );
+    payable(_projectLead).transfer(amount);
   }
 }
