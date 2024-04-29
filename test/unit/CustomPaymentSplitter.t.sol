@@ -3,6 +3,7 @@ pragma solidity >=0.8.23 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
+import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function setUp() external;
@@ -123,10 +124,11 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     // Ensure the investor is a payee of the conhtract.
     _paymentSplitter.publicAddPayee(investorWallet0, returnAmount);
 
-    // Signal th epayment can be released.
+    // Signal the payment can be released.
     _paymentSplitter.release(investorWallet0);
 
     // Release payment again but now 0. TODO: determine why this does not revert.
+    vm.expectRevert("The amount to be paid was not larger than 0.");
     _paymentSplitter.release(investorWallet0);
 
     vm.expectRevert(bytes("The dai for account, was not larger than 0."));
