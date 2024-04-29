@@ -8,6 +8,8 @@ interface Interface {
   function retreiveWorkerReward(uint256 amount) external;
 
   function projectLeadRecoversRewards(uint256 amount) external;
+
+  function getProjectLeadCanRecoverFrom() external returns (uint256);
 }
 
 contract WorkerGetReward is Interface {
@@ -35,7 +37,7 @@ contract WorkerGetReward is Interface {
   retrieve funds any earlier. */
   function addWorkerReward(address worker, uint256 retrievalDuration) public payable override {
     require(msg.value > 0, "Tried to add 0 value to worker reward.");
-    require(retrievalDuration >= _minRetrievalDuration, "Tried to set retrievalDuratin below min.");
+    require(retrievalDuration >= _minRetrievalDuration, "Tried to set retrievalDuration below min.");
     if (block.timestamp + retrievalDuration > _projectLeadCanRecoverFrom) {
       _projectLeadCanRecoverFrom = block.timestamp + retrievalDuration;
     }
@@ -64,5 +66,9 @@ contract WorkerGetReward is Interface {
       "ProjectLead tried to recover funds before workers got the chance."
     );
     payable(_projectLead).transfer(amount);
+  }
+
+  function getProjectLeadCanRecoverFrom() public view override returns (uint256) {
+    return _projectLeadCanRecoverFrom;
   }
 }

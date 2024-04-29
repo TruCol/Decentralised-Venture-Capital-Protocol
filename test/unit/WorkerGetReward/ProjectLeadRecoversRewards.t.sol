@@ -15,11 +15,15 @@ import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 interface Interface {
   function setUp() external;
 
-  function addWorkerRewardOfZero() external;
+  function recoverRewardsWithNonProjectLeadAddress() external;
 
-  function addWorkerRewardWithTooLowDuration() external;
+  function recoverMoreRewardThanContractContains() external;
 
-  function addWorkerRewardValid() external;
+  function recoverBeforeMinDurationHasPassed() external;
+
+  function recoverBeforeMaxDurationHasPassed() external;
+
+  function recoverRewardsWithProjectLead() external;
 }
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
@@ -73,9 +77,13 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     _workerGetReward = _dim.getWorkerGetReward();
   }
 
-  function addWorkerRewardOfZero() public virtual override {}
+  function recoverRewardsWithNonProjectLeadAddress() public virtual override {}
 
-  function addWorkerRewardWithTooLowDuration() public virtual override {}
+  function recoverMoreRewardThanContractContains() public virtual override {}
 
-  function addWorkerRewardValid() public virtual override {}
+  function recoverBeforeMinDurationHasPassed() public virtual override {}
+
+  function recoverBeforeMaxDurationHasPassed() public virtual override {}
+
+  function recoverRewardsWithProjectLead() public virtual override {}
 }

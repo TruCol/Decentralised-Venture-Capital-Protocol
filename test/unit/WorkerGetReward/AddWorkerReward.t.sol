@@ -20,6 +20,12 @@ interface Interface {
   function addWorkerRewardWithTooLowDuration() external;
 
   function addWorkerRewardValid() external;
+
+  function testProjectLeadRecoverDateIsExtended() external;
+
+  function testProjectLeadRecoverDateIsNotExtended() external;
+
+  function testSetRetrievalDurationBelowMin() external;
 }
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
@@ -94,5 +100,25 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     vm.warp(block.timestamp + 4 weeks);
     vm.expectRevert("Tried to set retrievalDuratin below min.");
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 5 weeks);
+  }
+
+  function testProjectLeadRecoverDateIsExtended() public virtual override {
+    address workerAddress = address(0);
+    _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
+    assertEq(_workerGetReward.getProjectLeadCanRecoverFrom(), block.timestamp + 8 weeks);
+  }
+
+  function testProjectLeadRecoverDateIsNotExtended() public virtual override {
+    address workerAddress = address(0);
+    _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 12 weeks);
+    assertEq(_workerGetReward.getProjectLeadCanRecoverFrom(), block.timestamp + 12 weeks);
+    _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
+    assertEq(_workerGetReward.getProjectLeadCanRecoverFrom(), block.timestamp + 12 weeks);
+  }
+
+  function testSetRetrievalDurationBelowMin() public virtual override {
+    address workerAddress = address(0);
+    vm.expectRevert("Tried to set retrievalDuration below min.");
+    _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 7 weeks);
   }
 }

@@ -17,9 +17,7 @@ interface Interface {
 
   function testRetrieveTooLargeRewardForWorker() external;
 
-  function testRetrieveTooLargeRewardForContract() external;
-
-  function testRetrieveWorkerReward() external;
+  function testRetrieveWorkerRewardSuccessfully() external;
 }
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
@@ -90,25 +88,17 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     _workerGetReward.retreiveWorkerReward(2);
   }
 
-  /**
-  TODO: ensure the worker cannot retrieve funds twice, and test it. */
-  function testRetrieveTooLargeRewardForContract() public virtual override {
-    // Retrieve 2 if worker can get 2 and contract only has 1.
-    // Add retrievable of 2 wei to worker.
+  function testRetrieveWorkerRewardSuccessfully() public virtual override {
     address workerAddress = address(0);
+
     _workerGetReward.addWorkerReward{ value: 2 }(workerAddress, 8 weeks);
-    // vm.expectRevert("Asked more reward than worker can get.");
+    vm.warp(block.timestamp + 10 weeks);
+    vm.prank(workerAddress);
     _workerGetReward.retreiveWorkerReward(2);
 
-    // TODO: determine why this does not throw an error, probably because global is not updated.
-    _workerGetReward.retreiveWorkerReward(2);
-  }
-
-  function testRetrieveWorkerReward() public virtual override {
-    address workerAddress = address(0);
-
-    vm.warp(block.timestamp + 4 weeks);
-    vm.expectRevert("Tried to set retrievalDuratin below min.");
-    _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 5 weeks);
+    // Assert worker can only retrieve reward once.
+    vm.prank(workerAddress);
+    vm.expectRevert("Asked more reward than worker can get.");
+    _workerGetReward.retreiveWorkerReward(1);
   }
 }
