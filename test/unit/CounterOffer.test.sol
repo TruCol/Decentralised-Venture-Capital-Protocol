@@ -21,6 +21,12 @@ interface Interface {
   function testRejectCounterOffer() external;
 
   function testAcceptCounterOffer() external;
+
+  function testPullbackOfferOtherThanInvestor() external;
+
+  function testPullbackAcceptedOffer() external;
+
+  function testPullbackOfferExpired() external;
 }
 
 contract CounterOfferTest is PRBTest, StdCheats, Interface {
@@ -138,12 +144,92 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 1, "D: The TierInvestment length was not 1.");
 
     vm.prank(_projectLeadAddress);
-    vm.expectRevert(bytes("Offer already accepted"));
+    vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
-    // vm.prank( _projectLeadAddress);
-    // vm.expectRevert(bytes("Offer already accepted"));
-    // _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+
+    // TODO: assert investor has investment back.
   }
 
-  function testRejectCounterOffer() public virtual override {}
+  function testRejectCounterOffer() public virtual override {
+    _receiveCounterOfferContract = _dim.getReceiveCounterOffer();
+    assertEq(_investorWallet.balance, 3 ether, "Start balance of investor unexpected.");
+    vm.prank(_investorWallet);
+    _receiveCounterOfferContract.makeOffer{ value: 2 ether }(201, 4 weeks);
+    assertEq(_investorWallet.balance, 1 ether, "Balance of investor unexpected after offer.");
+
+    // Assert the amount of TierInvestments is 0.
+    assertEq(_dim.getTierInvestmentLength(), 0, "A: The TierInvestment length was not 0.");
+
+    // Simulate 3 weeks passing by
+    vm.warp(block.timestamp + 3 weeks);
+
+    // Assert the amount of TierInvestments is 0.
+    assertEq(_dim.getTierInvestmentLength(), 0, "C: The TierInvestment length was not 0.");
+
+    // Assert revert when trying to accept the investment.
+    vm.expectRevert(bytes("Only project lead can accept offer"));
+    _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+    assertEq(_investorWallet.balance, 1 ether, "Balance of investor unexpected after offer.");
+
+    vm.prank(_projectLeadAddress);
+    _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+    vm.warp(block.timestamp + 5 weeks);
+
+    vm.prank(_investorWallet);
+    _receiveCounterOfferContract.pullbackOffer(0);
+    assertEq(_investorWallet.balance, 3 ether, "Balance of investor not recovered after reject.");
+
+    assertEq(_dim.getTierInvestmentLength(), 0, "D: The TierInvestment length was not 0.");
+
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
+
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+
+    // TODO: assert investor has investment back.
+  }
+
+  function testPullbackOfferOtherThanInvestor() public virtual override {
+    _receiveCounterOfferContract = _dim.getReceiveCounterOffer();
+    _receiveCounterOfferContract.makeOffer{ value: 40 ether }(201, 4 weeks);
+
+    vm.prank(address(111));
+    vm.expectRevert(bytes("Someone other than the investor tried to retrieve offer."));
+    _receiveCounterOfferContract.pullbackOffer(0);
+  }
+
+  function testPullbackAcceptedOffer() public virtual override {
+    _receiveCounterOfferContract = _dim.getReceiveCounterOffer();
+    _receiveCounterOfferContract.makeOffer{ value: 1 ether }(201, 4 weeks);
+
+    vm.prank(_projectLeadAddress);
+    _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
+
+    vm.expectRevert(bytes("The offer has been accepted, so can't pull back."));
+    _receiveCounterOfferContract.pullbackOffer(0);
+  }
+
+  function testPullbackOfferExpired() public virtual override {
+    assertEq(_investorWallet.balance, 3 ether, "Start balance of investor unexpected.");
+    _receiveCounterOfferContract = _dim.getReceiveCounterOffer();
+    vm.prank(_investorWallet);
+    _receiveCounterOfferContract.makeOffer{ value: 1 ether }(201, 4 weeks);
+    assertEq(_investorWallet.balance, 2 ether, "Start after investment balance of investor unexpected.");
+
+    vm.prank(_investorWallet);
+    vm.expectRevert(bytes("The offer duration has not yet expired."));
+    _receiveCounterOfferContract.pullbackOffer(0);
+
+    vm.prank(_investorWallet);
+    vm.warp(block.timestamp + 5 weeks);
+    _receiveCounterOfferContract.pullbackOffer(0);
+    assertEq(_investorWallet.balance, 3 ether, "Start after revert balance of investor unexpected.");
+  }
 }

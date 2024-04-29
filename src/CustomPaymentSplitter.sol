@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function deposit() external payable;
@@ -76,9 +77,10 @@ contract CustomPaymentSplitter is Interface {
 
     // The amount the payee may receive is equal to the amount of outstanding
     // DAI, subtracted by the amount that has been released to that account.
+
     uint256 payment = _dai[account] - _released[account];
 
-    require(payment >= 0, "The amount to be paid was not larger than 0.");
+    require(payment > 0, "The amount to be paid was not larger than 0.");
     // Track the amount of DAI the payee has received through the release
     // process.
     _released[account] = _released[account] + (payment);

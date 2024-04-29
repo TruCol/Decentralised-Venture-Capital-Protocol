@@ -12,15 +12,6 @@ import { Offer } from "../src/ReceiveCounterOffer.sol";
 
 import "forge-std/src/console2.sol"; // Import the console library
 
-// struct Offer {
-//   address payable _offerInvestor;
-//   uint256 _investmentAmount;
-//   uint16 _offerMultiplier;
-//   uint256 _offerDuration; // Time in seconds for project lead to decide
-//   uint256 _offerStartTime;
-//   bool _offerIsAccepted;
-// }
-
 interface Interface {
   function receiveSaasPayment() external payable;
 
@@ -259,12 +250,11 @@ contract DecentralisedInvestmentManager is Interface {
 
   function receiveAcceptedOffer(address payable offerInvestor) public payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
-
     require(
-      !_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
-      "The investor ceiling is not reached."
+      msg.sender == address(_receiveCounterOffer),
+      "The contract calling this function was not counterOfferContract."
     );
-
+    require(!_helper.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers), "The investor ceiling is reached.");
     _allocateInvestment(msg.value, offerInvestor);
 
     emit InvestmentReceived(offerInvestor, msg.value);
