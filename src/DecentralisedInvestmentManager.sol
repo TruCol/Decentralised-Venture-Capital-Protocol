@@ -424,4 +424,8 @@ contract DecentralisedInvestmentManager is Interface {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
   }
+
+  function addWorkerReward(uint256 amount) public {
+    require(msg.sender == _projectLead, "Other than projectLead tried to reward worker.");
+  }
 }
