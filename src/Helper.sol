@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-
+import "forge-std/src/console2.sol"; // Import the console library
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
@@ -87,15 +87,14 @@ contract DecentralisedInvestmentHelper is Interface {
       revert ReachedInvestmentCeiling(cumReceivedInvestments, "Investment ceiling is reached.");
     }
 
-    // Find the matching tier
-    for (uint256 i = 0; i < nrOfTiers; ++i) {
-      uint256 minVal = tiers[i].getMinVal();
-      uint256 maxVal = tiers[i].getMaxVal();
-      if (isInRange(minVal, maxVal, cumReceivedInvestments)) {
-        currentTier = tiers[i];
-        return currentTier;
-      }
+    uint256 i = 0;
+    while (shouldCheckNextStage(i, nrOfTiers, tiers, cumReceivedInvestments)) {
+      i++;
     }
+    if (i < nrOfTiers) {
+      return tiers[i];
+    }
+
     // Should not reach here with valid tiers
     revert(
       string(
@@ -106,6 +105,19 @@ contract DecentralisedInvestmentHelper is Interface {
         )
       )
     );
+  }
+
+  function shouldCheckNextStage(
+    uint256 i,
+    uint256 nrOfTiers,
+    Tier[] memory tiers,
+    uint256 cumReceivedInvestments
+  ) public view returns (bool) {
+    if (i >= nrOfTiers) {
+      return false;
+    } else {
+      return !isInRange(tiers[i].getMinVal(), tiers[i].getMaxVal(), cumReceivedInvestments);
+    }
   }
 
   function getRemainingAmountInCurrentTier(

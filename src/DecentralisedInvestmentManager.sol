@@ -7,6 +7,7 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
 import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
+import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
 import { Offer } from "../src/ReceiveCounterOffer.sol";
 
@@ -36,6 +37,8 @@ interface Interface {
   function getProjectLeadFracNumerator() external returns (uint256 projectLeadFracNumerator);
 
   function getReceiveCounterOffer() external returns (ReceiveCounterOffer);
+
+  function getWorkerGetReward() external returns (WorkerGetReward);
 }
 
 contract DecentralisedInvestmentManager is Interface {
@@ -69,6 +72,7 @@ contract DecentralisedInvestmentManager is Interface {
   uint256 private _offerDuration; // Time in seconds for project lead to decide
   uint256 private _offerStartTime;
   bool private _offerIsAccepted;
+  WorkerGetReward private _workerGetReward;
 
   event PaymentReceived(address indexed from, uint256 indexed amount);
   event InvestmentReceived(address indexed from, uint256 indexed amount);
@@ -113,6 +117,8 @@ contract DecentralisedInvestmentManager is Interface {
     _withdrawers.push(projectLead);
     _owedDai.push(0);
     _paymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
+
+    _workerGetReward = new WorkerGetReward(_projectLead, 8 weeks);
 
     // Specify the different investment tiers in DAI.
     // Validate the provided tiers array (optional)
@@ -320,6 +326,10 @@ contract DecentralisedInvestmentManager is Interface {
     return _receiveCounterOffer;
   }
 
+  function getWorkerGetReward() public view override returns (WorkerGetReward) {
+    return _workerGetReward;
+  }
+
   // Function that can be called externally to trigger returnAll if conditions are met
   function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
     // TODO: return all investments.
@@ -423,9 +433,5 @@ contract DecentralisedInvestmentManager is Interface {
     } else {
       _paymentSplitter.publicAddSharesToPayee(receivingWallet, amount);
     }
-  }
-
-  function addWorkerReward(uint256 amount) public {
-    require(msg.sender == _projectLead, "Other than projectLead tried to reward worker.");
   }
 }
