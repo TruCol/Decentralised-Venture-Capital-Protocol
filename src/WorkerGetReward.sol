@@ -9,7 +9,7 @@ interface Interface {
 
   function projectLeadRecoversRewards(uint256 amount) external;
 
-  function getProjectLeadCanRecoverFrom() external returns (uint256);
+  function getProjectLeadCanRecoverFromTime() external returns (uint256);
 }
 
 contract WorkerGetReward is Interface {
@@ -55,11 +55,12 @@ contract WorkerGetReward is Interface {
     payable(msg.sender).transfer(amount);
     _rewards[msg.sender] -= amount;
     uint256 afterBalance = msg.sender.balance;
-    require(afterBalance - beforeBalance == amount, "Worker reward not transferred succesxsfully.");
+    require(afterBalance - beforeBalance == amount, "Worker reward not transferred successfully.");
   }
 
   function projectLeadRecoversRewards(uint256 amount) public override {
     require(msg.sender == _projectLead, "Someone other than projectLead tried to recover rewards.");
+    require(amount > 0, "Tried to recover 0 wei.");
     require(address(this).balance >= amount, "Tried to recover more than the contract contains.");
     require(
       block.timestamp > _projectLeadCanRecoverFrom,
@@ -68,7 +69,7 @@ contract WorkerGetReward is Interface {
     payable(_projectLead).transfer(amount);
   }
 
-  function getProjectLeadCanRecoverFrom() public view override returns (uint256) {
+  function getProjectLeadCanRecoverFromTime() public view override returns (uint256) {
     return _projectLeadCanRecoverFrom;
   }
 }

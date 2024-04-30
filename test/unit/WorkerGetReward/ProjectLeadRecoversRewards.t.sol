@@ -15,15 +15,15 @@ import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 interface Interface {
   function setUp() external;
 
-  function recoverRewardsWithNonProjectLeadAddress() external;
+  function testRecoverRewardsWithNonProjectLeadAddress() external;
 
-  function recoverMoreRewardThanContractContains() external;
+  function testRecoverMoreRewardThanContractContains() external;
 
-  function recoverBeforeMinDurationHasPassed() external;
+  function testRecoverBeforeMinDurationHasPassed() external;
 
-  function recoverBeforeMaxDurationHasPassed() external;
+  function testRecoverBeforeMaxDurationHasPassed() external;
 
-  function recoverRewardsWithProjectLead() external;
+  function testRecoverRewardsWithProjectLead() external;
 }
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
@@ -77,13 +77,57 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     _workerGetReward = _dim.getWorkerGetReward();
   }
 
-  function recoverRewardsWithNonProjectLeadAddress() public virtual override {}
+  function testRecoverRewardsWithNonProjectLeadAddress() public virtual override {
+    vm.expectRevert("Someone other than projectLead tried to recover rewards.");
+    _workerGetReward.projectLeadRecoversRewards(1);
+  }
 
-  function recoverMoreRewardThanContractContains() public virtual override {}
+  function testRecoverMoreRewardThanContractContains() public virtual override {
+    // Ask 0 when contract has 0.
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert("Tried to recover 0 wei.");
+    _workerGetReward.projectLeadRecoversRewards(0);
 
-  function recoverBeforeMinDurationHasPassed() public virtual override {}
+    // Ask 1 when contract has 0.
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert("Tried to recover more than the contract contains.");
+    _workerGetReward.projectLeadRecoversRewards(1);
 
-  function recoverBeforeMaxDurationHasPassed() public virtual override {}
+    // Ask 2 when contract has 1.
+    address workerAddress = address(0);
+    _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert("Tried to recover more than the contract contains.");
+    _workerGetReward.projectLeadRecoversRewards(2);
+  }
 
-  function recoverRewardsWithProjectLead() public virtual override {}
+  function testRecoverBeforeMinDurationHasPassed() public virtual override {
+    // Ask 2 when contract has 1.
+    address workerAddress = address(0);
+    _workerGetReward.addWorkerReward{ value: 3 }(workerAddress, 8 weeks);
+    vm.prank(_projectLeadAddress);
+    vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    _workerGetReward.projectLeadRecoversRewards(3);
+    //
+  }
+
+  function testRecoverBeforeMaxDurationHasPassed() public virtual override {
+    // Ask 2 when contract has 1.
+    address workerAddress = address(0);
+    _workerGetReward.addWorkerReward{ value: 3 }(workerAddress, 12 weeks);
+    vm.prank(_projectLeadAddress);
+    vm.warp(block.timestamp + 12 weeks - 1);
+    vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    _workerGetReward.projectLeadRecoversRewards(3);
+  }
+
+  function testRecoverRewardsWithProjectLead() public virtual override {
+    // Ask 2 when contract has 1.
+    address workerAddress = address(0);
+    _workerGetReward.addWorkerReward{ value: 3 }(workerAddress, 12 weeks);
+    vm.prank(_projectLeadAddress);
+    vm.warp(block.timestamp + 12 weeks + 1);
+    // vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    _workerGetReward.projectLeadRecoversRewards(3);
+  }
 }
