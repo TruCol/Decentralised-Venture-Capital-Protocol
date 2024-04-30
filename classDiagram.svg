@@ -187,7 +187,7 @@
 <text text-anchor="start" x="982.81" y="-808.9" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;isInRange(minVal: uint256, maxVal: uint256, someVal: uint256): (inRange: bool)</text>
 <text text-anchor="start" x="982.81" y="-792.1" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;computeCurrentInvestmentTier(cumReceivedInvestments: uint256, tiers: Tier[]): (currentTier: Tier)</text>
 <text text-anchor="start" x="982.81" y="-775.3" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;getRemainingAmountInCurrentTier(cumReceivedInvestments: uint256, someTier: Tier): (remainingAmountInTier: uint256)</text>
-<text text-anchor="start" x="982.81" y="-758.5" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;computeRemainingInvestorPayout(cumRemainingInvestorReturn: uint256, investorFracNumerator: uint256, investorFracDenominator: uint256, paidAmount: uint256): (returneCumRemainingInvestorReturn: uint256)</text>
+<text text-anchor="start" x="982.81" y="-758.5" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;computeRemainingInvestorPayout(cumRemainingInvestorReturn: uint256, investorFracNumerator: uint256, investorFracDenominator: uint256, paidAmount: uint256): (returnCumRemainingInvestorReturn: uint256)</text>
 </g>
 <!-- 3&#45;&gt;5 -->
 <g id="edge7" class="edge">
@@ -246,7 +246,7 @@
 <text text-anchor="start" x="981.06" y="-1185.1" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;&#160;hasReachedInvestmentCeiling(cumReceivedInvestments: uint256, tiers: Tier[]): (reachedInvestmentCeiling: bool)</text>
 <text text-anchor="start" x="981.06" y="-1168.3" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;&#160;computeCurrentInvestmentTier(cumReceivedInvestments: uint256, tiers: Tier[]): (currentTier: Tier)</text>
 <text text-anchor="start" x="981.06" y="-1151.5" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;&#160;getRemainingAmountInCurrentTier(cumReceivedInvestments: uint256, someTier: Tier): (remainingAmountInTier: uint256)</text>
-<text text-anchor="start" x="981.06" y="-1134.7" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;&#160;computeRemainingInvestorPayout(cumRemainingInvestorReturn: uint256, investorFracNumerator: uint256, investorFracDenominator: uint256, paidAmount: uint256): (returneCumRemainingInvestorReturn: uint256)</text>
+<text text-anchor="start" x="981.06" y="-1134.7" font-family="Times,serif" font-size="14.00"> &#160;&#160;&#160;&#160;computeRemainingInvestorPayout(cumRemainingInvestorReturn: uint256, investorFracNumerator: uint256, investorFracDenominator: uint256, paidAmount: uint256): (returnCumRemainingInvestorReturn: uint256)</text>
 </g>
 <!-- 4&#45;&gt;7 -->
 <g id="edge10" class="edge">
