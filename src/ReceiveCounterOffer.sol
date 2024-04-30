@@ -152,7 +152,7 @@ contract ReceiveCounterOffer is Interface {
 
   @param offerId The unique identifier of the offer within the _offers array.
 
-  **/
+  */
   function pullbackOffer(uint256 offerId) public override {
     require(msg.sender == _offers[offerId]._offerInvestor, "Someone other than the investor tried to retrieve offer.");
     if (_offers[offerId]._isDecided) {

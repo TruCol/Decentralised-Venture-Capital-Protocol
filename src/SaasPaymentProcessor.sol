@@ -41,10 +41,29 @@ contract SaasPaymentProcessor is Interface {
     _;
   }
 
+  /**
+  @notice Initializes the SaasPaymentProcessor contract by setting the contract creator as the owner.
+  @dev This constructor sets the sender of the transaction as the owner of the contract.
+  */
   constructor() public {
     _owner = msg.sender;
   }
 
+  /**
+  @notice Computes the payout for investors based on their tier investments and the SAAS revenue and stores it as the
+  remaining return in the TierInvestment objects.
+  @dev This function calculates the returns for investors in each tierInvestment based on their investments and the
+  total SAAS revenue. It ensures that the cumulative payouts match the SAAS revenue. The ROIs are then stored in the
+  tierInvestment  objects as remaining return.
+
+  @param helper An instance of the Helper contract.
+  @param tierInvestments An array of `TierInvestment` structs representing the investments made by investors in each tier.
+  @param saasRevenueForInvestors The total SAAS revenue allocated for investor returns.
+  @param cumRemainingInvestorReturn The cumulative remaining return amount for investors.
+
+  @return _returnTiers An array of `TierInvestment` structs representing the tiers for which returns are computed.
+  @return _returnAmounts An array of uint256 values representing the computed returns for each tier.
+  */
   function computeInvestorReturns(
     Helper helper,
     TierInvestment[] memory tierInvestments,
@@ -62,7 +81,6 @@ contract SaasPaymentProcessor is Interface {
 
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // Compute how much an investor receives for its investment in this tier.
-
       (uint256 investmentReturn, bool returnHasRoundedUp) = computeInvestmentReturn(
         helper,
         tierInvestments[i].getRemainingReturn(),
@@ -99,12 +117,19 @@ contract SaasPaymentProcessor is Interface {
   }
 
   /**
-  @notice This creates a tierInvestment object/contract for the current tier.
-  Since it takes in the current tier, it stores the multiple used for that tier
-  to specify how much the investor may retrieve. Furthermore, it tracks how
-  much investment this contract has received in total using
-  _cumReceivedInvestments.
-   */
+  @notice Creates TierInvestment & updates total investment.
+
+  @dev Creates a new TierInvestment for an investor in the current tier. Then increments total investment received.
+  Since it takes in the current tier, it stores the multiple used for that current tier.
+  Furthermore, it tracks how much investment this contract has received in total using _cumReceivedInvestments.
+
+  @param cumReceivedInvestments Total investment received before this call.
+  @param investorWallet Address of the investor.
+  @param currentTier The tier the investment belongs to.
+  @param newInvestmentAmount The amount of wei invested.
+
+  @return A tuple of (updated total investment, new TierInvestment object).
+  **/
   function addInvestmentToCurrentTier(
     uint256 cumReceivedInvestments,
     address investorWallet,
@@ -117,7 +142,16 @@ contract SaasPaymentProcessor is Interface {
   }
 
   /**
-  @dev Since this is an integer division, which is used to allocate shares,
+  @dev
+  */
+  /**
+  @notice Calculates investment return for investors based on remaining return and investor share.
+
+  @dev This function computes the investment return for investors based on the remaining return available for
+  distribution and the total cumulative remaining investor return. It employs integer division, which discards
+  decimals.
+
+  Since this is an integer division, which is used to allocate shares,
   the decimals that are discarded by the integer division, in total would add
   up to 1, if the shares are not exact division. Therefore, this function
   compares the results of the division, with round down vs round up. If the two
@@ -134,7 +168,17 @@ contract SaasPaymentProcessor is Interface {
   fraction gets +1 wei to ensure all the numbers add up correctly. A
   difference of +- wei is considederd negligible w.r.t. to the investor return,
   yet critical in the safe evaluation of this contract.
-  */
+
+
+  @param helper (Helper): A reference to a helper contract likely containing the isWholeDivision function.
+  @param remainingReturn (uint256): The total remaining wei to be distributed to investors.
+  @param saasRevenueForInvestors (uint256): The total SaaS revenue allocated to investors.
+  @param cumRemainingInvestorReturn (uint256): The total cumulative remaining investor return used as the divisor for calculating share ratios.
+  @param incomingHasRoundedUp (bool): A boolean flag indicating if a previous calculation rounded up.
+
+  @return investmentReturn The calculated investment return for the current investor (uint256).
+  @return returnedHasRoundedUp A boolean indicating if this function rounded up the share (bool).
+  **/
   function computeInvestmentReturn(
     Helper helper,
     uint256 remainingReturn,
