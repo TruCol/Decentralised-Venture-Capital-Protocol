@@ -3,7 +3,7 @@ pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
+import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
@@ -38,7 +38,7 @@ contract HelperTest is PRBTest, StdCheats, Interface {
 
   Tier[] private _tiers;
   Tier[] private _someTiers;
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
@@ -59,7 +59,7 @@ contract HelperTest is PRBTest, StdCheats, Interface {
     _tiers.push(tier2);
 
     // Initialise contract helper.
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
   }
 
   function testExceedInvestmentCeiling() public override {

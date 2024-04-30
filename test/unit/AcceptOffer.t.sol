@@ -93,6 +93,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
     vm.warp(block.timestamp + 15 weeks);
 
+    vm.prank(_projectLeadAddress);
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether.");
   }

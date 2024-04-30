@@ -5,7 +5,7 @@ import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 
 import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
-import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
+import { Helper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
@@ -58,7 +58,7 @@ contract DecentralisedInvestmentManager is Interface {
 
   ReceiveCounterOffer private _receiveCounterOffer;
 
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
 
   SaasPaymentProcessor private _saasPaymentProcessor;
   TierInvestment[] private _tierInvestments;
@@ -85,10 +85,19 @@ contract DecentralisedInvestmentManager is Interface {
   }
 
   /**
-   * Constructor for creating a Tier instance. The values cannot be changed
-   * after creation.
-   *
-   */
+  @notice This contract manages a decentralized investment process.
+
+  @dev This contract facilitates fundraising for a project by allowing investors to contribute
+  currency based on predefined tiers. It tracks the total amount raised, distributes rewards,
+  and handles withdrawals for the project lead and potentially other parties.
+
+  @param tiers: An array of `Tier` objects defining the different investment tiers.
+  @param projectLeadFracNumerator: Numerator representing the project lead's revenue share.
+  @param projectLeadFracDenominator: Denominator representing the project lead's revenue share.
+  @param projectLead: The address of the project lead.
+  @param raisePeriod: The duration of the fundraising campaign in seconds (uint32).
+  @param investmentTarget: The total amount of DAI the campaign aims to raise.
+  */
   constructor(
     Tier[] memory tiers,
     uint256 projectLeadFracNumerator,
@@ -103,7 +112,7 @@ contract DecentralisedInvestmentManager is Interface {
     _projectLead = projectLead;
 
     // Initialise contract helper.
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
     _saasPaymentProcessor = new SaasPaymentProcessor();
 
     _startTime = block.timestamp;
@@ -225,7 +234,11 @@ contract DecentralisedInvestmentManager is Interface {
   }
 
   /**
-  @notice when an investor makes an investment with its investmentWallet, this
+  @notice This function is called to process a SAAS payment received by the contract.
+  It splits the revenue between the project lead and investors based on a predefined
+  ratio.
+
+  When an investor makes an investment with its investmentWallet, this
   contract checks whether the contract is full, or whether it still takes in
   new investments. If the investment ceiling is reached it reverts the
   investment back to the investor. Otherwise it takes it in, and fills up the
@@ -240,7 +253,15 @@ contract DecentralisedInvestmentManager is Interface {
   recursively calls itself until the whole investment is distributed, or the
   investment ceiling is reached. In case of the latter, the remaining
   investment amount is returned.
-   */
+
+  @dev This function first validates that the received SAAS payment is greater than
+  zero. Then, it calculates the revenue distribution for the project lead and investors
+  using helper functions. It performs a sanity check to ensure the distribution matches
+  the total received amount. Finally, it distributes the investor's portion
+  (if any) based on their investment tier and remaining return.
+
+
+  */
   function receiveInvestment() external payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
 
@@ -254,6 +275,22 @@ contract DecentralisedInvestmentManager is Interface {
     emit InvestmentReceived(msg.sender, msg.value);
   }
 
+  /**
+  @notice This function allows an investor to finalize an investment based on a
+  previously accepted counter-offer. This can only be called by the
+  _receiveCounterOffer contract.
+
+  @dev This function validates that the investment amount is greater than zero
+  and the caller is authorized (the `ReceiveCounterOffer` contract). It also checks
+  if the investment ceiling has not been reached. If all requirements are met,
+  the function allocates the investment and emits an `InvestmentReceived` event.
+  TODO: specify and test exactly what happens if a single investment overshoots
+  the investment ceiling.
+
+  @param offerInvestor The address of the investor finalizing the investment.
+
+
+  */
   function receiveAcceptedOffer(address payable offerInvestor) public payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
     require(
@@ -266,6 +303,21 @@ contract DecentralisedInvestmentManager is Interface {
     emit InvestmentReceived(offerInvestor, msg.value);
   }
 
+  /**
+  @notice This function allows the project lead to instantly increase the current
+  investment tier multiplier. (An ROI decrease is not possible.) It does not
+  increase the ROI multiple of previous investments, it only increases the ROI
+  multiple of any new investments.
+
+  @dev This function restricts access to the project lead only. It validates that
+  the new multiplier is strictly greater than the current tier's multiplier.
+  If the requirements are met, it directly updates the current tier's multiplier
+  with the new value.
+
+  @param newMultiple The new multiplier to be applied to the current investment tier.
+
+
+  */
   function increaseCurrentMultipleInstantly(uint256 newMultiple) public override {
     require(
       msg.sender == _projectLead,
@@ -276,7 +328,18 @@ contract DecentralisedInvestmentManager is Interface {
     currentTier.increaseMultiple(newMultiple);
   }
 
-  // Allow project lead to retrieve the investment.
+  /**
+  @notice This function allows the project lead to withdraw funds from the investment pool.
+
+  @dev This function restricts access to the project lead only. It verifies that
+  the contract has sufficient balance and the investment target has been reached
+  before allowing a withdrawal. It then transfers the requested amount to the
+  project lead's address using a secure `call{value: }` approach.
+
+  @param amount The amount of DAI the project lead wants to withdraw.
+
+
+  */
   function withdraw(uint256 amount) public override {
     // Ensure only the project lead can retrieve funds in this contract. The
     // funds in this contract are those coming from investments. Saaspayments are
@@ -287,52 +350,152 @@ contract DecentralisedInvestmentManager is Interface {
     require(address(this).balance >= amount, "Insufficient contract balance");
     require(_cumReceivedInvestments >= _investmentTarget, "Investment target is not yet reached.");
 
-    // Transfer funds to user using call{value: } (safer approach)
+    // Transfer funds to user using call{value: } (safer approach).
     (bool success, ) = payable(msg.sender).call{ value: amount }("");
     require(success, "Investment withdraw by project lead failed");
   }
 
-  // Assuming there's an internal function to get tier investment length
+  /**
+  @notice This function retrieves the total number of investment tiers currently
+  registered in the contract.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It fetches the length of the internal `_tierInvestments` array
+  which stores information about each investment tier.
+
+  @return nrOfTierInvestments The total number of registered investment tiers.
+  */
   function getTierInvestmentLength() public view override returns (uint256 nrOfTierInvestments) {
     nrOfTierInvestments = _tierInvestments.length;
     return nrOfTierInvestments;
   }
 
+  /**
+  @notice This function retrieves the address of the `CustomPaymentSplitter` contract
+  used for managing project lead and investor withdrawals.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It returns the address stored in the internal `_paymentSplitter`
+  variable.
+
+  @return paymentSplitter The address of the `CustomPaymentSplitter` contract.
+  */
   function getPaymentSplitter() public view override returns (CustomPaymentSplitter paymentSplitter) {
     paymentSplitter = _paymentSplitter;
     return paymentSplitter;
   }
 
+  /**
+  @notice This function retrieves the total amount of wei currently raised by the
+  investment campaign.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It returns the value stored in the internal `_cumReceivedInvestments`
+  variable which keeps track of the total amount of investments received.
+
+  @return cumReceivedInvestments The total amount of wei collected through investments.
+  */
   function getCumReceivedInvestments() public view override returns (uint256 cumReceivedInvestments) {
     cumReceivedInvestments = _cumReceivedInvestments;
     return cumReceivedInvestments;
   }
 
+  /**
+  @notice This function retrieves the total remaining return amount available for
+  investors based on the current investment pool and defined tiers.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It utilizes the helper contract `_helper` to calculate the cumulative
+  remaining investor return based on the current investment tiers and the total
+  amount of wei raised.
+
+  @return cumRemainingInvestorReturn The total remaining amount of wei available for investor returns.
+  */
   function getCumRemainingInvestorReturn() public view override returns (uint256 cumRemainingInvestorReturn) {
     return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
   }
 
+  /**
+  @notice This function retrieves the investment tier that corresponds to the current
+  total amount of wei raised.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It utilizes the helper contract `_helper` to determine the current tier
+  based on the predefined investment tiers and the total amount collected through
+  investments (`_cumReceivedInvestments`).
+
+  @return currentTier An object representing the current investment tier.
+  */
   function getCurrentTier() public view override returns (Tier currentTier) {
     currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
     return currentTier;
   }
 
+  /**
+  @notice This function retrieves the fraction of the total revenue allocated to
+  the project lead.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It returns the value stored in the internal
+  `_projectLeadFracNumerator` variable, which represents the numerator of the
+  fraction defining the project lead's revenue share (expressed in WEI).
+
+  @return projectLeadFracNumerator The numerator representing the project lead's revenue share fraction (WEI).
+  */
   function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
     projectLeadFracNumerator = _projectLeadFracNumerator;
     return projectLeadFracNumerator;
   }
 
+  /**
+  @notice This function retrieves the `ReceiveCounterOffer` contract
+  used for processing counter-offers made to investors.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It returns the address stored in the internal `_receiveCounterOffer`
+  variable.
+
+  @return `ReceiveCounterOffer` contract.
+  */
   function getReceiveCounterOffer() public view override returns (ReceiveCounterOffer) {
     return _receiveCounterOffer;
   }
 
+  /**
+  @notice This function retrieves the `WorkerGetReward` contract
+  used for managing project worker reward distribution.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's
+  state. It returns the address stored in the internal `_workerGetReward`
+  variable.
+
+  @return address The address of the `WorkerGetReward` contract.
+  */
   function getWorkerGetReward() public view override returns (WorkerGetReward) {
     return _workerGetReward;
   }
 
-  // Function that can be called externally to trigger returnAll if conditions are met
+  /**
+  @notice This function allows the project lead to initiate a full investor return
+  in case the fundraising target is not met by the deadline.
+
+  @dev This function can only be called by the project lead after the fundraising
+  delay has passed and the investment target has not been reached. It iterates
+  through all investment tiers and transfers the invested amounts back to the
+  corresponding investors using a secure `transfer` approach. Finally, it verifies
+  that the contract balance is zero after the return process.
+
+  **Important Notes:**
+
+  * This function is designed as a safety measure and should only be called if
+  the project fails to reach its funding target.
+  * Project owners should carefully consider the implications of returning funds
+  before calling this function.
+
+
+  */
   function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
-    // TODO: return all investments.
+    require(msg.sender == _projectLead, "Someone other than projectLead tried to return all investments.");
     uint256 nrOfTierInvestments = _tierInvestments.length;
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // Transfer the amount to the PaymentSplitter contract
@@ -342,17 +505,32 @@ contract DecentralisedInvestmentManager is Interface {
   }
 
   /**
-  @notice If the investment ceiling is not reached, it finds the lowest open
-  investment tier, and then computes how much can still be invested in that
-  investment tier. If the investment amount is larger than the amount remaining
-  in that tier, it fills that tier up with a part of the investment using the
-  addInvestmentToCurrentTier function, and recursively calls itself until the
-  investment amount is fully allocated, or Investment ceiling is reached.
-  If the investment amount is equal to- or smaller than the amount remaining in
-  that tier, it adds that amount to the current investment tier using the
-  addInvestmentToCurrentTier. That's it.
+  @notice This internal function allocates a received investment to the appropriate
+  tierInvestment contract(s).
 
-  Made internal instead of private for testing purposes.
+  @dev This function first validates that the investment amount is greater than
+  zero. It then checks if the investment ceiling has been reached. If not, it
+  determines the current investment tier and the remaining amount available in that
+  tier. It allocates the investment following these steps:
+
+  1. If the investment amount is greater than the remaining amount in the current
+  tier:
+    - Invest the remaining amount in the current tier.
+    - Recursively call `_allocateInvestment` with the remaining investment amount
+      to allocate the remaining funds to subsequent tiers.
+
+  2. If the investment amount is less than or equal to the remaining amount in the
+  current tier:
+    - Invest the full amount in the current tier.
+
+  The function utilizes the helper contract `_saasPaymentProcessor` to perform the
+  tier-based investment allocation and keeps track of all investments using the
+  `_tierInvestments` array.
+
+  @param investmentAmount The amount of WEI invested by the investor.
+  @param investorWallet The address of the investor's wallet.
+
+
   */
   function _allocateInvestment(uint256 investmentAmount, address investorWallet) internal {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
@@ -402,6 +580,35 @@ contract DecentralisedInvestmentManager is Interface {
   }
 
   /**
+  @notice This internal function allocates SAAS revenue to a designated wallet address.
+
+  @dev This function performs the following actions:
+
+  1. Validates that the contract has sufficient balance to cover the allocation amount
+  and that the allocation amount is greater than zero.
+
+  2. Transfers the allocation amount (in WEI) to the `CustomPaymentSplitter` contract
+  using a secure `call{value: }` approach. The call includes the `deposit` function
+  signature and the receiving wallet address as arguments.
+
+  3. Verifies the success of the transfer.
+
+  4. Checks if the receiving wallet is already registered as a payee in the
+  `CustomPaymentSplitter` contract.
+
+    - If not, it calls the `publicAddPayee` function of the `CustomPaymentSplitter`
+      contract to add the receiving wallet as a payee with the allocated amount as
+      its initial share.
+
+    - If the receiving wallet is already a payee, it calls the
+      `publicAddSharesToPayee` function of the `CustomPaymentSplitter` contract to
+      increase the existing payee's share by the allocated amount.
+
+  **Important Notes:**
+
+  * This function assumes the existence of a `CustomPaymentSplitter` contract
+  deployed and properly configured for managing project revenue distribution.
+
   This contract does not check who calls it, which sounds risky, but it is an internal contract,
   which means it can only be called by this contract or contracts that derive from this one.
   I assume contracts that derive from this contract are contracts that are initialised within this
@@ -410,13 +617,15 @@ contract DecentralisedInvestmentManager is Interface {
   In essence, other functions should not allow calling this function with an amount or
   wallet address that did not correspond to a SAAS payment. Since this function is only
   called by receiveSaasPayment function (w.r.t. non-test functions), which contains the
-   logic to only call this if a avlid SAAS payment is received, this is safe.
+  logic to only call this if a avlid SAAS payment is received, this is safe.
 
-   Ideally one would make it private instead of internal, such that only this contract is
-   able to call this function, however, to also allow tests to reach this contract, it is
-   made internal.
-  TODO: include safe handling of gas costs.
-   */
+  Ideally one would make it private instead of internal, such that only this contract is
+  able to call this function, however, to also allow tests to reach this contract, it is
+  made internal.
+
+  @param amount The amount of WEI to be allocated as SAAS revenue.
+  @param receivingWallet The address of the wallet that should receive the allocation.
+  */
   function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");

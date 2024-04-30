@@ -8,7 +8,7 @@ import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
-import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
+import { Helper } from "../../src/Helper.sol";
 import { ReceiveCounterOffer } from "../../src/ReceiveCounterOffer.sol";
 
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
@@ -38,7 +38,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   SaasPaymentProcessor private _saasPaymentProcessor;
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
   TierInvestment[] private _tierInvestments;
   ExposedDecentralisedInvestmentManager private _exposed_dim;
   address payable private _investorWallet1;
