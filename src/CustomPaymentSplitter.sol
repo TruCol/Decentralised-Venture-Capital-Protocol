@@ -50,8 +50,37 @@ contract CustomPaymentSplitter is Interface {
   }
 
   /**
-   * @dev Constructor
-   */
+  @notice This constructor initializes the `CustomPaymentSplitter` contract.
+
+  @dev This constructor performs the following actions:
+
+  1. Validates that the provided lists of payees and corresponding amounts owed have
+  the same length. It ensures at least one payee is specified. That implicitly
+  veries that at least one amountsOwed element is given.
+
+  2. Sets the contract owner to the message sender (`msg.sender`). This contract
+  is designed to be initialised by the DecentralisedInvestmentManager contract.
+
+  3. Stores the provided `amountsOwed` array in the internal `_amountsOwed`
+  variable.
+
+  4. Iterates through the `payees` and `amountsOwed` arrays, calling the
+  `_addPayee` internal function for each element to register payees and their
+  initial shares.
+
+  **Important Notes:**
+
+  * The `CustomPaymentSplitter` contract is designed for splitting payments among
+  multiple payees based on predefined shares. It is a modificiation of the
+  PaymentSplitter contract by OpenZeppelin.
+
+  @param payees A list of wallet addresses representing the people that can
+  receive money.
+  @param amountsOwed A list of WEI amounts representing the initial shares
+  allocated to each payee.
+
+  @return None (This function initializes the contract state).
+  */
   constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
     require(payees.length > 0, "There are not more than 0 payees.");
@@ -66,18 +95,40 @@ contract CustomPaymentSplitter is Interface {
   }
 
   /**
-  Doubt: by not requiring msg.sender == account, one allows anyone to trigger
-  the release of the investment funds. This can be inefficient for tax
-  purposes.
-   * @dev Release one of the payee's proportional payment.
-   * @param account Whose payments will be released.
-   */
+  @notice This function allows a payee to claim their outstanding wei balance.
+
+  @dev This function is designed to be called by payees to withdraw their share of
+  collected DAI. It performs the following actions:
+
+  1. Validates that the payee's outstanding wei balance (the difference between
+  their total nr of "shares" and any previous releases) is greater than zero.
+
+  2. Calculates the amount to be paid to the payee by subtracting any previously
+  released wei from their initial share.
+
+  3. Verifies that the calculated payment amount is greater than zero.
+
+  4. Updates the internal accounting for the payee's released wei and the total
+  contract-wide released wei.
+
+  5. Transfers the calculated payment amount of wei to the payee's address using
+  a secure `transfer` approach.
+
+  6. Emits a `PaymentReleased` event to log the payment details.
+
+  **Important Notes:**
+  * Payees are responsible for calling this function to claim their outstanding
+  balances.
+
+  @param account The address of the payee requesting a release.
+
+  @return None (This function modifies internal state variables and transfers funds)
+  */
   function release(address payable account) public override {
     require(_dai[account] > 0, "The dai for account, was not larger than 0.");
 
     // The amount the payee may receive is equal to the amount of outstanding
     // DAI, subtracted by the amount that has been released to that account.
-
     uint256 payment = _dai[account] - _released[account];
 
     require(payment > 0, "The amount to be paid was not larger than 0.");
@@ -112,33 +163,94 @@ contract CustomPaymentSplitter is Interface {
   }
 
   /**
-   * Public counterpart of the _addPayee function, to add users that can withdraw
-   *   funds after constructor initialisation.
-   */
+  @notice This function allows the contract owner to add additional "shares" to an existing payee.
+
+  @dev This function increases the "share" allocation of a registered payee. It performs
+  the following actions:
+
+  1. Validates that the additional share amount (in WEI) is greater than zero.
+
+  2. Verifies that the payee address already exists in the `_dai` mapping (implicit
+  through requirement check).
+
+  3. Updates the payee's share balance in the `_dai` mapping by adding the provided
+  `dai` amount.
+
+  4. Updates the contract-wide total DAI amount by adding the provided `dai` amount.
+
+  5. Emits a `SharesAdded` event to log the details of the share increase.
+
+  **Important Notes:**
+
+  * This function can only be called by the contract owner _dim. It cannot be
+  called by the projectLead.
+  * The payee must already be registered with the contract to receive additional
+  shares.
+
+  @param account The address of the payee to receive additional shares.
+  @param dai The amount of additional DAI shares to be allocated (in WEI).
+
+  @return None (This function modifies internal state variables)
+  */
   function publicAddSharesToPayee(address account, uint256 dai) public override onlyOwner {
     require(dai > 0, "There were 0 dai shares incoming.");
 
-    // TODO: assert account is in _dai array.
-
+    // One can not assert the account is already in _dai, because inherently in
+    // Solidity, a mapping contains all possible options already. So it will
+    // always return true. Furthermore, all values are initialised at 0 for
+    // this mapping, which also is a valid value for an account that is
+    // already in there.
     _dai[account] = _dai[account] + dai;
     _totalDai = _totalDai + dai;
     emit SharesAdded(account, dai);
   }
 
-  // This function can receive Ether from other accounts
+  /**
+  @notice This function is used to deposit funds into the `CustomPaymentSplitter`
+  contract.
+
+  @dev This function allows anyone to deposit funds into the contract. It primarily
+  serves as a way to collect investment funds or other revenue streams. The function
+  logs the deposit details by emitting a `PaymentReceived` event.
+
+  **Important Notes:**
+
+  * There is no restriction on who can call this function.
+  * TODO: Consider implementing access control mechanisms if only specific addresses
+  should be allowed to deposit funds. This may be important because some
+  business logic/balance checks may malfunction if unintentional funds come in.
+
+  @return None (This function modifies the contract balance).
+  */
   function deposit() public payable override {
     // Event to log deposits
     emit PaymentReceived(msg.sender, msg.value);
   }
 
   /**
-   * return the amount already released to an account.
-   */
+  @notice This function retrieves the total amount of wei that has already been released to a specific payee.
+
+  @dev This function is a view function, meaning it doesn't modify the contract's state. It returns the accumulated
+  amount of wei that has been released to the provided payee address.
+
+  @param account The address of the payee for whom to retrieve the released DAI amount.
+
+  @return uint256 The total amount of DAI (in WEI) released to the payee.
+  */
   function released(address account) public view override returns (uint256 amountReleased) {
     amountReleased = _released[account];
     return amountReleased;
   }
 
+  /**
+  @notice This function verifies if a specified address is registered as a payee in the contract.
+
+  @dev This function is a view function and does not modify the contract's state. It iterates through the internal `_payees` array to check if the provided `account` address exists within the list of registered payees.
+
+  @param account The address to be checked against the registered payees.
+
+  @return bool True if the address is a registered payee, False otherwise.
+  */
   function isPayee(address account) public view override returns (bool accountIsPayee) {
     uint256 nrOfPayees = _payees.length;
     accountIsPayee = false;
@@ -152,10 +264,25 @@ contract CustomPaymentSplitter is Interface {
   }
 
   /**
-   * @dev Add a new payee to the contract.
-   * @param account The address of the payee to add.
-   * @param dai_ The number of dai owned by the payee.
-   */
+  @notice This private function adds a new payee to the contract.
+
+  @dev This function is private and can only be called by other functions within the contract. It performs the following actions:
+
+  1. Validates that the payee address is not already registered (by checking if the corresponding `wei` share balance is zero).
+
+  2. Adds the payee's address to the internal `_payees` array.
+
+  3. Sets the payee's initial share balance in the `_dai` mapping.
+
+  4. Updates the contract-wide total DAI amount to reflect the addition of the new payee's share.
+
+  5. Emits a `PayeeAdded` event to log the details of the new payee.
+
+  @param account The address of the payee to be added.
+  @param dai_ The amount of wei allocated as the payee's initial share.
+
+  @return None (This function modifies internal state variables)
+  */
   function _addPayee(address account, uint256 dai_) private {
     require(_dai[account] == 0, "This account already is owed some currency.");
 
