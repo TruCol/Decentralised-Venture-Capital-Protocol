@@ -78,8 +78,6 @@ contract CustomPaymentSplitter is Interface {
   receive money.
   @param amountsOwed A list of WEI amounts representing the initial shares
   allocated to each payee.
-
-  @return None (This function initializes the contract state).
   */
   constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
@@ -122,7 +120,7 @@ contract CustomPaymentSplitter is Interface {
 
   @param account The address of the payee requesting a release.
 
-  @return None (This function modifies internal state variables and transfers funds)
+
   */
   function release(address payable account) public override {
     require(_dai[account] > 0, "The dai for account, was not larger than 0.");
@@ -190,7 +188,6 @@ contract CustomPaymentSplitter is Interface {
   @param account The address of the payee to receive additional shares.
   @param dai The amount of additional DAI shares to be allocated (in WEI).
 
-  @return None (This function modifies internal state variables)
   */
   function publicAddSharesToPayee(address account, uint256 dai) public override onlyOwner {
     require(dai > 0, "There were 0 dai shares incoming.");
@@ -220,7 +217,6 @@ contract CustomPaymentSplitter is Interface {
   should be allowed to deposit funds. This may be important because some
   business logic/balance checks may malfunction if unintentional funds come in.
 
-  @return None (This function modifies the contract balance).
   */
   function deposit() public payable override {
     // Event to log deposits
@@ -235,7 +231,7 @@ contract CustomPaymentSplitter is Interface {
 
   @param account The address of the payee for whom to retrieve the released DAI amount.
 
-  @return uint256 The total amount of DAI (in WEI) released to the payee.
+  @return amountReleased The total amount of DAI (in WEI) released to the payee.
   */
   function released(address account) public view override returns (uint256 amountReleased) {
     amountReleased = _released[account];
@@ -249,7 +245,7 @@ contract CustomPaymentSplitter is Interface {
 
   @param account The address to be checked against the registered payees.
 
-  @return bool True if the address is a registered payee, False otherwise.
+  @return accountIsPayee True if the address is a registered payee, False otherwise.
   */
   function isPayee(address account) public view override returns (bool accountIsPayee) {
     uint256 nrOfPayees = _payees.length;
@@ -281,7 +277,6 @@ contract CustomPaymentSplitter is Interface {
   @param account The address of the payee to be added.
   @param dai_ The amount of wei allocated as the payee's initial share.
 
-  @return None (This function modifies internal state variables)
   */
   function _addPayee(address account, uint256 dai_) private {
     require(_dai[account] == 0, "This account already is owed some currency.");

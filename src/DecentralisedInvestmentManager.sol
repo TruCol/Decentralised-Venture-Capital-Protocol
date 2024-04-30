@@ -260,9 +260,7 @@ contract DecentralisedInvestmentManager is Interface {
   the total received amount. Finally, it distributes the investor's portion
   (if any) based on their investment tier and remaining return.
 
-  @param msg.value The amount of DAI received as the SAAS payment.
 
-  @return None (This function modifies internal state variables)
   */
   function receiveInvestment() external payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
@@ -291,7 +289,7 @@ contract DecentralisedInvestmentManager is Interface {
 
   @param offerInvestor The address of the investor finalizing the investment.
 
-  @return None (This function modifies internal state variables).
+
   */
   function receiveAcceptedOffer(address payable offerInvestor) public payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
@@ -318,7 +316,7 @@ contract DecentralisedInvestmentManager is Interface {
 
   @param newMultiple The new multiplier to be applied to the current investment tier.
 
-  @return None (This function modifies internal state variables)
+
   */
   function increaseCurrentMultipleInstantly(uint256 newMultiple) public override {
     require(
@@ -340,7 +338,7 @@ contract DecentralisedInvestmentManager is Interface {
 
   @param amount The amount of DAI the project lead wants to withdraw.
 
-  @return None (This function modifies the contract balance)
+
   */
   function withdraw(uint256 amount) public override {
     // Ensure only the project lead can retrieve funds in this contract. The
@@ -365,7 +363,7 @@ contract DecentralisedInvestmentManager is Interface {
   state. It fetches the length of the internal `_tierInvestments` array
   which stores information about each investment tier.
 
-  @return uint256 The total number of registered investment tiers.
+  @return nrOfTierInvestments The total number of registered investment tiers.
   */
   function getTierInvestmentLength() public view override returns (uint256 nrOfTierInvestments) {
     nrOfTierInvestments = _tierInvestments.length;
@@ -380,7 +378,7 @@ contract DecentralisedInvestmentManager is Interface {
   state. It returns the address stored in the internal `_paymentSplitter`
   variable.
 
-  @return address The address of the `CustomPaymentSplitter` contract.
+  @return paymentSplitter The address of the `CustomPaymentSplitter` contract.
   */
   function getPaymentSplitter() public view override returns (CustomPaymentSplitter paymentSplitter) {
     paymentSplitter = _paymentSplitter;
@@ -395,7 +393,7 @@ contract DecentralisedInvestmentManager is Interface {
   state. It returns the value stored in the internal `_cumReceivedInvestments`
   variable which keeps track of the total amount of investments received.
 
-  @return uint256 The total amount of wei collected through investments.
+  @return cumReceivedInvestments The total amount of wei collected through investments.
   */
   function getCumReceivedInvestments() public view override returns (uint256 cumReceivedInvestments) {
     cumReceivedInvestments = _cumReceivedInvestments;
@@ -411,7 +409,7 @@ contract DecentralisedInvestmentManager is Interface {
   remaining investor return based on the current investment tiers and the total
   amount of wei raised.
 
-  @return uint256 The total remaining amount of wei available for investor returns.
+  @return cumRemainingInvestorReturn The total remaining amount of wei available for investor returns.
   */
   function getCumRemainingInvestorReturn() public view override returns (uint256 cumRemainingInvestorReturn) {
     return _helper.computeCumRemainingInvestorReturn(_tierInvestments);
@@ -426,7 +424,7 @@ contract DecentralisedInvestmentManager is Interface {
   based on the predefined investment tiers and the total amount collected through
   investments (`_cumReceivedInvestments`).
 
-  @return Tier An object representing the current investment tier.
+  @return currentTier An object representing the current investment tier.
   */
   function getCurrentTier() public view override returns (Tier currentTier) {
     currentTier = _helper.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
@@ -442,7 +440,7 @@ contract DecentralisedInvestmentManager is Interface {
   `_projectLeadFracNumerator` variable, which represents the numerator of the
   fraction defining the project lead's revenue share (expressed in WEI).
 
-  @return uint256 The numerator representing the project lead's revenue share fraction (WEI).
+  @return projectLeadFracNumerator The numerator representing the project lead's revenue share fraction (WEI).
   */
   function getProjectLeadFracNumerator() public view override returns (uint256 projectLeadFracNumerator) {
     projectLeadFracNumerator = _projectLeadFracNumerator;
@@ -494,7 +492,7 @@ contract DecentralisedInvestmentManager is Interface {
   * Project owners should carefully consider the implications of returning funds
   before calling this function.
 
-  @return None (This function modifies the contract balance)
+
   */
   function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
     require(msg.sender == _projectLead, "Someone other than projectLead tried to return all investments.");
@@ -532,7 +530,7 @@ contract DecentralisedInvestmentManager is Interface {
   @param investmentAmount The amount of WEI invested by the investor.
   @param investorWallet The address of the investor's wallet.
 
-  @return None (This function modifies internal state variables)
+
   */
   function _allocateInvestment(uint256 investmentAmount, address investorWallet) internal {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
@@ -627,8 +625,6 @@ contract DecentralisedInvestmentManager is Interface {
 
   @param amount The amount of WEI to be allocated as SAAS revenue.
   @param receivingWallet The address of the wallet that should receive the allocation.
-
-  @return None (This function modifies the contract balance)
   */
   function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
     require(address(this).balance >= amount, "Error: Insufficient contract balance.");

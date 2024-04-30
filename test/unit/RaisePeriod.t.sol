@@ -98,11 +98,16 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     vm.warp(block.timestamp + 3 weeks);
 
     vm.expectRevert(bytes("The fund raising period has not passed yet."));
+    vm.prank(_projectLeadAddress);
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
     vm.warp(block.timestamp + 15 weeks);
 
+    vm.expectRevert(bytes("Someone other than projectLead tried to return all investments."));
+    _dim.triggerReturnAll();
+
+    vm.prank(_projectLeadAddress);
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether.");
   }
