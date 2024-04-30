@@ -27,7 +27,8 @@ contract WorkerGetReward is Interface {
   @dev All parameters are set during construction and cannot be modified afterwards.
 
   @param projectLead The address of the project lead who can recover unclaimed rewards after a minimum duration.
-  @param minRetrievalDuration The minimum duration a worker must wait before they can claim their rewards from the project lead.
+  @param minRetrievalDuration The minimum duration a worker must wait before they can claim their rewards from the
+  project lead.
   */
   constructor(address projectLead, uint256 minRetrievalDuration) public {
     _projectLead = projectLead;
@@ -81,7 +82,8 @@ contract WorkerGetReward is Interface {
   }
 
   /**
-  @notice  This function allows the project lead to recover any unclaimed rewards after the minimum retrieval duration has passed.
+  @notice  This function allows the project lead to recover any unclaimed rewards after the minimum retrieval duration
+  has passed.
 
   @dev The project lead can only recover a non-zero amount up to the contract's current balance, and only after the
   pre-defined wait time has elapsed, ensuring workers have had a chance to claim their rewards first. The wait time is

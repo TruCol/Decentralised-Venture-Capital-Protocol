@@ -241,7 +241,8 @@ contract CustomPaymentSplitter is Interface {
   /**
   @notice This function verifies if a specified address is registered as a payee in the contract.
 
-  @dev This function is a view function and does not modify the contract's state. It iterates through the internal `_payees` array to check if the provided `account` address exists within the list of registered payees.
+  @dev This function is a view function and does not modify the contract's state. It iterates through the
+  internal `_payees` array to check if the provided `account` address exists within the list of registered payees.
 
   @param account The address to be checked against the registered payees.
 
@@ -262,9 +263,11 @@ contract CustomPaymentSplitter is Interface {
   /**
   @notice This private function adds a new payee to the contract.
 
-  @dev This function is private and can only be called by other functions within the contract. It performs the following actions:
+  @dev This function is private and can only be called by other functions within the contract. It performs the
+  following actions:
 
-  1. Validates that the payee address is not already registered (by checking if the corresponding `wei` share balance is zero).
+  1. Validates that the payee address is not already registered (by checking if the corresponding `wei` share balance
+  is zero).
 
   2. Adds the payee's address to the internal `_payees` array.
 

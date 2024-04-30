@@ -75,7 +75,8 @@ contract TierInvestment is Interface {
 
   /**
   @notice Retrieves the address of the investor associated with this TierInvestment object.
-  @dev This function is a view function that returns the address of the investor associated with this TierInvestment object.
+  @dev This function is a view function that returns the address of the investor associated with this TierInvestment
+  object.
   @return investor The address of the investor.
   */
   function getInvestor() public view override returns (address investor) {

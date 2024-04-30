@@ -85,9 +85,11 @@ contract ReceiveCounterOffer is Interface {
   @dev This function enables the project lead to make a decision on an offer stored in the internal _offers array. The
   function performs the following actions:
 
-      Validates that the function caller is the project lead (enforced by the require statement with msg.sender == _projectLead).
+      Validates that the function caller is the project lead (enforced by the require statement
+      with msg.sender == _projectLead).
 
-      Ensures the offer hasn't already been decided upon (enforced by the require statement with !_offers[offerId]._isDecided).
+      Ensures the offer hasn't already been decided upon (enforced by the require statement
+      with !_offers[offerId]._isDecided).
 
       Checks if the offer is still valid by comparing the current timestamp with the offer's start time and duration.
 

@@ -92,12 +92,15 @@ contract Helper is Interface {
   /**
   @notice This function determines if the total amount of received investments has reached the investment ceiling.
 
-  @dev This function is a view function and does not modify the contract's state. It compares the provided `cumReceivedInvestments` (total received WEI) to the investment ceiling retrieved by calling `getInvestmentCeiling(tiers)`.
+  @dev This function is a view function and does not modify the contract's state. It compares the provided
+  `cumReceivedInvestments` (total received WEI) to the investment ceiling retrieved by calling
+  `getInvestmentCeiling(tiers)`.
 
   @param cumReceivedInvestments The cumulative amount of WEI received from investors.
   @param tiers An array of `Tier` structs representing the investment tiers and their configurations.
 
-  @return reachedInvestmentCeiling True if the total received investments have reached or exceeded the investment ceiling, False otherwise.
+  @return reachedInvestmentCeiling True if the total received investments have reached or exceeded the investment
+  ceiling, False otherwise.
   */
   function hasReachedInvestmentCeiling(
     uint256 cumReceivedInvestments,
@@ -110,7 +113,9 @@ contract Helper is Interface {
   /**
   @notice This function identifies the current investment tier based on the total received investments.
 
-  @dev This function is a view function and does not modify the contract's state. It iterates through the provided `tiers` array to find the tier where the `cumReceivedInvestments` (total received WEI) falls within the defined investment range.
+  @dev This function is a view function and does not modify the contract's state. It iterates through the provided
+  `tiers` array to find the tier where the `cumReceivedInvestments` (total received WEI) falls within the defined
+  investment range.
 
   @param cumReceivedInvestments The cumulative amount of WEI received from investors.
   @param tiers An array of `Tier` structs representing the investment tiers and their configurations.
@@ -119,8 +124,10 @@ contract Helper is Interface {
 
   **Important Notes:**
 
-  * The function assumes that the `tiers` array is properly configured with increasing investment thresholds. The tier with the highest threshold should be positioned at the end of the array.
-  * If the `cumReceivedInvestments` reach or exceed the investment ceiling defined by the tiers, the function reverts with a `ReachedInvestmentCeiling` error.
+  * The function assumes that the `tiers` array is properly configured with increasing investment thresholds. The tier
+  with the highest threshold should be positioned at the end of the array.
+  * If the `cumReceivedInvestments` reach or exceed the investment ceiling defined by the tiers, the function reverts
+  with a `ReachedInvestmentCeiling` error.
   */
   function computeCurrentInvestmentTier(
     uint256 cumReceivedInvestments,
@@ -216,7 +223,8 @@ contract Helper is Interface {
   }
 
   /**
-  @notice This function calculates the remaining amount of wei available for payout to investors after the current payout is distributed.
+  @notice This function calculates the remaining amount of wei available for payout to investors after the current
+  payout is distributed.
 
   @dev This function considers the following factors:
 
@@ -227,15 +235,21 @@ contract Helper is Interface {
   The function employs a tiered approach to determine the payout amount for investors:
 
       If there are no remaining funds for investors (cumRemainingInvestorReturn == 0), the function returns 0.
-      If the investor's owed amount is less than the current payout (cumRemainingInvestorReturn * investorFracDenominator < paidAmount * (investorFracNumerator)), the function pays out the investor's entire remaining balance (cumRemainingInvestorReturn).
-      Otherwise, the function calculates the investor's payout based on their fractional share of the current payment (paidAmount). In this case, a division with rounding-up is performed to ensure investors receive their full entitlement during their final payout.
+      If the investor's owed amount is less than the current payout
+      (cumRemainingInvestorReturn * investorFracDenominator < paidAmount * (investorFracNumerator)), the function pays
+      out the investor's entire remaining balance (cumRemainingInvestorReturn).
+      Otherwise, the function calculates the investor's payout based on their fractional share of the current payment
+      (paidAmount). In this case, a division with rounding-up is performed to ensure investors receive their full
+      entitlement during their final payout.
 
-  @param cumRemainingInvestorReturn The total amount of wei remaining for investor payout before the current distribution.
+  @param cumRemainingInvestorReturn The total amount of wei remaining for investor payout before the current
+  distribution.
   @param investorFracNumerator The numerator representing the investor's fractional share.
   @param investorFracDenominator The denominator representing the investor's fractional share.
   @param paidAmount The amount of wei being distributed in the current payout.
 
-  @return returnCumRemainingInvestorReturn The remaining amount of wei available for investor payout after the current distribution.
+  @return returnCumRemainingInvestorReturn The remaining amount of wei available for investor payout after the current
+  distribution.
 
   **/
   function computeRemainingInvestorPayout(
@@ -260,8 +274,8 @@ contract Helper is Interface {
       returnCumRemainingInvestorReturn = cumRemainingInvestorReturn;
       return returnCumRemainingInvestorReturn;
 
-      // In this case, there is not enough SAAS payment received to make the investors whole with this single payment, so
-      // instead they get their fraction of the SAAS payment.
+      // In this case, there is not enough SAAS payment received to make the investors whole with this single payment,
+      // so instead they get their fraction of the SAAS payment.
     } else {
       // Perform division with roundup to ensure the invstors are paid in whole during their last payout without
       // requiring an additional 1 wei payout.
@@ -305,7 +319,8 @@ contract Helper is Interface {
   /**
   @notice This function checks whether a given value lies within a specific inclusive range.
 
-  @dev This function is useful for validating inputs or performing operations within certain value boundaries. It takes three arguments:
+  @dev This function is useful for validating inputs or performing operations within certain value boundaries. It takes
+  three arguments:
 
       minVal: The minimum value of the inclusive range.
       maxVal: The maximum value of the inclusive range.

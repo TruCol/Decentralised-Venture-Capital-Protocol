@@ -57,7 +57,8 @@ contract SaasPaymentProcessor is Interface {
   tierInvestment  objects as remaining return.
 
   @param helper An instance of the Helper contract.
-  @param tierInvestments An array of `TierInvestment` structs representing the investments made by investors in each tier.
+  @param tierInvestments An array of `TierInvestment` structs representing the investments made by investors in each
+  tier.
   @param saasRevenueForInvestors The total SAAS revenue allocated for investor returns.
   @param cumRemainingInvestorReturn The cumulative remaining return amount for investors.
 
@@ -173,7 +174,8 @@ contract SaasPaymentProcessor is Interface {
   @param helper (Helper): A reference to a helper contract likely containing the isWholeDivision function.
   @param remainingReturn (uint256): The total remaining wei to be distributed to investors.
   @param saasRevenueForInvestors (uint256): The total SaaS revenue allocated to investors.
-  @param cumRemainingInvestorReturn (uint256): The total cumulative remaining investor return used as the divisor for calculating share ratios.
+  @param cumRemainingInvestorReturn (uint256): The total cumulative remaining investor return used as the divisor for
+  calculating share ratios.
   @param incomingHasRoundedUp (bool): A boolean flag indicating if a previous calculation rounded up.
 
   @return investmentReturn The calculated investment return for the current investor (uint256).
