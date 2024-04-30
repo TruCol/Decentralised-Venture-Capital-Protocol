@@ -4,7 +4,7 @@ pragma solidity >=0.8.23 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
+import { Helper } from "../../src/Helper.sol";
 
 interface Interface {
   function setUp() external;
@@ -21,12 +21,12 @@ interface Interface {
 }
 
 contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats, Interface {
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
     // Initialise contract helper.
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
   }
 
   /**

@@ -132,7 +132,7 @@
 <text text-anchor="start" x="8" y="-503.9" font-family="Times,serif" font-size="14.00"> &#160;&#160;_paymentSplitter: CustomPaymentSplitter</text>
 <text text-anchor="start" x="8" y="-487.1" font-family="Times,serif" font-size="14.00"> &#160;&#160;_cumReceivedInvestments: uint256</text>
 <text text-anchor="start" x="8" y="-470.3" font-family="Times,serif" font-size="14.00"> &#160;&#160;_tiers: Tier[]</text>
-<text text-anchor="start" x="8" y="-453.5" font-family="Times,serif" font-size="14.00"> &#160;&#160;_helper: DecentralisedInvestmentHelper</text>
+<text text-anchor="start" x="8" y="-453.5" font-family="Times,serif" font-size="14.00"> &#160;&#160;_helper: Helper</text>
 <text text-anchor="start" x="8" y="-436.7" font-family="Times,serif" font-size="14.00"> &#160;&#160;_tierInvestments: TierInvestment[]</text>
 <polyline fill="none" stroke="black" points="0,-428.5 1290.18,-428.5 "/>
 <text text-anchor="start" x="8" y="-411.9" font-family="Times,serif" font-size="14.00">Private:</text>
@@ -177,7 +177,7 @@
 <g id="node6" class="node">
 <title>5</title>
 <polygon fill="#f2f2f2" stroke="black" points="974.81,-750.3 974.81,-934.3 2223.37,-934.3 2223.37,-750.3 974.81,-750.3"/>
-<text text-anchor="middle" x="1599.09" y="-917.7" font-family="Times,serif" font-size="14.00">DecentralisedInvestmentHelper</text>
+<text text-anchor="middle" x="1599.09" y="-917.7" font-family="Times,serif" font-size="14.00">Helper</text>
 <text text-anchor="middle" x="1599.09" y="-900.9" font-family="Times,serif" font-size="14.00">src/Helper.sol</text>
 <polyline fill="none" stroke="black" points="974.81,-892.7 2223.37,-892.7 "/>
 <text text-anchor="start" x="982.81" y="-876.1" font-family="Times,serif" font-size="14.00">Public:</text>

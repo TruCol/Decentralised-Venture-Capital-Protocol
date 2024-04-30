@@ -11,7 +11,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
-import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
+import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
@@ -54,7 +54,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   SaasPaymentProcessor private _saasPaymentProcessor;
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
   TierInvestment[] private _tierInvestments;
   ExposedDecentralisedInvestmentManager private _exposed_dim;
   address payable private _investorWallet1;
@@ -241,7 +241,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
   function testPerformSaasRevenueAllocation() public override {
     _saasPaymentProcessor = new SaasPaymentProcessor();
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
 
     uint256 amountAboveContractBalance = 1;
     address receivingWallet = address(0);
@@ -257,7 +257,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
   function testPerformSaasRevenueAllocationToNonPayee() public override {
     _saasPaymentProcessor = new SaasPaymentProcessor();
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
 
     address receivingWallet = address(0);
     deal(address(_exposed_dim), 20);

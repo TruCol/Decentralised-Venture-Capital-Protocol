@@ -39,7 +39,7 @@ interface Interface {
   ) external pure returns (uint256 returneCumRemainingInvestorReturn);
 }
 
-contract DecentralisedInvestmentHelper is Interface {
+contract Helper is Interface {
   function computeCumRemainingInvestorReturn(
     TierInvestment[] memory tierInvestments
   ) public view override returns (uint256 cumRemainingInvestorReturn) {

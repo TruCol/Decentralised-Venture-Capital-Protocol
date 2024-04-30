@@ -6,7 +6,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Tier } from "../../src/Tier.sol";
-import { DecentralisedInvestmentHelper } from "../../src/Helper.sol";
+import { Helper } from "../../src/Helper.sol";
 
 interface Interface {
   function setUp() external;
@@ -20,13 +20,13 @@ interface Interface {
 
 contract SaasPaymentProcessorTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
   TierInvestment[] private _tierInvestments;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
     _saasPaymentProcessor = new SaasPaymentProcessor();
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
   }
 
   function testOnlyOwnerTriggered() public virtual override {

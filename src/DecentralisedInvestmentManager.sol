@@ -5,7 +5,7 @@ import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 
 import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
-import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
+import { Helper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
@@ -58,7 +58,7 @@ contract DecentralisedInvestmentManager is Interface {
 
   ReceiveCounterOffer private _receiveCounterOffer;
 
-  DecentralisedInvestmentHelper private _helper;
+  Helper private _helper;
 
   SaasPaymentProcessor private _saasPaymentProcessor;
   TierInvestment[] private _tierInvestments;
@@ -112,7 +112,7 @@ contract DecentralisedInvestmentManager is Interface {
     _projectLead = projectLead;
 
     // Initialise contract helper.
-    _helper = new DecentralisedInvestmentHelper();
+    _helper = new Helper();
     _saasPaymentProcessor = new SaasPaymentProcessor();
 
     _startTime = block.timestamp;

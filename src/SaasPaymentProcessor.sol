@@ -2,20 +2,20 @@
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
-import { DecentralisedInvestmentHelper } from "../src/Helper.sol";
+import { Helper } from "../src/Helper.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function computeInvestorReturns(
-    DecentralisedInvestmentHelper helper,
+    Helper helper,
     TierInvestment[] memory tierInvestments,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
   ) external returns (TierInvestment[] memory, uint256[] memory);
 
   function computeInvestmentReturn(
-    DecentralisedInvestmentHelper helper,
+    Helper helper,
     uint256 remainingReturn,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
@@ -46,7 +46,7 @@ contract SaasPaymentProcessor is Interface {
   }
 
   function computeInvestorReturns(
-    DecentralisedInvestmentHelper helper,
+    Helper helper,
     TierInvestment[] memory tierInvestments,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
@@ -136,7 +136,7 @@ contract SaasPaymentProcessor is Interface {
   yet critical in the safe evaluation of this contract.
   */
   function computeInvestmentReturn(
-    DecentralisedInvestmentHelper helper,
+    Helper helper,
     uint256 remainingReturn,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
