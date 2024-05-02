@@ -92,6 +92,9 @@ sudo npm install nodejs
 sudo npm install -g solhint
 solhint --version
 
+# Install Slither (smart contract static analyzer).
+python3 -m pip install slither-analyzer
+
 # Install prettier
 npm install --save-dev --save-exact prettier
 

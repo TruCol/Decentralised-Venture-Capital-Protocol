@@ -82,6 +82,12 @@ repos:
            "--fix", # Automatically fix those issues that can be auto-fixed.
            "--noPrompt", # Do not ask for backup before fix.
          ]
+     # Static code analyzer for solidity.
+     - id: slither
+       name: Slither analysis for smart contracts
+       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
+       language: system
+       files: ^(src/|test/)
 
 # Runs additional tests that are created by the pre-commit software itself.
  - repo: https://github.com/pre-commit/pre-commit-hooks
