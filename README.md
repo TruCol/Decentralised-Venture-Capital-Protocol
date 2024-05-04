@@ -203,7 +203,7 @@ contracts using:
 
 ```sh
 npm link sol2uml --only=production # Install sol2uml
-sol2uml src/
+sol2uml src/ --outputFileName docs/code_diagram.svg
 ```
 
 This will create the `classDiagram.svg` diagram of the code:
