@@ -1,7 +1,6 @@
 [book]
 src = "src"
-manual = "manual"
-title = "SUPERTITLE"
+title = ""
 
 [output.html]
 no-section-label = true

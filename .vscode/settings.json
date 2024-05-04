@@ -8,6 +8,27 @@
   "editor.folding": true,
   "editor.foldingStrategy": "indentation",
   "editor.showFoldingControls": "always",
+  "files.exclude": {
+    "**/.gitkeep": true,
+    "**/browserslist": true,
+    "**/favicon.ico": true,
+    "**/karma.conf.js": true,
+    "**/main.ts": true,
+    "**/polyfills.ts": true,
+    "**/test.ts": true,
+    "**/tsconfig.app.json": true,
+    "**/tsconfig.spec.json": true,
+    "**/tslint.json": true,
+    "*.json": true,
+    ".editorconfig": true,
+    ".gitignore": true,
+    ".vscode": true,
+    "bun.lockb": true,
+    "dist/": true,
+    "e2e/": true,
+    "lcov.info": true,
+    "node_modules/": true
+  },
   "solidity.compileUsingRemoteVersion": "v0.8.25+commit.b61c2a91",
   "solidity.formatter": "forge"
 }
