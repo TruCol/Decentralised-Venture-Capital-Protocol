@@ -12,5 +12,6 @@ contract Deploy is BaseScript {
   }
 
   // To make forge coverage skip this file.
+  // solhint-disable-next-line no-empty-blocks
   function test() public override {}
 }

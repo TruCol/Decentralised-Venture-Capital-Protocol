@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { Tier } from "../../src/Tier.sol";
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
@@ -13,7 +13,6 @@ import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentra
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
-import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
 interface Interface {
   function setUp() external;

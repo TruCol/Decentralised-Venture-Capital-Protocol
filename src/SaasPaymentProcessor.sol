@@ -3,7 +3,7 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { Helper } from "../src/Helper.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 interface Interface {
   function computeInvestorReturns(
