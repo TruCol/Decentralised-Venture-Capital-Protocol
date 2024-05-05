@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-import "@openzeppelin/contracts/utils/Strings.sol";
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 
@@ -9,9 +8,6 @@ import { Helper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
-import { Offer } from "../src/ReceiveCounterOffer.sol";
-
-import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function receiveSaasPayment() external payable;
@@ -36,9 +32,11 @@ interface Interface {
 
   function getProjectLeadFracNumerator() external returns (uint256 projectLeadFracNumerator);
 
-  function getReceiveCounterOffer() external returns (ReceiveCounterOffer);
+  function getReceiveCounterOffer() external returns (ReceiveCounterOffer receiveCounterOffer);
 
-  function getWorkerGetReward() external returns (WorkerGetReward);
+  function getWorkerGetReward() external returns (WorkerGetReward workerGetReward);
+
+  function triggerReturnAll() external;
 }
 
 contract DecentralisedInvestmentManager is Interface {
@@ -79,6 +77,8 @@ contract DecentralisedInvestmentManager is Interface {
 
   // Modifier to check if the delay has passed and investment target is unmet
   modifier onlyAfterDelayAndUnderTarget() {
+    // miners can manipulate time(stamps) seconds, not hours/days.
+    // solhint-disable-next-line not-rely-on-time
     require(block.timestamp >= _startTime + _raisePeriod, "The fund raising period has not passed yet.");
     require(_cumReceivedInvestments < _investmentTarget, "Investment target reached!");
     _; // Allows execution of the decorated (triggerReturnAll) function.
@@ -98,6 +98,8 @@ contract DecentralisedInvestmentManager is Interface {
   @param raisePeriod: The duration of the fundraising campaign in seconds (uint32).
   @param investmentTarget: The total amount of DAI the campaign aims to raise.
   */
+  // solhint-disable-next-line comprehensive-interface
+  // solhint-disable-next-line comprehensive-interface
   constructor(
     Tier[] memory tiers,
     uint256 projectLeadFracNumerator,
@@ -106,44 +108,33 @@ contract DecentralisedInvestmentManager is Interface {
     uint32 raisePeriod,
     uint256 investmentTarget
   ) public {
-    // Store incoming arguments in contract.
+    uint256 nrOfTiers = tiers.length;
+    require(nrOfTiers > 0, "You must provide at least one tier.");
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
     _projectLead = projectLead;
-
-    // Initialise contract helper.
-    _helper = new Helper();
-    _saasPaymentProcessor = new SaasPaymentProcessor();
-
+    // miners can manipulate time(stamps) seconds, not hours/days.
+    // solhint-disable-next-line not-rely-on-time
     _startTime = block.timestamp;
     _raisePeriod = raisePeriod;
     _investmentTarget = investmentTarget;
-
-    // Initialise default values.
+    _helper = new Helper();
+    _saasPaymentProcessor = new SaasPaymentProcessor();
     _cumReceivedInvestments = 0;
 
     // Add the project lead to the withdrawers and set its amount owed to 0.
     _withdrawers.push(projectLead);
     _owedDai.push(0);
     _paymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
-
     _workerGetReward = new WorkerGetReward(_projectLead, 8 weeks);
 
-    // Specify the different investment tiers in DAI.
-    // Validate the provided tiers array (optional)
-    require(tiers.length > 0, "You must provide at least one tier.");
-
-    // Iterate through the tiers and potentially perform additional checks
-    uint256 nrOfTiers = tiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {
-      // You can access tier properties using _tiers[i].getMinVal(), etc.
       if (i > 0) {
         require(
           tiers[i - 1].getMaxVal() == tiers[i].getMinVal(),
           "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
         );
       }
-
       // Recreate the Tier objects because this contract should be the owner.
       uint256 someMin = tiers[i].getMinVal();
       uint256 someMax = tiers[i].getMaxVal();
@@ -180,14 +171,12 @@ contract DecentralisedInvestmentManager is Interface {
   still receive, is calculated and stored in cumRemainingInvestorReturn. */
   function receiveSaasPayment() external payable override {
     require(msg.value > 0, "The SAAS payment was not larger than 0.");
-
     uint256 paidAmount = msg.value; // Assuming msg.value holds the received amount
     uint256 saasRevenueForProjectLead = 0;
     uint256 saasRevenueForInvestors = 0;
 
     // Compute how much the investors can receive together as total ROI.
     uint256 cumRemainingInvestorReturn = _helper.computeCumRemainingInvestorReturn(_tierInvestments);
-
     // Compute the saasRevenue for the investors.
     uint256 investorFracNumerator = _projectLeadFracDenominator - _projectLeadFracNumerator;
 
@@ -213,13 +202,14 @@ contract DecentralisedInvestmentManager is Interface {
     );
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
 
-    // Distribute remaining amount to investors (if applicable)Store
+    // Distribute remaining amount to investors (if applicable).
     if (saasRevenueForInvestors > 0) {
       (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) = _saasPaymentProcessor
         .computeInvestorReturns(_helper, _tierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn);
 
       // Perform the allocations.
-      for (uint256 i = 0; i < returnTiers.length; i++) {
+      uint256 nrOfReturnTiers = returnTiers.length;
+      for (uint256 i = 0; i < nrOfReturnTiers; ++i) {
         if (returnAmounts[i] > 0) {
           _performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
         }
@@ -227,9 +217,7 @@ contract DecentralisedInvestmentManager is Interface {
     }
 
     // Perform transaction and administration for project lead (if applicable)
-
     _performSaasRevenueAllocation(saasRevenueForProjectLead, _projectLead);
-
     emit PaymentReceived(msg.sender, msg.value);
   }
 
@@ -356,6 +344,35 @@ contract DecentralisedInvestmentManager is Interface {
   }
 
   /**
+  @notice This function allows the project lead to initiate a full investor return
+  in case the fundraising target is not met by the deadline.
+
+  @dev This function can only be called by the project lead after the fundraising
+  delay has passed and the investment target has not been reached. It iterates
+  through all investment tiers and transfers the invested amounts back to the
+  corresponding investors using a secure `transfer` approach. Finally, it verifies
+  that the contract balance is zero after the return process.
+
+  **Important Notes:**
+
+  * This function is designed as a safety measure and should only be called if
+  the project fails to reach its funding target.
+  * Project owners should carefully consider the implications of returning funds
+  before calling this function.
+
+
+  */
+  function triggerReturnAll() public override onlyAfterDelayAndUnderTarget {
+    require(msg.sender == _projectLead, "Someone other than projectLead tried to return all investments.");
+    uint256 nrOfTierInvestments = _tierInvestments.length;
+    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
+      // Transfer the amount to the PaymentSplitter contract
+      payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
+    }
+    require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
+  }
+
+  /**
   @notice This function retrieves the total number of investment tiers currently
   registered in the contract.
 
@@ -455,10 +472,11 @@ contract DecentralisedInvestmentManager is Interface {
   state. It returns the address stored in the internal `_receiveCounterOffer`
   variable.
 
-  @return `ReceiveCounterOffer` contract.
+  @return receiveCounterOffer contract.
   */
-  function getReceiveCounterOffer() public view override returns (ReceiveCounterOffer) {
-    return _receiveCounterOffer;
+  function getReceiveCounterOffer() public view override returns (ReceiveCounterOffer receiveCounterOffer) {
+    receiveCounterOffer = _receiveCounterOffer;
+    return receiveCounterOffer;
   }
 
   /**
@@ -469,39 +487,11 @@ contract DecentralisedInvestmentManager is Interface {
   state. It returns the address stored in the internal `_workerGetReward`
   variable.
 
-  @return address The address of the `WorkerGetReward` contract.
+  @return workerGetReward address The address of the `WorkerGetReward` contract.
   */
-  function getWorkerGetReward() public view override returns (WorkerGetReward) {
-    return _workerGetReward;
-  }
-
-  /**
-  @notice This function allows the project lead to initiate a full investor return
-  in case the fundraising target is not met by the deadline.
-
-  @dev This function can only be called by the project lead after the fundraising
-  delay has passed and the investment target has not been reached. It iterates
-  through all investment tiers and transfers the invested amounts back to the
-  corresponding investors using a secure `transfer` approach. Finally, it verifies
-  that the contract balance is zero after the return process.
-
-  **Important Notes:**
-
-  * This function is designed as a safety measure and should only be called if
-  the project fails to reach its funding target.
-  * Project owners should carefully consider the implications of returning funds
-  before calling this function.
-
-
-  */
-  function triggerReturnAll() public onlyAfterDelayAndUnderTarget {
-    require(msg.sender == _projectLead, "Someone other than projectLead tried to return all investments.");
-    uint256 nrOfTierInvestments = _tierInvestments.length;
-    for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
-      // Transfer the amount to the PaymentSplitter contract
-      payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
-    }
-    require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
+  function getWorkerGetReward() public view override returns (WorkerGetReward workerGetReward) {
+    workerGetReward = _workerGetReward;
+    return workerGetReward;
   }
 
   /**

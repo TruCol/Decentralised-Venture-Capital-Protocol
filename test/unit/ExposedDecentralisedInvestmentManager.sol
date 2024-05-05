@@ -3,13 +3,13 @@ pragma solidity >=0.8.23;
 
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import "forge-std/src/console2.sol"; // Import the console library
 
 // interface Interface {
 // function allocateInvestment() external;
 // }
 
 contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager {
+  // solhint-disable-next-line comprehensive-interface
   constructor(
     Tier[] memory tiers,
     uint256 projectLeadFracNumerator,

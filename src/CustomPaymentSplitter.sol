@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function deposit() external payable;
@@ -79,6 +78,7 @@ contract CustomPaymentSplitter is Interface {
   @param amountsOwed A list of WEI amounts representing the initial shares
   allocated to each payee.
   */
+  // solhint-disable-next-line comprehensive-interface
   constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
     require(payees.length > 0, "There are not more than 0 payees.");

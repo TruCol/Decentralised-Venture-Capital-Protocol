@@ -40,8 +40,8 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -81,7 +81,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     deal(_userWallet, 100 ether);
 
     // Initialise exposed dim.
-    _exposed_dim = new ExposedDecentralisedInvestmentManager(
+    _exposedDim = new ExposedDecentralisedInvestmentManager(
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
@@ -101,6 +101,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 0, "B: The TierInvestment length was not 0.");
 
     // Simulate 5 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
 
     // Assert the amount of TierInvestments is 0.
@@ -129,6 +130,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 0, "A: The TierInvestment length was not 0.");
 
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     // Assert the amount of TierInvestments is 0.
@@ -165,6 +167,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 0, "A: The TierInvestment length was not 0.");
 
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     // Assert the amount of TierInvestments is 0.
@@ -177,6 +180,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
 
     vm.prank(_projectLeadAddress);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
 
     vm.prank(_investorWallet);
@@ -228,6 +232,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     _receiveCounterOfferContract.pullbackOffer(0);
 
     vm.prank(_investorWallet);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
     _receiveCounterOfferContract.pullbackOffer(0);
     assertEq(_investorWallet.balance, 3 ether, "Start after revert balance of investor unexpected.");

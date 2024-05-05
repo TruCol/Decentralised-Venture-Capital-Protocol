@@ -4,7 +4,6 @@ import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { Helper } from "../src/Helper.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function computeInvestorReturns(
@@ -45,6 +44,7 @@ contract SaasPaymentProcessor is Interface {
   @notice Initializes the SaasPaymentProcessor contract by setting the contract creator as the owner.
   @dev This constructor sets the sender of the transaction as the owner of the contract.
   */
+  // solhint-disable-next-line comprehensive-interface
   constructor() public {
     _owner = msg.sender;
   }

@@ -2,7 +2,7 @@
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 import { Tier } from "../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import "forge-std/src/console2.sol"; // Import the console library
+
 struct Offer {
   address payable _offerInvestor;
   uint256 _investmentAmount;
@@ -47,6 +47,7 @@ contract ReceiveCounterOffer is Interface {
 
   @param projectLead The address of the project lead who can make and accept counteroffers.
   **/
+  // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead) public {
     _owner = payable(msg.sender);
     _projectLead = projectLead;
@@ -76,6 +77,8 @@ contract ReceiveCounterOffer is Interface {
 
   **/
   function makeOffer(uint16 multiplier, uint256 duration) external payable override {
+    // miners can manipulate time(stamps) seconds, not hours/days.
+    // solhint-disable-next-line not-rely-on-time
     _offers.push(Offer(payable(msg.sender), msg.value, multiplier, duration, block.timestamp, false, false));
   }
 
@@ -117,6 +120,8 @@ contract ReceiveCounterOffer is Interface {
     require(msg.sender == _projectLead, "Only project lead can accept offer");
 
     require(!_offers[offerId]._isDecided, "Offer already rejected or accepted.");
+    // miners can manipulate time(stamps) seconds, not hours/days.
+    // solhint-disable-next-line not-rely-on-time
     require(block.timestamp <= _offers[offerId]._offerStartTime + _offers[offerId]._offerDuration, "Offer expired");
 
     if (accept) {
@@ -161,6 +166,8 @@ contract ReceiveCounterOffer is Interface {
       require(!_offers[offerId]._offerIsAccepted, "The offer has been accepted, so can't pull back.");
     } else {
       require(
+        // miners can manipulate time(stamps) seconds, not hours/days.
+        // solhint-disable-next-line not-rely-on-time
         block.timestamp > _offers[offerId]._offerStartTime + _offers[offerId]._offerDuration,
         "The offer duration has not yet expired."
       );

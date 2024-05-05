@@ -24,7 +24,7 @@ interface Interface {
 contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLeadAddress;
   address payable private _investorWallet0;
-  address payable private _investorWallet1;
+  address payable private _investorWalletA;
   address private _userWallet;
   Tier[] private _tiers;
   uint256 private _investmentAmount0;
@@ -68,8 +68,8 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
     _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet0, 3 ether);
-    _investorWallet1 = payable(address(uint160(uint256(keccak256(bytes("2"))))));
-    deal(_investorWallet1, 4 ether);
+    _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
+    deal(_investorWalletA, 4 ether);
 
     _userWallet = address(uint160(uint256(keccak256(bytes("3")))));
     deal(_userWallet, 100 ether);
@@ -145,7 +145,7 @@ the multiple of the xecond tier) = 72.5 ether.
     );
 
     _investmentAmount1 = 4 ether;
-    vm.prank(address(_investorWallet1));
+    vm.prank(address(_investorWalletA));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: _investmentAmount1 }();
 
@@ -189,7 +189,7 @@ the multiple of the xecond tier) = 72.5 ether.
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWallet1), "The _investorWallet0 is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_investorWalletA), "The _investorWallet0 is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
       _investmentAmount0 + _investmentAmount1,
@@ -203,14 +203,14 @@ the multiple of the xecond tier) = 72.5 ether.
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet1);
+    paymentSplitter.release(_investorWalletA);
     assertEq(
-      paymentSplitter.released(_investorWallet1),
+      paymentSplitter.released(_investorWalletA),
       0.6 ether,
       "The amount released was unexpected for investorWallet1."
     );
     assertEq(
-      _investorWallet1.balance,
+      _investorWalletA.balance,
       4 ether - 4 ether + 0.6 ether,
       "The balance of the investorWallet1 was unexpected."
     );

@@ -37,8 +37,8 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -116,6 +116,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 3 }(workerAddress, 12 weeks);
     vm.prank(_projectLeadAddress);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 12 weeks - 1);
     vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
     _workerGetReward.projectLeadRecoversRewards(3);
@@ -126,6 +127,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 3 }(workerAddress, 12 weeks);
     vm.prank(_projectLeadAddress);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 12 weeks + 1);
     // vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
     _workerGetReward.projectLeadRecoversRewards(3);

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
 import { Tier } from "../../src/Tier.sol";
-import "forge-std/src/console2.sol"; // Import the console library
-import "forge-std/src/Vm.sol"; // For manipulating time
+import "forge-std/src/Vm.sol" as vm;
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -21,7 +20,7 @@ interface Interface {
 contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLeadAddress;
   address payable private _investorWallet0;
-  address payable private _investorWallet1;
+  address payable private _investorWalletA;
   Tier[] private _tiers;
   uint256 private _investmentAmount0;
   uint256 private _investmentAmount1;
@@ -53,19 +52,19 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     _tiers.push(tier2);
 
     // assertEq(address(_projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      0.6 ether
-    );
+    _dim = new DecentralisedInvestmentManager({
+      tiers: _tiers,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: _projectLeadFracDenominator,
+      projectLead: _projectLeadAddress,
+      raisePeriod: 12 weeks,
+      investmentTarget: 0.6 ether
+    });
 
     _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet0, 3 ether);
-    _investorWallet1 = payable(address(uint160(uint256(keccak256(bytes("2"))))));
-    deal(_investorWallet1, 4 ether);
+    _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
+    deal(_investorWalletA, 4 ether);
 
     _investmentAmount0 = 0.5 ether;
 
@@ -82,15 +81,16 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   was made, so the investor still gets a multiple of 10, yielding a return of 5
   ether.
    */
-
   function testRaisePeriodReturnSingleInvestment() public virtual override {
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     vm.expectRevert(bytes("The fund raising period has not passed yet."));
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 15 weeks);
 
     vm.prank(_projectLeadAddress);
@@ -100,6 +100,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
   function testKeepInvestmentsForSuccesfullRaise() public virtual override {
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     vm.expectRevert(bytes("The fund raising period has not passed yet."));
@@ -111,6 +112,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: 2.5 ether }();
 
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 15 weeks);
 
     vm.expectRevert(bytes("Investment target reached!"));

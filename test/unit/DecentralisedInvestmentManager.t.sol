@@ -56,8 +56,8 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -100,7 +100,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     deal(_userWallet, 100 ether);
 
     // Initialise exposed dim.
-    _exposed_dim = new ExposedDecentralisedInvestmentManager(
+    _exposedDim = new ExposedDecentralisedInvestmentManager(
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,
@@ -201,7 +201,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
     vm.prank(_projectLeadAddress);
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
-    _exposed_dim.allocateInvestment(0, address(0));
+    _exposedDim.allocateInvestment(0, address(0));
   }
 
   function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() public override {
@@ -228,14 +228,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     uint256 nrOfTiers = returnTiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {
       vm.prank(address(_dim));
-      _exposed_dim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+      _exposedDim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
     }
 
     // Perform the allocations.
     nrOfTiers = returnTiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {
       vm.prank(address(_dim));
-      _exposed_dim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+      _exposedDim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
     }
   }
 
@@ -248,11 +248,11 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
     vm.prank(address(_dim));
     vm.expectRevert(bytes("Error: Insufficient contract balance."));
-    _exposed_dim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
+    _exposedDim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
 
     vm.prank(address(_dim));
     vm.expectRevert(bytes("The SAAS revenue allocation amount was not larger than 0."));
-    _exposed_dim.performSaasRevenueAllocation(0, receivingWallet);
+    _exposedDim.performSaasRevenueAllocation(0, receivingWallet);
   }
 
   function testPerformSaasRevenueAllocationToNonPayee() public override {
@@ -260,8 +260,8 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     _helper = new Helper();
 
     address receivingWallet = address(0);
-    deal(address(_exposed_dim), 20);
-    assertFalse(_exposed_dim.getPaymentSplitter().isPayee(receivingWallet));
-    _exposed_dim.performSaasRevenueAllocation(10, receivingWallet);
+    deal(address(_exposedDim), 20);
+    assertFalse(_exposedDim.getPaymentSplitter().isPayee(receivingWallet));
+    _exposedDim.performSaasRevenueAllocation(10, receivingWallet);
   }
 }

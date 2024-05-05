@@ -32,8 +32,8 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -73,7 +73,7 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
     deal(_userWallet, 100 ether);
 
     // Initialise exposed dim.
-    _exposed_dim = new ExposedDecentralisedInvestmentManager(
+    _exposedDim = new ExposedDecentralisedInvestmentManager(
       _tiers,
       _projectLeadFracNumerator,
       _projectLeadFracDenominator,

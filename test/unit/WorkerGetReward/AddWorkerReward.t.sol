@@ -9,7 +9,6 @@ import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentra
 import { SaasPaymentProcessor } from "../../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../../src/Helper.sol";
 import { TierInvestment } from "../../../src/TierInvestment.sol";
-import { CustomPaymentSplitter } from "../../../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 
 interface Interface {
@@ -39,8 +38,8 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -67,14 +66,14 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     _tiers.push(tier2);
 
     // assertEq(address(_projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    _dim = new DecentralisedInvestmentManager({
+      tiers: _tiers,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: _projectLeadFracDenominator,
+      projectLead: _projectLeadAddress,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether
+    });
 
     _workerGetReward = _dim.getWorkerGetReward();
   }
@@ -89,6 +88,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   function addWorkerRewardWithTooLowDuration() public virtual override {
     address workerAddress = address(0);
     // vm.deal(address(this),5 ether);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 4 weeks - 1);
     vm.expectRevert("Tried to set retrievalDuratin below min.");
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 5 weeks);
@@ -97,6 +97,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   function addWorkerRewardValid() public virtual override {
     address workerAddress = address(0);
 
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 4 weeks);
     vm.expectRevert("Tried to set retrievalDuratin below min.");
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 5 weeks);
@@ -105,14 +106,17 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   function testProjectLeadRecoverDateIsExtended() public virtual override {
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
+    // solhint-disable-next-line not-rely-on-time
     assertEq(_workerGetReward.getProjectLeadCanRecoverFromTime(), block.timestamp + 8 weeks);
   }
 
   function testProjectLeadRecoverDateIsNotExtended() public virtual override {
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 12 weeks);
+    // solhint-disable-next-line not-rely-on-time
     assertEq(_workerGetReward.getProjectLeadCanRecoverFromTime(), block.timestamp + 12 weeks);
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
+    // solhint-disable-next-line not-rely-on-time
     assertEq(_workerGetReward.getProjectLeadCanRecoverFromTime(), block.timestamp + 12 weeks);
   }
 

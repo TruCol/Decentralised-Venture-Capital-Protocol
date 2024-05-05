@@ -28,6 +28,7 @@ contract Tier is ITier {
   @param maxVal The maximum investment amount for this tier.
   @param multiple The ROI multiple for this tier.
   */
+  // solhint-disable-next-line comprehensive-interface
   constructor(uint256 minVal, uint256 maxVal, uint256 multiple) public {
     _owner = msg.sender;
     // Improved error message using string concatenation

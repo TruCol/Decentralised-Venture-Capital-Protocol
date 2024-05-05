@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-import "forge-std/src/console2.sol"; // Import the console library
+
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);

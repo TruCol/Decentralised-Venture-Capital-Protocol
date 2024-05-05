@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
 import { Tier } from "../../src/Tier.sol";
-import "forge-std/src/console2.sol"; // Import the console library
-import "forge-std/src/Vm.sol"; // For manipulating time
+
+import "forge-std/src/Vm.sol" as vm; // For manipulating time
 // Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -23,7 +23,7 @@ interface Interface {
 contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLeadAddress;
   address payable private _investorWallet0;
-  address payable private _investorWallet1;
+  address payable private _investorWalletA;
   Tier[] private _tiers;
   uint256 private _investmentAmount0;
   uint256 private _investmentAmount1;
@@ -66,8 +66,8 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
     _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet0, 3 ether);
-    _investorWallet1 = payable(address(uint160(uint256(keccak256(bytes("2"))))));
-    deal(_investorWallet1, 4 ether);
+    _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
+    deal(_investorWalletA, 4 ether);
 
     _investmentAmount0 = 0.5 ether;
 
@@ -80,6 +80,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
   function testProjectLeadCantWithdrawBeforeTargetIsReached() public virtual override {
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     vm.prank(_projectLeadAddress);
@@ -95,6 +96,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
   function testRaisePeriodReturnSingleInvestment() public virtual override {
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     vm.expectRevert(bytes("The fund raising period has not passed yet."));
@@ -102,6 +104,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 15 weeks);
 
     vm.expectRevert(bytes("Someone other than projectLead tried to return all investments."));
@@ -114,6 +117,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
   function testKeepInvestmentsForSuccesfullRaise() public virtual override {
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     vm.expectRevert(bytes("The fund raising period has not passed yet."));
@@ -125,6 +129,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: 2.5 ether }();
 
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 15 weeks);
 
     vm.expectRevert(bytes("Investment target reached!"));

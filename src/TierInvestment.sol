@@ -49,6 +49,7 @@ contract TierInvestment is Interface {
   @param newInvestmentAmount The amount of Wei invested by the investor. Must be greater than or equal to 1 Wei.
   @param tier The Tier object containing investment details like multiplier and lockin period.
   */
+  // solhint-disable-next-line comprehensive-interface
   constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) public {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;

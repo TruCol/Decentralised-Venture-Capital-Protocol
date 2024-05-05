@@ -31,8 +31,8 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -92,6 +92,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
     address workerAddress = address(0);
 
     _workerGetReward.addWorkerReward{ value: 2 }(workerAddress, 8 weeks);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 10 weeks);
     vm.prank(workerAddress);
     _workerGetReward.retreiveWorkerReward(2);
