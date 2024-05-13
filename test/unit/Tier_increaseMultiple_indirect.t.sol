@@ -10,6 +10,8 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 
 // Import the paymentsplitter that has the shares for the investors.
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
+import { InitialiseDim } from "test/InitialiseDim.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface Interface {
   function setUp() external;
@@ -39,45 +41,36 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
     _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    _projectLeadFracNumerator = 4;
-    _projectLeadFracDenominator = 10;
-
-    // Specify the investment tiers in ether.
-    uint256 firstTierCeiling = 4 ether;
-    uint256 secondTierCeiling = 15 ether;
-    uint256 thirdTierCeiling = 30 ether;
-    vm.prank(_projectLeadAddress);
-    Tier tier0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier0);
-    vm.prank(_projectLeadAddress);
-    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier1);
-    vm.prank(_projectLeadAddress);
-    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier2);
-
-    // assertEq(address(_projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    uint256[] memory ceilings = new uint256[](3);
+    ceilings[0] = 4 ether;
+    ceilings[1] = 15 ether;
+    ceilings[2] = 30 ether;
+    uint8[] memory multiples = new uint8[](3);
+    multiples[0] = 10;
+    multiples[1] = 5;
+    multiples[2] = 2;
+    InitialiseDim initDim = new InitialiseDim({
+      ceilings: ceilings,
+      multiples: multiples,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether,
+      projectLeadAddress: _projectLeadAddress,
+      projectLeadFracNumerator: 4,
+      projectLeadFracDenominator: 10
+    });
+    _dim = initDim.getDim();
 
     _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet0, 3 ether);
     _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
     deal(_investorWalletA, 4 ether);
-
     _userWallet = address(uint160(uint256(keccak256(bytes("3")))));
     deal(_userWallet, 100 ether);
 
-    // Print the addresses to console.
-
+    /**
+    Invest 0.5 ether in tier 0 which has a ceiling of 4 ether, and multiple 10.
+    This creates a cumulative remaining investor return of 5 ether.*/
     _investmentAmount0 = 0.5 ether;
-
     // Set the msg.sender address to that of the _investorWallet0 for the next call.
     vm.prank(address(_investorWallet0));
     // Send investment directly from the investor wallet into the receiveInvestment function.
@@ -92,6 +85,17 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   ether.
    */
 
+  /**
+    Invest 0.5 ether in tier 0 which has a ceiling of 4 ether, and multiple 10.
+    This creates a cumulative remaining investor return of 5 ether.
+
+    After the project lead has increased the multiple of tier 0 from 10 to 20,
+    the cumulative return remains unchanged.
+
+    Then a SAAS payment of 20 ether is made, meaning the investors have received
+    5 ether (because they invested 0.5 ether when the multiple was 10 instead of 20),
+    and the projectLead has received 15 ether.
+    */
   function testIncreaseMultipleIndirectly() public virtual override {
     // Assert project lead can increase multiple.
     vm.prank(_projectLeadAddress);
@@ -116,9 +120,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // Tier 0 has a multiple of 10. So 0.5 * 10. Then subtract the 0.2 SAAS payment
-      // but only the 0.6 fraction which is for investors.
-      // 0.5 * 10 * 10^18 - 10*10^18 * 0.6 = (5 - 6)*10 =0
       0 ether,
       "Error, the cumRemainingInvestorReturn was not as expected directly after first SAAS payment."
     );
@@ -131,11 +132,28 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   }
 
   /**
+
+
 The multiple has increased from 10 to 20, the ceiling of the first investment
 tier is 4 ether, and 0.5 has already been invested, and 5 ether has already
-been paid out, so the cumulative remaining return becomes 3.5*20 +0.5*5 (5 is
-the multiple of the xecond tier) = 72.5 ether.
+been paid out, so the cumulative remaining return becomes *4-0.5)*20... = 3.5*20 +0.5*5 = 72.5 ether. (5 is
+the multiple of the second tier, and 0.5 is the amount of investment in the second tier).
 */
+  /**
+    Invest 0.5 ether in tier 0 which has a ceiling of 4 ether, and multiple 10.
+    This creates a cumulative remaining investor return of 5 ether.
+
+    After the project lead has increased the multiple of tier 0 from 10 to 20,
+    the cumulative return remains unchanged.
+
+    Then a SAAS payment of 20 ether is made, meaning the investors have received
+    5 ether (because they invested 0.5 ether when the multiple was 10 instead of 20),
+    and the projectLead has received 15 ether.
+
+    Next, a second investment of 4 ether is made. 3.5 goes into Tier 0 with a multiple of 20,
+    and 0.5 goes into Tier 1 with a multiple of 5. This means the cumulative remaining investor
+    return becomes 3.5*20+0.5*5 = 72.5 ether.
+    */
   function followUpSecondInvestment() public virtual override {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
@@ -193,7 +211,7 @@ the multiple of the xecond tier) = 72.5 ether.
     assertEq(
       _dim.getCumReceivedInvestments(),
       _investmentAmount0 + _investmentAmount1,
-      "Error, the _cumReceivedInvestments was not as expected after investment."
+      "Error, the _cumReceivedInvestments was not as expected after second investment."
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),

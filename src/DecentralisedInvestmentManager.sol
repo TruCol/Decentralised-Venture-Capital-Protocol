@@ -8,6 +8,7 @@ import { Helper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface Interface {
   function receiveSaasPayment() external payable;
@@ -177,6 +178,7 @@ contract DecentralisedInvestmentManager is Interface {
 
     // Compute how much the investors can receive together as total ROI.
     uint256 cumRemainingInvestorReturn = _helper.computeCumRemainingInvestorReturn(_tierInvestments);
+
     // Compute the saasRevenue for the investors.
     uint256 investorFracNumerator = _projectLeadFracDenominator - _projectLeadFracNumerator;
 
@@ -186,6 +188,7 @@ contract DecentralisedInvestmentManager is Interface {
       _projectLeadFracDenominator,
       paidAmount
     );
+
     saasRevenueForProjectLead = paidAmount - saasRevenueForInvestors;
 
     string memory errorMessage = "Error: SAAS revenue distribution mismatch.\n";

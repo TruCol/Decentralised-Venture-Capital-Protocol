@@ -13,6 +13,7 @@ import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentra
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
+import { InitialiseDim } from "test/InitialiseDim.sol";
 
 interface Interface {
   function setUp() external;
@@ -64,31 +65,27 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
-    // Instantiate the attribute for the contract-under-test.
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     _projectLeadFracNumerator = 4;
-    _projectLeadFracDenominator = 10;
-
-    // Specify the investment tiers in ether.
-    uint256 firstTierCeiling = 4 ether;
-    uint256 secondTierCeiling = 15 ether;
-    uint256 thirdTierCeiling = 30 ether;
-    Tier tier0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier0);
-    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier1);
-    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier2);
-
-    // assertEq(address(_projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256[] memory ceilings = new uint256[](3);
+    ceilings[0] = 4 ether;
+    ceilings[1] = 15 ether;
+    ceilings[2] = 30 ether;
+    uint8[] memory multiples = new uint8[](3);
+    multiples[0] = 10;
+    multiples[1] = 5;
+    multiples[2] = 2;
+    InitialiseDim initDim = new InitialiseDim({
+      ceilings: ceilings,
+      multiples: multiples,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether,
+      projectLeadAddress: _projectLeadAddress,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: 10
+    });
+    _dim = initDim.getDim();
+    _exposedDim = initDim.getExposedDim();
 
     // Assert the _cumReceivedInvestments is 0 after Initialisation.
     assertEq(_dim.getCumReceivedInvestments(), 0);
@@ -97,16 +94,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     deal(_investorWallet, 3 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
-
-    // Initialise exposed dim.
-    _exposedDim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
   }
 
   /// @dev Test to simulate a larger balance using `deal`.

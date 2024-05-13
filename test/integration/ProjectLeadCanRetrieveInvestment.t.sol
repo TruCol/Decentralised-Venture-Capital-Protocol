@@ -11,6 +11,7 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 
 // Import the paymentsplitter that has the shares for the investors.
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
+import { InitialiseDim } from "test/InitialiseDim.sol";
 
 interface Interface {
   function setUp() external;
@@ -31,28 +32,24 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
   function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
     _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    _projectLeadFracNumerator = 4;
-    _projectLeadFracDenominator = 10;
-
-    // Specify the investment tiers in ether.
-    uint256 firstTierCeiling = 4 ether;
-    uint256 secondTierCeiling = 15 ether;
-    uint256 thirdTierCeiling = 30 ether;
-    Tier tier0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier0);
-    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier1);
-    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier2);
-
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      0.4 ether
-    );
+    uint256[] memory ceilings = new uint256[](3);
+    ceilings[0] = 4 ether;
+    ceilings[1] = 15 ether;
+    ceilings[2] = 30 ether;
+    uint8[] memory multiples = new uint8[](3);
+    multiples[0] = 10;
+    multiples[1] = 5;
+    multiples[2] = 2;
+    InitialiseDim initDim = new InitialiseDim({
+      ceilings: ceilings,
+      multiples: multiples,
+      raisePeriod: 12 weeks,
+      investmentTarget: 0.4 ether,
+      projectLeadAddress: _projectLeadAddress,
+      projectLeadFracNumerator: 4,
+      projectLeadFracDenominator: 10
+    });
+    _dim = initDim.getDim();
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet, 3 ether);

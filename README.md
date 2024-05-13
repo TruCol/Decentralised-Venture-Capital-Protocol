@@ -136,7 +136,7 @@ clear && forge test -vvv
 Or to run a single test (function):
 
 ```sh
-clear && forge test --vvv --match-test testInvestorGetsSaasRevenue
+clear && forge test -vvv --match-test testInvestorGetsSaasRevenue
 ```
 
 The `-vvv` is necessary to display the error messages that you wrote with the
