@@ -10,8 +10,8 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../src/Helper.sol";
 import { ReceiveCounterOffer } from "../../src/ReceiveCounterOffer.sol";
-
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
+import { InitialiseDim } from "test/InitialiseDim.sol";
 
 interface Interface {
   function setUp() external;
@@ -30,9 +30,8 @@ interface Interface {
 }
 
 contract CounterOfferTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
   address payable private _investorWallet;
-  address private _userWallet;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
   uint256 private _projectLeadFracNumerator;
@@ -40,8 +39,8 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -51,44 +50,35 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
-    // Specify the investment tiers in ether.
-    uint256 firstTierCeiling = 4 ether;
-    uint256 secondTierCeiling = 15 ether;
-    uint256 thirdTierCeiling = 30 ether;
-    Tier tier0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier0);
-    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier1);
-    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier2);
-
-    // assertEq(address(_projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256[] memory ceilings = new uint256[](3);
+    ceilings[0] = 4 ether;
+    ceilings[1] = 15 ether;
+    ceilings[2] = 30 ether;
+    uint8[] memory multiples = new uint8[](3);
+    multiples[0] = 10;
+    multiples[1] = 5;
+    multiples[2] = 2;
+    InitialiseDim initDim = new InitialiseDim({
+      ceilings: ceilings,
+      multiples: multiples,
+      raisePeriod: 12 weeks,
+      investmentTarget: 2 ether,
+      projectLead: _projectLead,
+      projectLeadFracNumerator: 4,
+      projectLeadFracDenominator: 10
+    });
+    _dim = initDim.getDim();
+    _exposedDim = initDim.getExposedDim();
 
     // Assert the _cumReceivedInvestments is 0 after Initialisation.
     assertEq(_dim.getCumReceivedInvestments(), 0);
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet, 3 ether);
-    _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
-    deal(_userWallet, 100 ether);
 
-    // Initialise exposed dim.
-    _exposed_dim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    address _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
+    deal(_userWallet, 100 ether);
   }
 
   function testExpireCounterOffer() public virtual override {
@@ -101,6 +91,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 0, "B: The TierInvestment length was not 0.");
 
     // Simulate 5 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
 
     // Assert the amount of TierInvestments is 0.
@@ -110,11 +101,11 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     vm.expectRevert(bytes("Only project lead can accept offer"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer expired"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer expired"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
   }
@@ -129,6 +120,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 0, "A: The TierInvestment length was not 0.");
 
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     // Assert the amount of TierInvestments is 0.
@@ -138,16 +130,16 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     vm.expectRevert(bytes("Only project lead can accept offer"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     assertEq(_dim.getTierInvestmentLength(), 1, "D: The TierInvestment length was not 1.");
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
 
@@ -165,6 +157,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     assertEq(_dim.getTierInvestmentLength(), 0, "A: The TierInvestment length was not 0.");
 
     // Simulate 3 weeks passing by
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 3 weeks);
 
     // Assert the amount of TierInvestments is 0.
@@ -175,8 +168,9 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
     assertEq(_investorWallet.balance, 1 ether, "Balance of investor unexpected after offer.");
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
 
     vm.prank(_investorWallet);
@@ -185,11 +179,11 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
 
     assertEq(_dim.getTierInvestmentLength(), 0, "D: The TierInvestment length was not 0.");
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
 
@@ -209,7 +203,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     _receiveCounterOfferContract = _dim.getReceiveCounterOffer();
     _receiveCounterOfferContract.makeOffer{ value: 1 ether }(201, 4 weeks);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.expectRevert(bytes("The offer has been accepted, so can't pull back."));
@@ -228,6 +222,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     _receiveCounterOfferContract.pullbackOffer(0);
 
     vm.prank(_investorWallet);
+    // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
     _receiveCounterOfferContract.pullbackOffer(0);
     assertEq(_investorWallet.balance, 3 ether, "Start after revert balance of investor unexpected.");

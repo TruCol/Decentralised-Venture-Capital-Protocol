@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+
 import { Tier } from "../src/Tier.sol";
 
 interface Interface {
@@ -11,7 +12,7 @@ interface Interface {
 
   function getRemainingReturn() external view returns (uint256 remainingReturn);
 
-  function getOwner() external view returns (address);
+  function getOwner() external view returns (address owner);
 }
 
 contract TierInvestment is Interface {
@@ -49,6 +50,7 @@ contract TierInvestment is Interface {
   @param newInvestmentAmount The amount of Wei invested by the investor. Must be greater than or equal to 1 Wei.
   @param tier The Tier object containing investment details like multiplier and lockin period.
   */
+  // solhint-disable-next-line comprehensive-interface
   constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) public {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _owner = msg.sender;
@@ -58,6 +60,7 @@ contract TierInvestment is Interface {
     _tier = tier;
 
     // Initialise default value.
+
     _remainingReturn = _newInvestmentAmount * tier.getMultiple();
   }
 
@@ -108,9 +111,10 @@ contract TierInvestment is Interface {
   /**
   @notice Retrieves the address of the owner of this contract.
   @dev This function is a view function that returns the address of the owner of this contract.
-  @return The address of the owner.
+  @return owner The address of the owner.
   */
-  function getOwner() public view override returns (address) {
-    return _owner;
+  function getOwner() public view override returns (address owner) {
+    owner = _owner;
+    return owner;
   }
 }

@@ -158,7 +158,7 @@ Available Accounts
 If you need to do manual debugging, you can use console2 print statements like:
 
 ```sol
-
+import {console2} from "forge-std/src/console2.sol";
 console2.log("Hello World, a={0}, b={1}", a, b);
 ```
 

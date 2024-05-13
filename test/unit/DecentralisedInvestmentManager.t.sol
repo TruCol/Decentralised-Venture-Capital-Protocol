@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
-import { Tier } from "../../src/Tier.sol";
-// Used to run the tests
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-// Import the main contract that is being tested.
+import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
-import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
+import { InitialiseDim } from "test/InitialiseDim.sol";
 
 interface Interface {
   function setUp() external;
@@ -46,7 +44,7 @@ interface Interface {
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
   address payable private _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
@@ -56,8 +54,8 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposed_dim;
-  address payable private _investorWallet1;
+  ExposedDecentralisedInvestmentManager private _exposedDim;
+  address payable private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -65,31 +63,27 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
-    // Instantiate the attribute for the contract-under-test.
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     _projectLeadFracNumerator = 4;
-    _projectLeadFracDenominator = 10;
-
-    // Specify the investment tiers in ether.
-    uint256 firstTierCeiling = 4 ether;
-    uint256 secondTierCeiling = 15 ether;
-    uint256 thirdTierCeiling = 30 ether;
-    Tier tier0 = new Tier(0, firstTierCeiling, 10);
-    _tiers.push(tier0);
-    Tier tier1 = new Tier(firstTierCeiling, secondTierCeiling, 5);
-    _tiers.push(tier1);
-    Tier tier2 = new Tier(secondTierCeiling, thirdTierCeiling, 2);
-    _tiers.push(tier2);
-
-    // assertEq(address(_projectLeadAddress).balance, 43);
-    _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256[] memory ceilings = new uint256[](3);
+    ceilings[0] = 4 ether;
+    ceilings[1] = 15 ether;
+    ceilings[2] = 30 ether;
+    uint8[] memory multiples = new uint8[](3);
+    multiples[0] = 10;
+    multiples[1] = 5;
+    multiples[2] = 2;
+    InitialiseDim initDim = new InitialiseDim({
+      ceilings: ceilings,
+      multiples: multiples,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether,
+      projectLead: _projectLead,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: 10
+    });
+    _dim = initDim.getDim();
+    _exposedDim = initDim.getExposedDim();
 
     // Assert the _cumReceivedInvestments is 0 after Initialisation.
     assertEq(_dim.getCumReceivedInvestments(), 0);
@@ -98,16 +92,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     deal(_investorWallet, 3 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
-
-    // Initialise exposed dim.
-    _exposed_dim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
@@ -119,14 +103,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     // Test empty tiers are not allowed.
     Tier[] memory emptyTiers;
     vm.expectRevert(bytes("You must provide at least one tier."));
-    new DecentralisedInvestmentManager(
-      emptyTiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    new DecentralisedInvestmentManager({
+      tiers: emptyTiers,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: _projectLeadFracDenominator,
+      projectLead: _projectLead,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether
+    });
   }
 
   function testReturnFunds() public override {
@@ -152,14 +136,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     vm.expectRevert(
       bytes("Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier.")
     );
-    _dim = new DecentralisedInvestmentManager(
-      gappedTiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    _dim = new DecentralisedInvestmentManager({
+      tiers: gappedTiers,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: _projectLeadFracDenominator,
+      projectLead: _projectLead,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether
+    });
   }
 
   function testZeroSAASPayment() public override {
@@ -182,13 +166,13 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       bytes("Increasing the current investment tier multiple attempted by someone other than project lead.")
     );
     _dim.increaseCurrentMultipleInstantly(1);
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
     _dim.increaseCurrentMultipleInstantly(1);
   }
 
   function testWithdraw() public override {
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Insufficient contract balance"));
     _dim.withdraw(500 ether);
 
@@ -199,9 +183,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   }
 
   function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
-    _exposed_dim.allocateInvestment(0, address(0));
+    _exposedDim.allocateInvestment(0, address(0));
   }
 
   function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() public override {
@@ -212,6 +196,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
     vm.expectRevert(
       bytes(
+        // solhint-disable-next-line func-named-parameters
         string.concat(
           "The cumulativePayout (\n",
           Strings.toString(cumRemainingInvestorReturn0),
@@ -228,14 +213,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     uint256 nrOfTiers = returnTiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {
       vm.prank(address(_dim));
-      _exposed_dim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+      _exposedDim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
     }
 
     // Perform the allocations.
     nrOfTiers = returnTiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {
       vm.prank(address(_dim));
-      _exposed_dim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
+      _exposedDim.performSaasRevenueAllocation(returnAmounts[i], returnTiers[i].getInvestor());
     }
   }
 
@@ -248,11 +233,11 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
     vm.prank(address(_dim));
     vm.expectRevert(bytes("Error: Insufficient contract balance."));
-    _exposed_dim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
+    _exposedDim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
 
     vm.prank(address(_dim));
     vm.expectRevert(bytes("The SAAS revenue allocation amount was not larger than 0."));
-    _exposed_dim.performSaasRevenueAllocation(0, receivingWallet);
+    _exposedDim.performSaasRevenueAllocation(0, receivingWallet);
   }
 
   function testPerformSaasRevenueAllocationToNonPayee() public override {
@@ -260,8 +245,8 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     _helper = new Helper();
 
     address receivingWallet = address(0);
-    deal(address(_exposed_dim), 20);
-    assertFalse(_exposed_dim.getPaymentSplitter().isPayee(receivingWallet));
-    _exposed_dim.performSaasRevenueAllocation(10, receivingWallet);
+    deal(address(_exposedDim), 20);
+    assertFalse(_exposedDim.getPaymentSplitter().isPayee(receivingWallet));
+    _exposedDim.performSaasRevenueAllocation(10, receivingWallet);
   }
 }

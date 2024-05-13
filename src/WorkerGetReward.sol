@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
-import "forge-std/src/console2.sol"; // Import the console library
 
 interface Interface {
   function addWorkerReward(address worker, uint256 retrievalDuration) external payable;
@@ -9,15 +8,14 @@ interface Interface {
 
   function projectLeadRecoversRewards(uint256 amount) external;
 
-  function getProjectLeadCanRecoverFromTime() external returns (uint256);
+  function getProjectLeadCanRecoverFromTime() external returns (uint256 projectLeadCanRecoverFrom);
 }
 
 contract WorkerGetReward is Interface {
   address private _projectLead;
-
   uint256 private _projectLeadCanRecoverFrom;
-
   uint256 private _minRetrievalDuration;
+  // solhint-disable-next-line named-parameters-mapping
   mapping(address => uint256) private _rewards;
 
   /**
@@ -30,9 +28,13 @@ contract WorkerGetReward is Interface {
   @param minRetrievalDuration The minimum duration a worker must wait before they can claim their rewards from the
   project lead.
   */
+  // solhint-disable-next-line comprehensive-interface
+  // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead, uint256 minRetrievalDuration) public {
     _projectLead = projectLead;
     _minRetrievalDuration = minRetrievalDuration;
+    // miners can manipulate time(stamps) seconds, not hours/days.
+    // solhint-disable-next-line not-rely-on-time
     _projectLeadCanRecoverFrom = block.timestamp + _minRetrievalDuration;
     // Create mapping of worker rewards.
   }
@@ -55,7 +57,11 @@ contract WorkerGetReward is Interface {
   function addWorkerReward(address worker, uint256 retrievalDuration) public payable override {
     require(msg.value > 0, "Tried to add 0 value to worker reward.");
     require(retrievalDuration >= _minRetrievalDuration, "Tried to set retrievalDuration below min.");
+    // miners can manipulate time(stamps) seconds, not hours/days.
+    // solhint-disable-next-line not-rely-on-time
     if (block.timestamp + retrievalDuration > _projectLeadCanRecoverFrom) {
+      // miners can manipulate time(stamps) seconds, not hours/days.
+      // solhint-disable-next-line not-rely-on-time
       _projectLeadCanRecoverFrom = block.timestamp + retrievalDuration;
     }
     _rewards[worker] += msg.value;
@@ -74,11 +80,9 @@ contract WorkerGetReward is Interface {
     require(_rewards[msg.sender] >= amount, "Asked more reward than worker can get.");
     require(address(this).balance >= amount, "Tried to payout more than the contract contains.");
 
-    uint256 beforeBalance = msg.sender.balance;
-    payable(msg.sender).transfer(amount);
     _rewards[msg.sender] -= amount;
-    uint256 afterBalance = msg.sender.balance;
-    require(afterBalance - beforeBalance == amount, "Worker reward not transferred successfully.");
+    payable(msg.sender).transfer(amount);
+    // TODO: require payment to be successful.
   }
 
   /**
@@ -96,6 +100,8 @@ contract WorkerGetReward is Interface {
     require(amount > 0, "Tried to recover 0 wei.");
     require(address(this).balance >= amount, "Tried to recover more than the contract contains.");
     require(
+      // miners can manipulate time(stamps) seconds, not hours/days.
+      // solhint-disable-next-line not-rely-on-time
       block.timestamp > _projectLeadCanRecoverFrom,
       "ProjectLead tried to recover funds before workers got the chance."
     );
@@ -108,9 +114,10 @@ contract WorkerGetReward is Interface {
   @dev This initial value is set during construction and is later updated by the maximum time at which any worker can
   still retrieve its reward.
 
-  @return _projectLeadCanRecoverFrom The timestamp (in seconds since epoch) at which the project lead can recover funds.
+  @return projectLeadCanRecoverFrom The timestamp (in seconds since epoch) at which the project lead can recover funds.
   */
-  function getProjectLeadCanRecoverFromTime() public view override returns (uint256) {
-    return _projectLeadCanRecoverFrom;
+  function getProjectLeadCanRecoverFromTime() public view override returns (uint256 projectLeadCanRecoverFrom) {
+    projectLeadCanRecoverFrom = _projectLeadCanRecoverFrom;
+    return projectLeadCanRecoverFrom;
   }
 }

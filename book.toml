@@ -1,0 +1,13 @@
+[book]
+src = "src"
+manual = "manual"
+title = "SUPERTITLE"
+
+[output.html]
+no-section-label = true
+additional-js = ["solidity.min.js"]
+additional-css = ["book.css"]
+git-repository-url = "https://github.com/TruCol/Decentralised-Saas-Investment-Protocol"
+
+[output.html.fold]
+enable = true

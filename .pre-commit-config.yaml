@@ -58,31 +58,6 @@ repos:
    hooks:
     - id: codespell
 
-# Performs static code analysis to check for programming errors.
- - repo: local
-   hooks:
-     - id: pylint
-       name: pylint
-       entry: pylint
-       language: system
-       types: [python]
-       args:
-         [
-           "-rn", # Only display messages
-           "-sn", # Don't display the score
-         ]
-     - id: solhint
-       name: Solidity style guide compliance.
-       entry: solhint
-       language: node
-       verbose: true
-       files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
-       args:
-         [
-           "--fix", # Automatically fix those issues that can be auto-fixed.
-           "--noPrompt", # Do not ask for backup before fix.
-         ]
-
 # Runs additional tests that are created by the pre-commit software itself.
  - repo: https://github.com/pre-commit/pre-commit-hooks
    rev: v4.6.0
@@ -204,6 +179,7 @@ repos:
    hooks:
      - id: markdownlint
        args: ["--fix"]
+       exclude: "^docs/src"
 
 
  - repo: https://github.com/pre-commit/mirrors-prettier
@@ -213,3 +189,34 @@ repos:
        additional_dependencies: ["prettier@2.7.1", "prettier-plugin-solidity@1.0.0"]
        files: "\\.sol$"
        args: ["--plugin=prettier-plugin-solidity"]
+
+# Performs static code analysis to check for programming errors.
+ - repo: local
+   hooks:
+     - id: pylint
+       name: pylint
+       entry: pylint
+       language: system
+       types: [python]
+       args:
+         [
+           "-rn", # Only display messages
+           "-sn", # Don't display the score
+         ]
+     - id: solhint
+       name: Solidity style guide compliance.
+       entry: solhint
+       language: node
+       verbose: true
+       files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
+       args:
+         [
+           "--fix", # Automatically fix those issues that can be auto-fixed.
+           "--noPrompt", # Do not ask for backup before fix.
+         ]
+     # Static code analyzer for solidity.
+     - id: slither
+       name: Slither analysis for smart contracts
+       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
+       language: system
+       files: ^(src/|test/)

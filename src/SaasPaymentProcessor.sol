@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { Helper } from "../src/Helper.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "forge-std/src/console2.sol"; // Import the console library
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 interface Interface {
   function computeInvestorReturns(
@@ -12,7 +12,7 @@ interface Interface {
     TierInvestment[] memory tierInvestments,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
-  ) external returns (TierInvestment[] memory, uint256[] memory);
+  ) external returns (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts);
 
   function computeInvestmentReturn(
     Helper helper,
@@ -27,7 +27,7 @@ interface Interface {
     address investorWallet,
     Tier currentTier,
     uint256 newInvestmentAmount
-  ) external returns (uint256, TierInvestment newTierInvestment);
+  ) external returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment);
 }
 
 contract SaasPaymentProcessor is Interface {
@@ -45,6 +45,7 @@ contract SaasPaymentProcessor is Interface {
   @notice Initializes the SaasPaymentProcessor contract by setting the contract creator as the owner.
   @dev This constructor sets the sender of the transaction as the owner of the contract.
   */
+  // solhint-disable-next-line comprehensive-interface
   constructor() public {
     _owner = msg.sender;
   }
@@ -62,41 +63,41 @@ contract SaasPaymentProcessor is Interface {
   @param saasRevenueForInvestors The total SAAS revenue allocated for investor returns.
   @param cumRemainingInvestorReturn The cumulative remaining return amount for investors.
 
-  @return _returnTiers An array of `TierInvestment` structs representing the tiers for which returns are computed.
-  @return _returnAmounts An array of uint256 values representing the computed returns for each tier.
+  @return returnTiers An array of `TierInvestment` structs representing the tiers for which returns are computed.
+  @return returnAmounts An array of uint256 values representing the computed returns for each tier.
   */
   function computeInvestorReturns(
     Helper helper,
     TierInvestment[] memory tierInvestments,
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
-  ) public override returns (TierInvestment[] memory, uint256[] memory) {
+  ) public override returns (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) {
     require(saasRevenueForInvestors > 0, "saasRevenueForInvestors is not larger than 0.");
     uint256 nrOfTierInvestments = tierInvestments.length;
 
-    uint256[] memory _returnAmounts = new uint256[](nrOfTierInvestments);
-    TierInvestment[] memory _returnTiers = new TierInvestment[](nrOfTierInvestments);
+    returnAmounts = new uint256[](nrOfTierInvestments);
+    returnTiers = new TierInvestment[](nrOfTierInvestments);
 
     uint256 cumulativePayout = 0;
     bool hasRoundedUp = false;
 
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
       // Compute how much an investor receives for its investment in this tier.
-      (uint256 investmentReturn, bool returnHasRoundedUp) = computeInvestmentReturn(
-        helper,
-        tierInvestments[i].getRemainingReturn(),
-        saasRevenueForInvestors,
-        cumRemainingInvestorReturn,
-        hasRoundedUp
-      );
+      (uint256 investmentReturn, bool returnHasRoundedUp) = computeInvestmentReturn({
+        helper: helper,
+        remainingReturn: tierInvestments[i].getRemainingReturn(),
+        saasRevenueForInvestors: saasRevenueForInvestors,
+        cumRemainingInvestorReturn: cumRemainingInvestorReturn,
+        incomingHasRoundedUp: hasRoundedUp
+      });
 
       // Booleans are passed by value, so have to overwrite it.
       hasRoundedUp = returnHasRoundedUp;
 
       if (investmentReturn > 0) {
         // Allocate that amount to the investor.
-        _returnAmounts[i] = investmentReturn;
-        _returnTiers[i] = tierInvestments[i];
+        returnAmounts[i] = investmentReturn;
+        returnTiers[i] = tierInvestments[i];
         // Track the payout in the tierInvestment.
         tierInvestments[i].publicSetRemainingReturn(tierInvestments[i].getInvestor(), investmentReturn);
         cumulativePayout += investmentReturn;
@@ -105,7 +106,7 @@ contract SaasPaymentProcessor is Interface {
 
     require(
       cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
-      // cumulativePayout == saasRevenueForInvestors,
+      // solhint-disable-next-line func-named-parameters
       string.concat(
         "The cumulativePayout (\n",
         Strings.toString(cumulativePayout),
@@ -114,7 +115,7 @@ contract SaasPaymentProcessor is Interface {
         ")."
       )
     );
-    return (_returnTiers, _returnAmounts);
+    return (returnTiers, returnAmounts);
   }
 
   /**
@@ -129,17 +130,19 @@ contract SaasPaymentProcessor is Interface {
   @param currentTier The tier the investment belongs to.
   @param newInvestmentAmount The amount of wei invested.
 
-  @return A tuple of (updated total investment, new TierInvestment object).
+  @return updatedCumReceivedInvestments The new cumulatively received investment.
+  @return newTierInvestment The newly created TierInvestment object.
   **/
   function addInvestmentToCurrentTier(
     uint256 cumReceivedInvestments,
     address investorWallet,
     Tier currentTier,
     uint256 newInvestmentAmount
-  ) public override onlyOwner returns (uint256, TierInvestment newTierInvestment) {
+  ) public override onlyOwner returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment) {
     newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
     cumReceivedInvestments += newInvestmentAmount;
-    return (cumReceivedInvestments, newTierInvestment);
+    updatedCumReceivedInvestments = cumReceivedInvestments;
+    return (updatedCumReceivedInvestments, newTierInvestment);
   }
 
   /**
