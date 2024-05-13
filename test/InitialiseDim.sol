@@ -22,7 +22,7 @@ contract InitialiseDim is Interface {
     uint8[] memory multiples,
     uint32 raisePeriod,
     uint256 investmentTarget,
-    address projectLeadAddress,
+    address projectLead,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator
   ) public {
@@ -38,24 +38,24 @@ contract InitialiseDim is Interface {
       }
     }
 
-    _dim = new DecentralisedInvestmentManager(
-      {tiers: _tiers,
+    _dim = new DecentralisedInvestmentManager({
+      tiers: _tiers,
       projectLeadFracNumerator: projectLeadFracNumerator,
       projectLeadFracDenominator: projectLeadFracDenominator,
-      projectLead: projectLeadAddress,
+      projectLead: projectLead,
       raisePeriod: raisePeriod,
-      investmentTarget: investmentTarget}
-    );
+      investmentTarget: investmentTarget
+    });
 
     // Initialise exposed dim.
-    _exposedDim = new ExposedDecentralisedInvestmentManager(
-      {tiers: _tiers,
+    _exposedDim = new ExposedDecentralisedInvestmentManager({
+      tiers: _tiers,
       projectLeadFracNumerator: projectLeadFracNumerator,
       projectLeadFracDenominator: projectLeadFracDenominator,
-      projectLeadAddress: projectLeadAddress,
+      projectLead: projectLead,
       raisePeriod: raisePeriod,
-      investmentTarget: investmentTarget}
-    );
+      investmentTarget: investmentTarget
+    });
   }
 
   function getDim() public override returns (DecentralisedInvestmentManager dim) {

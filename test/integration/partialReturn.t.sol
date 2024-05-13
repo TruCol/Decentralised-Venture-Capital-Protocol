@@ -18,7 +18,7 @@ interface Interface {
 }
 
 contract PartialReturnTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
 
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
@@ -31,7 +31,7 @@ contract PartialReturnTest is PRBTest, StdCheats, Interface {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
     ceilings[1] = 15 ether;
@@ -45,7 +45,7 @@ contract PartialReturnTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 3 ether,
-      projectLeadAddress: _projectLeadAddress,
+      projectLead: _projectLead,
       projectLeadFracNumerator: 4,
       projectLeadFracDenominator: 10
     });

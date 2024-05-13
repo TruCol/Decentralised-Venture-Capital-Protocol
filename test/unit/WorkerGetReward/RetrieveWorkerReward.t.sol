@@ -10,7 +10,6 @@ import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentra
 import { SaasPaymentProcessor } from "../../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../../src/Helper.sol";
 import { TierInvestment } from "../../../src/TierInvestment.sol";
-import { CustomPaymentSplitter } from "../../../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
@@ -23,7 +22,6 @@ interface Interface {
 }
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
   address payable private _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
@@ -45,7 +43,6 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
     ceilings[1] = 15 ether;
@@ -59,7 +56,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 3 ether,
-      projectLeadAddress: _projectLeadAddress,
+      projectLead: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
       projectLeadFracNumerator: 4,
       projectLeadFracDenominator: 10
     });

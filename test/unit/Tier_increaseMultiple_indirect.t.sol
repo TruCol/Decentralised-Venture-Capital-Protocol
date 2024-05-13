@@ -20,7 +20,7 @@ interface Interface {
 }
 
 contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
   address payable private _investorWallet0;
   address payable private _investorWalletA;
   address private _userWallet;
@@ -36,7 +36,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
     ceilings[1] = 15 ether;
@@ -50,7 +50,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 3 ether,
-      projectLeadAddress: _projectLeadAddress,
+      projectLead: _projectLead,
       projectLeadFracNumerator: 4,
       projectLeadFracDenominator: 10
     });
@@ -94,7 +94,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     */
   function testIncreaseMultipleIndirectly() public virtual override {
     // Assert project lead can increase multiple.
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _dim.increaseCurrentMultipleInstantly(20);
     assertEq(_dim.getCurrentTier().getMultiple(), 20, "The multiple was not 20.");
 

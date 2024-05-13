@@ -30,9 +30,8 @@ interface Interface {
 }
 
 contract CounterOfferTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
   address payable private _investorWallet;
-  address private _userWallet;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
   uint256 private _projectLeadFracNumerator;
@@ -51,7 +50,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
     ceilings[1] = 15 ether;
@@ -65,7 +64,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 2 ether,
-      projectLeadAddress: _projectLeadAddress,
+      projectLead: _projectLead,
       projectLeadFracNumerator: 4,
       projectLeadFracDenominator: 10
     });
@@ -77,7 +76,8 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
     deal(_investorWallet, 3 ether);
-    _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
+
+    address _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
   }
 
@@ -101,11 +101,11 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     vm.expectRevert(bytes("Only project lead can accept offer"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer expired"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer expired"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
   }
@@ -130,16 +130,16 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     vm.expectRevert(bytes("Only project lead can accept offer"));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     assertEq(_dim.getTierInvestmentLength(), 1, "D: The TierInvestment length was not 1.");
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
 
@@ -168,7 +168,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
     assertEq(_investorWallet.balance, 1 ether, "Balance of investor unexpected after offer.");
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
     // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 5 weeks);
@@ -179,11 +179,11 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
 
     assertEq(_dim.getTierInvestmentLength(), 0, "D: The TierInvestment length was not 0.");
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Offer already rejected or accepted."));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
 
@@ -203,7 +203,7 @@ contract CounterOfferTest is PRBTest, StdCheats, Interface {
     _receiveCounterOfferContract = _dim.getReceiveCounterOffer();
     _receiveCounterOfferContract.makeOffer{ value: 1 ether }(201, 4 weeks);
 
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.expectRevert(bytes("The offer has been accepted, so can't pull back."));

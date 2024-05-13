@@ -49,7 +49,7 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 3 ether,
-      projectLeadAddress: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
+      projectLead: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
       projectLeadFracNumerator: 4,
       projectLeadFracDenominator: 10
     });

@@ -5,12 +5,12 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 
 struct Offer {
   address payable _offerInvestor;
-  uint256 _investmentAmount;
   uint16 _offerMultiplier;
-  uint256 _offerDuration; // Time in seconds for project lead to decide
-  uint256 _offerStartTime;
   bool _offerIsAccepted;
   bool _isDecided;
+  uint256 _investmentAmount;
+  uint256 _offerDuration; // Time in seconds for project lead to decide
+  uint256 _offerStartTime;
 }
 
 interface Interface {
@@ -79,7 +79,18 @@ contract ReceiveCounterOffer is Interface {
   function makeOffer(uint16 multiplier, uint256 duration) external payable override {
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
-    _offers.push(Offer(payable(msg.sender), msg.value, multiplier, duration, block.timestamp, false, false));
+    _offers.push(
+      Offer({
+        _offerInvestor: payable(msg.sender),
+        _offerMultiplier: multiplier,
+        _offerIsAccepted: false,
+        _isDecided: false,
+        _investmentAmount: msg.value,
+        _offerDuration: duration,
+        // solhint-disable-next-line not-rely-on-time
+        _offerStartTime: block.timestamp
+      })
+    );
   }
 
   /**

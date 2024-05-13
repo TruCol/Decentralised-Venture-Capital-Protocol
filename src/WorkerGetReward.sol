@@ -13,10 +13,9 @@ interface Interface {
 
 contract WorkerGetReward is Interface {
   address private _projectLead;
-
   uint256 private _projectLeadCanRecoverFrom;
-
   uint256 private _minRetrievalDuration;
+  // solhint-disable-next-line named-parameters-mapping
   mapping(address => uint256) private _rewards;
 
   /**

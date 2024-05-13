@@ -27,7 +27,9 @@ contract CustomPaymentSplitter is Interface {
   // Not yet supported by Prettier
   // mapping(address  _somePayee => uint256  _someDaiOwed) private _dai;
   // mapping(address  _payedEntity => uint256  _amount_payed) private _released;
+  // solhint-disable-next-line named-parameters-mapping
   mapping(address => uint256) private _dai;
+  // solhint-disable-next-line named-parameters-mapping
   mapping(address => uint256) private _released;
 
   address[] private _payees;

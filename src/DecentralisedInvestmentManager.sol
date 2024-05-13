@@ -39,6 +39,7 @@ interface Interface {
   function triggerReturnAll() external;
 }
 
+// solhint-disable-next-line max-states-count
 contract DecentralisedInvestmentManager is Interface {
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
@@ -139,7 +140,7 @@ contract DecentralisedInvestmentManager is Interface {
       uint256 someMin = tiers[i].getMinVal();
       uint256 someMax = tiers[i].getMaxVal();
       uint256 someMultiple = tiers[i].getMultiple();
-      Tier tierOwnedByThisContract = new Tier(someMin, someMax, someMultiple);
+      Tier tierOwnedByThisContract = new Tier({ minVal: someMin, maxVal: someMax, multiple: someMultiple });
       _tiers.push(tierOwnedByThisContract);
     }
     _receiveCounterOffer = new ReceiveCounterOffer(projectLead);
@@ -180,18 +181,17 @@ contract DecentralisedInvestmentManager is Interface {
 
     // Compute the saasRevenue for the investors.
     uint256 investorFracNumerator = _projectLeadFracDenominator - _projectLeadFracNumerator;
-
     saasRevenueForInvestors = _helper.computeRemainingInvestorPayout(
       cumRemainingInvestorReturn,
       investorFracNumerator,
       _projectLeadFracDenominator,
       paidAmount
     );
-
     saasRevenueForProjectLead = paidAmount - saasRevenueForInvestors;
 
     string memory errorMessage = "Error: SAAS revenue distribution mismatch.\n";
     errorMessage = string(
+      // solhint-disable-next-line func-named-parameters
       abi.encodePacked(
         errorMessage,
         "In error saasRevenueForInvestors=",

@@ -31,6 +31,13 @@ interface Interface {
     Tier someTier
   ) external view returns (uint256 remainingAmountInTier);
 
+  function shouldCheckNextStage(
+    uint256 i,
+    uint256 nrOfTiers,
+    Tier[] memory tiers,
+    uint256 cumReceivedInvestments
+  ) external view returns (bool shouldCheckNextStageBool);
+
   function computeRemainingInvestorPayout(
     uint256 cumRemainingInvestorReturn,
     uint256 investorFracNumerator,
@@ -143,7 +150,7 @@ contract Helper is Interface {
 
     uint256 i = 0;
     while (shouldCheckNextStage(i, nrOfTiers, tiers, cumReceivedInvestments)) {
-      i++;
+      ++i;
     }
     if (i < nrOfTiers) {
       return tiers[i];
@@ -173,19 +180,20 @@ contract Helper is Interface {
   @param nrOfTiers The total number of investment tiers.
   @param tiers An array of `Tier` structs representing the investment tiers and their configurations.
   @param cumReceivedInvestments The total amount of wei received from investors.
-  @return bool True if the next investment tier should be checked, false otherwise.
+  @return shouldCheckNextStageBool True if the next investment tier should be checked, false otherwise.
   */
   function shouldCheckNextStage(
     uint256 i,
     uint256 nrOfTiers,
     Tier[] memory tiers,
     uint256 cumReceivedInvestments
-  ) public view returns (bool) {
+  ) public view override returns (bool shouldCheckNextStageBool) {
     if (i >= nrOfTiers) {
-      return false;
+      shouldCheckNextStageBool = false;
     } else {
-      return !isInRange(tiers[i].getMinVal(), tiers[i].getMaxVal(), cumReceivedInvestments);
+      shouldCheckNextStageBool = !isInRange(tiers[i].getMinVal(), tiers[i].getMaxVal(), cumReceivedInvestments);
     }
+    return shouldCheckNextStageBool;
   }
 
   /**

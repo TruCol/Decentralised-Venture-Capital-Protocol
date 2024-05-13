@@ -12,7 +12,7 @@ interface Interface {
 
   function getRemainingReturn() external view returns (uint256 remainingReturn);
 
-  function getOwner() external view returns (address);
+  function getOwner() external view returns (address owner);
 }
 
 contract TierInvestment is Interface {
@@ -111,9 +111,10 @@ contract TierInvestment is Interface {
   /**
   @notice Retrieves the address of the owner of this contract.
   @dev This function is a view function that returns the address of the owner of this contract.
-  @return The address of the owner.
+  @return owner The address of the owner.
   */
-  function getOwner() public view override returns (address) {
-    return _owner;
+  function getOwner() public view override returns (address owner) {
+    owner = _owner;
+    return owner;
   }
 }

@@ -44,7 +44,7 @@ interface Interface {
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
   address payable private _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
@@ -64,7 +64,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
     _projectLeadFracNumerator = 4;
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
     ceilings[1] = 15 ether;
@@ -78,7 +78,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 3 ether,
-      projectLeadAddress: _projectLeadAddress,
+      projectLead: _projectLead,
       projectLeadFracNumerator: _projectLeadFracNumerator,
       projectLeadFracDenominator: 10
     });
@@ -103,14 +103,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     // Test empty tiers are not allowed.
     Tier[] memory emptyTiers;
     vm.expectRevert(bytes("You must provide at least one tier."));
-    new DecentralisedInvestmentManager(
-      emptyTiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    new DecentralisedInvestmentManager({
+      tiers: emptyTiers,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: _projectLeadFracDenominator,
+      projectLead: _projectLead,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether
+    });
   }
 
   function testReturnFunds() public override {
@@ -136,14 +136,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
     vm.expectRevert(
       bytes("Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier.")
     );
-    _dim = new DecentralisedInvestmentManager(
-      gappedTiers,
-      _projectLeadFracNumerator,
-      _projectLeadFracDenominator,
-      _projectLeadAddress,
-      12 weeks,
-      3 ether
-    );
+    _dim = new DecentralisedInvestmentManager({
+      tiers: gappedTiers,
+      projectLeadFracNumerator: _projectLeadFracNumerator,
+      projectLeadFracDenominator: _projectLeadFracDenominator,
+      projectLead: _projectLead,
+      raisePeriod: 12 weeks,
+      investmentTarget: 3 ether
+    });
   }
 
   function testZeroSAASPayment() public override {
@@ -166,13 +166,13 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       bytes("Increasing the current investment tier multiple attempted by someone other than project lead.")
     );
     _dim.increaseCurrentMultipleInstantly(1);
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
     _dim.increaseCurrentMultipleInstantly(1);
   }
 
   function testWithdraw() public override {
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("Insufficient contract balance"));
     _dim.withdraw(500 ether);
 
@@ -183,7 +183,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   }
 
   function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
-    vm.prank(_projectLeadAddress);
+    vm.prank(_projectLead);
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
     _exposedDim.allocateInvestment(0, address(0));
   }
@@ -196,6 +196,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
 
     vm.expectRevert(
       bytes(
+        // solhint-disable-next-line func-named-parameters
         string.concat(
           "The cumulativePayout (\n",
           Strings.toString(cumRemainingInvestorReturn0),

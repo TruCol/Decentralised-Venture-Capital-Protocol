@@ -29,7 +29,8 @@ abstract contract BaseScript is Script {
   /// - If $MNEMONIC is not defined, default to a test mnemonic.
   ///
   /// The use case for $ETH_FROM is to specify the broadcaster key and its address via the command line.
-  // solhint-disable-next-line comprehensive-interface
+  // solhint-disable-next-line comprehensive-interface func-visibility
+  // solhint-disable-next-line func-visibility
   constructor() {
     address from = vm.envOr({ name: "ETH_FROM", defaultValue: address(0) });
     if (from != address(0)) {

@@ -16,7 +16,7 @@ interface Interface {
 }
 
 contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
-  address internal _projectLeadAddress;
+  address internal _projectLead;
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   address payable private _investorWallet;
@@ -27,7 +27,7 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
     // Instantiate the attribute for the contract-under-test.
-    _projectLeadAddress = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
     ceilings[1] = 15 ether;
@@ -41,7 +41,7 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
       multiples: multiples,
       raisePeriod: 12 weeks,
       investmentTarget: 0.4 ether,
-      projectLeadAddress: _projectLeadAddress,
+      projectLead: _projectLead,
       projectLeadFracNumerator: 4,
       projectLeadFracDenominator: 10
     });
@@ -65,11 +65,11 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
     _dim.receiveInvestment{ value: investmentAmount }();
 
     // Assert project lead can retrieve investment.
-    assertEq(_projectLeadAddress.balance, 0);
+    assertEq(_projectLead.balance, 0);
     // vm.prank(address(_investorWallet));
-    vm.prank(address(_projectLeadAddress));
+    vm.prank(address(_projectLead));
     _dim.withdraw(investmentAmount);
-    assertEq(_projectLeadAddress.balance, 0.5 ether);
+    assertEq(_projectLead.balance, 0.5 ether);
 
     // Assert can make saas payment.
     uint256 saasPaymentAmount = 0.2 ether;
