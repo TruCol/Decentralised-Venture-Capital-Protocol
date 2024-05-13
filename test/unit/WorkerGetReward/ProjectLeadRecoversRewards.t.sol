@@ -3,6 +3,7 @@ pragma solidity >=0.8.23 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
+
 import { Tier } from "../../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";

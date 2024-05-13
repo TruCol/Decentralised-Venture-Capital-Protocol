@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23 <0.9.0;
-import { Tier } from "../../src/Tier.sol";
 
 import "forge-std/src/Vm.sol" as vm; // For manipulating time
-// Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-// Import the main contract that is being tested.
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { Tier } from "../../src/Tier.sol";
 
 interface Interface {
   function setUp() external;

@@ -5,8 +5,6 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../src/Tier.sol";
-import { ITier } from "../../src/Tier.sol";
-
 import { TierInvestment } from "../../src/TierInvestment.sol";
 
 interface Interface {
@@ -19,7 +17,7 @@ interface Interface {
 /// https://book.getfoundry.sh/forge/writing-tests
 contract TierTest is PRBTest, StdCheats, Interface {
   Tier internal _validTier;
-  ITier internal _some;
+
   address internal _testAddress;
   Tier internal _tierInterface;
 

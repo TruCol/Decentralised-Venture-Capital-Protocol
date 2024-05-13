@@ -4,7 +4,6 @@ pragma solidity >=0.8.23;
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 interface Interface {
   function getDim() external returns (DecentralisedInvestmentManager dim);
@@ -26,7 +25,7 @@ contract InitialiseDim is Interface {
     address projectLeadAddress,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator
-  ) {
+  ) public {
     // Specify the investment tiers in ether.
     uint256 nrOfTiers = ceilings.length;
     uint256 nrOfMultiples = multiples.length;
@@ -40,22 +39,22 @@ contract InitialiseDim is Interface {
     }
 
     _dim = new DecentralisedInvestmentManager(
-      _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
-      projectLeadAddress,
-      raisePeriod,
-      investmentTarget
+      {tiers: _tiers,
+      projectLeadFracNumerator: projectLeadFracNumerator,
+      projectLeadFracDenominator: projectLeadFracDenominator,
+      projectLead: projectLeadAddress,
+      raisePeriod: raisePeriod,
+      investmentTarget: investmentTarget}
     );
 
     // Initialise exposed dim.
     _exposedDim = new ExposedDecentralisedInvestmentManager(
-      _tiers,
-      projectLeadFracNumerator,
-      projectLeadFracDenominator,
-      projectLeadAddress,
-      raisePeriod,
-      investmentTarget
+      {tiers: _tiers,
+      projectLeadFracNumerator: projectLeadFracNumerator,
+      projectLeadFracDenominator: projectLeadFracDenominator,
+      projectLeadAddress: projectLeadAddress,
+      raisePeriod: raisePeriod,
+      investmentTarget: investmentTarget}
     );
   }
 

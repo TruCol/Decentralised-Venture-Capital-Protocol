@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+
 import { Tier } from "../src/Tier.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 interface Interface {
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) external;

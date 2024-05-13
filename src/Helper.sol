@@ -3,7 +3,6 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
-import { console2 } from "forge-std/src/console2.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
 interface Interface {

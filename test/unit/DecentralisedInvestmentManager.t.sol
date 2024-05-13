@@ -2,12 +2,10 @@
 pragma solidity >=0.8.23;
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
-import { Tier } from "../../src/Tier.sol";
-// Used to run the tests
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-// Import the main contract that is being tested.
+import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";

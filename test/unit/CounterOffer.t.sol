@@ -10,7 +10,6 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../src/Helper.sol";
 import { ReceiveCounterOffer } from "../../src/ReceiveCounterOffer.sol";
-
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 

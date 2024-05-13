@@ -7,15 +7,14 @@
     "@openzeppelin/contracts": "^5.0.1",
     "gulp": "^5.0.0",
     "markdownlint-cli": "^0.39.0",
-    "sol2uml": "^2.5.20"
+    "sol2uml": "^1.1.29"
   },
   "description": "",
   "devDependencies": {
     "@prb/test": "^0.6.4",
     "forge-std": "github:foundry-rs/forge-std#v1.7.5",
     "lcov-badge-generator": "^1.0.5",
-    "prettier": "^3.0.0",
-    "solhint": "^3.6.2"
+    "prettier": "^3.0.0"
   },
   "keywords": [
     "blockchain",

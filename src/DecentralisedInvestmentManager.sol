@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
-
 import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
 import { Helper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 interface Interface {
   function receiveSaasPayment() external payable;

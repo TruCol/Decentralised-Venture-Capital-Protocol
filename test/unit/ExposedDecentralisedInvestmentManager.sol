@@ -4,10 +4,6 @@ pragma solidity >=0.8.23;
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
-// interface Interface {
-// function allocateInvestment() external;
-// }
-
 contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager {
   // solhint-disable-next-line comprehensive-interface
   constructor(
@@ -15,8 +11,8 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     address projectLeadAddress,
-    uint32 _raisePeriod,
-    uint256 _investmentTarget
+    uint32 raisePeriod,
+    uint256 investmentTarget
   )
     public
     DecentralisedInvestmentManager(
@@ -24,8 +20,8 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
       projectLeadFracNumerator,
       projectLeadFracDenominator,
       projectLeadAddress,
-      _raisePeriod,
-      _investmentTarget
+      raisePeriod,
+      investmentTarget
     )
   {
     // Additional logic for ExposedDecentralisedInvestmentManager if needed
