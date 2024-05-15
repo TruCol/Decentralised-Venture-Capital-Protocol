@@ -45,7 +45,7 @@ interface Interface {
 /// https://book.getfoundry.sh/forge/writing-tests
 contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
-  address payable private _investorWallet;
+  address private _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
@@ -53,9 +53,8 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   uint256 private _projectLeadFracDenominator;
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
-  TierInvestment[] private _tierInvestments;
   ExposedDecentralisedInvestmentManager private _exposedDim;
-  address payable private _investorWalletA;
+  address private _investorWalletA;
   uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
@@ -64,6 +63,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
     _projectLeadFracNumerator = 4;
+    _projectLeadFracDenominator = 10;
     _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
@@ -207,8 +207,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
       )
     );
 
+    TierInvestment[] memory emptyTierInvestments;
     (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) = _saasPaymentProcessor
-      .computeInvestorReturns(_helper, _tierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn0);
+      .computeInvestorReturns(_helper, emptyTierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn0);
     // Perform the allocations.
     uint256 nrOfTiers = returnTiers.length;
     for (uint256 i = 0; i < nrOfTiers; ++i) {

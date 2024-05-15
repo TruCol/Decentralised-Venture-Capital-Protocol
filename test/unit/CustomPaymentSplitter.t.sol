@@ -48,6 +48,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
+    _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     _withdrawers.push(_projectLead);
     _owedDai.push(0);
     _paymentSplitter = new CustomPaymentSplitter(_withdrawers, _owedDai);
@@ -92,7 +93,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
   }
 
   function testCanReleasePayment() public override {
-    address payable investorWallet0 = payable(address(5));
+    address investorWallet0 = address(5);
     uint256 returnAmount = 40;
     uint256 startBalance = 7;
 

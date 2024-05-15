@@ -38,7 +38,6 @@ contract HelperTest is PRBTest, StdCheats, Interface {
   uint256 private _cumReceivedInvestments;
 
   Tier[] private _tiers;
-  Tier[] private _someTiers;
   Helper private _helper;
 
   /// @dev A function invoked before each test case is run.
@@ -112,10 +111,9 @@ contract HelperTest is PRBTest, StdCheats, Interface {
     // assertEq(_helper.computeCurrentInvestmentTier(1 wei, _tiers).getMultiple(), 10);
 
     // Try empty tier.
-
+    Tier[] memory emptyTiers;
     vm.expectRevert(bytes("There were no investmentTiers received."));
-    _helper.computeCurrentInvestmentTier(2 wei, _someTiers);
-    // assertEq(_helper.computeCurrentInvestmentTier(2 wei, _someTiers).getMultiple(), 10);
+    _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
   }
 
   function testGetRemainingAmountInCurrentTier() public override {
