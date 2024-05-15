@@ -121,7 +121,8 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet0);
+    vm.prank(_investorWallet0);
+    paymentSplitter.release();
     assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
     assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
     followUpSecondInvestment();
@@ -217,7 +218,8 @@ the multiple of the second tier, and 0.5 is the amount of investment in the seco
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWalletA);
+    vm.prank(_investorWalletA);
+    paymentSplitter.release();
     assertEq(
       paymentSplitter.released(_investorWalletA),
       0.6 ether,

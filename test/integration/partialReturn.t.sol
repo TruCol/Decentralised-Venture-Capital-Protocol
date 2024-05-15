@@ -123,7 +123,8 @@ contract PartialReturnTest is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet);
+    vm.prank(_investorWallet);
+    paymentSplitter.release();
     assertEq(paymentSplitter.released(_investorWallet), 0.12 ether);
     assertEq(_investorWallet.balance, 3 ether - 0.5 ether + 0.12 ether);
   }

@@ -106,7 +106,8 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     _paymentSplitter.publicAddPayee(investorWallet0, returnAmount);
 
     // Signal th epayment can be released.
-    _paymentSplitter.release(investorWallet0);
+    vm.prank(investorWallet0);
+    _paymentSplitter.release();
     assertEq(investorWallet0.balance, startBalance + returnAmount);
     assertEq(_paymentSplitter.released(investorWallet0), returnAmount);
   }
@@ -126,14 +127,17 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
     _paymentSplitter.publicAddPayee(investorWallet0, returnAmount);
 
     // Signal the payment can be released.
-    _paymentSplitter.release(investorWallet0);
+    vm.prank(investorWallet0);
+    _paymentSplitter.release();
 
     // Release payment again but now 0. TODO: determine why this does not revert.
     vm.expectRevert("The amount to be paid was not larger than 0.");
-    _paymentSplitter.release(investorWallet0);
+    vm.prank(investorWallet0);
+    _paymentSplitter.release();
 
     vm.expectRevert(bytes("The dai for account, was not larger than 0."));
-    _paymentSplitter.release(payable(address(9001)));
+    vm.prank(address(9001));
+    _paymentSplitter.release();
   }
 
   function testCannotAddZeroShares() public override {

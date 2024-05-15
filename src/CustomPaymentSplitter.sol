@@ -4,7 +4,7 @@ pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 interface Interface {
   function deposit() external payable;
 
-  function release(address payable account) external;
+  function release() external;
 
   function publicAddPayee(address account, uint256 dai_) external;
 
@@ -120,11 +120,9 @@ contract CustomPaymentSplitter is Interface {
   * Payees are responsible for calling this function to claim their outstanding
   balances.
 
-  @param account The address of the payee requesting a release.
-
-
   */
-  function release(address payable account) public override {
+  function release() public override {
+    address payable account = payable(msg.sender);
     require(_dai[account] > 0, "The dai for account, was not larger than 0.");
 
     // The amount the payee may receive is equal to the amount of outstanding
