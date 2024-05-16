@@ -12,9 +12,9 @@ interface IWorkerGetReward {
 }
 
 contract WorkerGetReward is IWorkerGetReward {
-  address private _projectLead;
+  address private immutable _PROJECT_LEAD;
   uint256 private _projectLeadCanRecoverFrom;
-  uint256 private _minRetrievalDuration;
+  uint256 private immutable _MIN_RETRIEVAL_DURATION;
   // solhint-disable-next-line named-parameters-mapping
   mapping(address => uint256) private _rewards;
 
@@ -31,11 +31,11 @@ contract WorkerGetReward is IWorkerGetReward {
   // solhint-disable-next-line comprehensive-interface
   // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead, uint256 minRetrievalDuration) public {
-    _projectLead = projectLead;
-    _minRetrievalDuration = minRetrievalDuration;
+    _PROJECT_LEAD = projectLead;
+    _MIN_RETRIEVAL_DURATION = minRetrievalDuration;
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
-    _projectLeadCanRecoverFrom = block.timestamp + _minRetrievalDuration;
+    _projectLeadCanRecoverFrom = block.timestamp + _MIN_RETRIEVAL_DURATION;
     // Create mapping of worker rewards.
   }
 
@@ -56,7 +56,7 @@ contract WorkerGetReward is IWorkerGetReward {
   */
   function addWorkerReward(address worker, uint256 retrievalDuration) public payable override {
     require(msg.value > 0, "Tried to add 0 value to worker reward.");
-    require(retrievalDuration >= _minRetrievalDuration, "Tried to set retrievalDuration below min.");
+    require(retrievalDuration >= _MIN_RETRIEVAL_DURATION, "Tried to set retrievalDuration below min.");
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
     if (block.timestamp + retrievalDuration > _projectLeadCanRecoverFrom) {
@@ -96,7 +96,7 @@ contract WorkerGetReward is IWorkerGetReward {
   @param amount The amount of Wei the project lead wishes to recover.
   */
   function projectLeadRecoversRewards(uint256 amount) public override {
-    require(msg.sender == _projectLead, "Someone other than projectLead tried to recover rewards.");
+    require(msg.sender == _PROJECT_LEAD, "Someone other than projectLead tried to recover rewards.");
     require(amount > 0, "Tried to recover 0 wei.");
     require(address(this).balance >= amount, "Tried to recover more than the contract contains.");
     require(
@@ -105,7 +105,7 @@ contract WorkerGetReward is IWorkerGetReward {
       block.timestamp > _projectLeadCanRecoverFrom,
       "ProjectLead tried to recover funds before workers got the chance."
     );
-    payable(_projectLead).transfer(amount);
+    payable(_PROJECT_LEAD).transfer(amount);
   }
 
   /**

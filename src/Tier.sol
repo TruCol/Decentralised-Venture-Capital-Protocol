@@ -5,18 +5,18 @@ error InvalidMinVal(uint256 providedVal, string errorMessage);
 interface ITier {
   function increaseMultiple(uint256 newMultiple) external;
 
-  function getMinVal() external view returns (uint256 _minVal);
+  function getMinVal() external view returns (uint256 minVal);
 
-  function getMaxVal() external view returns (uint256 _maxVal);
+  function getMaxVal() external view returns (uint256 maxVal);
 
   function getMultiple() external view returns (uint256 _multiple);
 }
 
 contract Tier is ITier {
-  uint256 private _minVal;
-  uint256 private _maxVal;
+  uint256 private immutable _MIN_VAL;
+  uint256 private immutable _MAX_VAL;
   uint256 private _multiple;
-  address private _owner;
+  address private immutable _OWNER;
 
   /**
   @notice Constructor for creating a Tier instance with specified configuration parameters.
@@ -30,17 +30,17 @@ contract Tier is ITier {
   */
   // solhint-disable-next-line comprehensive-interface
   constructor(uint256 minVal, uint256 maxVal, uint256 multiple) public {
-    _owner = msg.sender;
+    _OWNER = msg.sender;
 
     require(maxVal > minVal, "The maximum amount should be larger than the minimum.");
     require(multiple > 1, "A ROI multiple should be at larger than 1.");
 
     // The minVal is public, so you can get it directly from another
     // contract.
-    // The _minVal is private, so you cannot access it from another
+    // The _MIN_VAL is private, so you cannot access it from another
     // contract.
-    _minVal = minVal;
-    _maxVal = maxVal;
+    _MIN_VAL = minVal;
+    _MAX_VAL = maxVal;
     _multiple = multiple;
   }
 
@@ -51,7 +51,7 @@ contract Tier is ITier {
   @param newMultiple The new ROI multiple to set for this Tier object.
   */
   function increaseMultiple(uint256 newMultiple) public virtual override {
-    require(msg.sender == _owner, "Increasing the Tier object multiple attempted by someone other than project lead.");
+    require(msg.sender == _OWNER, "Increasing the Tier object multiple attempted by someone other than project lead.");
     require(newMultiple > _multiple, "The new multiple was not larger than the old multiple.");
     _multiple = newMultiple;
   }
@@ -64,7 +64,7 @@ contract Tier is ITier {
   @return minVal The minimum allowed value.
   */
   function getMinVal() public view override returns (uint256 minVal) {
-    minVal = _minVal;
+    minVal = _MIN_VAL;
     return minVal;
   }
 
@@ -76,7 +76,7 @@ contract Tier is ITier {
   @return maxVal The minimum allowed value.
   */
   function getMaxVal() public view override returns (uint256 maxVal) {
-    maxVal = _maxVal;
+    maxVal = _MAX_VAL;
     return maxVal;
   }
 

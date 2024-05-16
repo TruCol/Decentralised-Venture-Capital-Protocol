@@ -32,13 +32,13 @@ interface ISaasPaymentProcessor {
 }
 
 contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
-  address private _owner;
+  address private immutable _OWNER;
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "SaasPaymentProcessor: The sender of this message is not the owner.");
+    require(msg.sender == _OWNER, "SaasPaymentProcessor: The sender of this message is not the owner.");
     _;
   }
 
@@ -48,7 +48,7 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
   */
   // solhint-disable-next-line comprehensive-interface
   constructor() public {
-    _owner = msg.sender;
+    _OWNER = msg.sender;
   }
 
   /**

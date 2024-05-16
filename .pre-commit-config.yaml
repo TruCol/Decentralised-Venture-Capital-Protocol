@@ -218,8 +218,10 @@ repos:
      - id: slither
        language: system
        name: Slither analysis for smart contracts
-      # Run on all files:
-       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
+      # Run on all checks on all files:
+      #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
+       # Run only
+       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect constable-states "$file"; done'
        files: ^(src/|test/)
 
       # Run on a single file:

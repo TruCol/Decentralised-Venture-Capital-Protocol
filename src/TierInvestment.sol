@@ -16,9 +16,9 @@ interface ITierInvestment {
 }
 
 contract TierInvestment is ITierInvestment {
-  address private _investor;
-  uint256 private _newInvestmentAmount;
-  Tier private _tier;
+  address private immutable _INVESTOR;
+  uint256 private immutable _NEW_INVESTMENT_AMOUNT;
+  Tier private immutable _TIER;
 
   /**
    * The amount of DAI that is still to be returned for this investment.
@@ -30,14 +30,14 @@ contract TierInvestment is ITierInvestment {
    */
   uint256 public collectivleReturn;
 
-  address private _owner;
+  address private immutable _OWNER;
 
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "The message is sent by someone other than the owner of this contract.");
+    require(msg.sender == _OWNER, "The message is sent by someone other than the owner of this contract.");
     _;
   }
 
@@ -53,15 +53,15 @@ contract TierInvestment is ITierInvestment {
   // solhint-disable-next-line comprehensive-interface
   constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) public {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
-    _owner = msg.sender;
+    _OWNER = msg.sender;
 
-    _investor = someInvestor;
-    _newInvestmentAmount = newInvestmentAmount;
-    _tier = tier;
+    _INVESTOR = someInvestor;
+    _NEW_INVESTMENT_AMOUNT = newInvestmentAmount;
+    _TIER = tier;
 
     // Initialise default value.
 
-    _remainingReturn = _newInvestmentAmount * tier.getMultiple();
+    _remainingReturn = _NEW_INVESTMENT_AMOUNT * tier.getMultiple();
   }
 
   /**
@@ -72,7 +72,7 @@ contract TierInvestment is ITierInvestment {
   @param newlyReturnedAmount The amount newly returned by the investor.
   */
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public override onlyOwner {
-    require(_investor == someInvestor, "Error, the new return is being set for the wrong investor.");
+    require(_INVESTOR == someInvestor, "Error, the new return is being set for the wrong investor.");
     _remainingReturn = _remainingReturn - newlyReturnedAmount;
   }
 
@@ -83,7 +83,7 @@ contract TierInvestment is ITierInvestment {
   @return investor The address of the investor.
   */
   function getInvestor() public view override returns (address investor) {
-    investor = _investor;
+    investor = _INVESTOR;
     return investor;
   }
 
@@ -93,7 +93,7 @@ contract TierInvestment is ITierInvestment {
   @return newInvestmentAmount The new investment amount.
   */
   function getNewInvestmentAmount() public view override returns (uint256 newInvestmentAmount) {
-    newInvestmentAmount = _newInvestmentAmount;
+    newInvestmentAmount = _NEW_INVESTMENT_AMOUNT;
     return newInvestmentAmount;
   }
 
@@ -114,7 +114,7 @@ contract TierInvestment is ITierInvestment {
   @return owner The address of the owner.
   */
   function getOwner() public view override returns (address owner) {
-    owner = _owner;
+    owner = _OWNER;
     return owner;
   }
 }

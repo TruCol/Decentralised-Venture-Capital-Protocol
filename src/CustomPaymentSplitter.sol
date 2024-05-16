@@ -34,7 +34,7 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
 
   address[] private _payees;
   uint256[] private _amountsOwed;
-  address private _owner;
+  address private immutable _OWNER;
 
   event PayeeAdded(address indexed account, uint256 indexed dai);
   event PaymentReleased(address indexed to, uint256 indexed amount);
@@ -46,7 +46,7 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "CustomPaymentSplitter: The sender of this message is not the owner.");
+    require(msg.sender == _OWNER, "CustomPaymentSplitter: The sender of this message is not the owner.");
     _;
   }
 
@@ -85,7 +85,7 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
     require(payees.length > 0, "There are not more than 0 payees.");
 
-    _owner = msg.sender;
+    _OWNER = msg.sender;
     _amountsOwed = amountsOwed;
 
     uint256 nrOfPayees = payees.length;

@@ -15,9 +15,9 @@ interface Interface {
 
 contract InitialiseDim is Interface {
   Tier[] private _tiers;
-  DecentralisedInvestmentManager private _dim;
-  ExposedDecentralisedInvestmentManager private _exposedDim;
-  address private _projectLead;
+  DecentralisedInvestmentManager private immutable _DIM;
+  ExposedDecentralisedInvestmentManager private immutable _EXPOSED_DIM;
+  address private immutable _PROJECT_LEAD;
 
   // solhint-disable-next-line comprehensive-interface
   constructor(
@@ -30,7 +30,7 @@ contract InitialiseDim is Interface {
     uint256 projectLeadFracDenominator
   ) public {
     // Initialise the private attributes.
-    _projectLead = projectLead;
+    _PROJECT_LEAD = projectLead;
 
     // Specify the investment tiers in ether.
     uint256 nrOfTiers = ceilings.length;
@@ -44,7 +44,7 @@ contract InitialiseDim is Interface {
       }
     }
 
-    _dim = new DecentralisedInvestmentManager({
+    _DIM = new DecentralisedInvestmentManager({
       tiers: _tiers,
       projectLeadFracNumerator: projectLeadFracNumerator,
       projectLeadFracDenominator: projectLeadFracDenominator,
@@ -54,7 +54,7 @@ contract InitialiseDim is Interface {
     });
 
     // Initialise exposed dim.
-    _exposedDim = new ExposedDecentralisedInvestmentManager({
+    _EXPOSED_DIM = new ExposedDecentralisedInvestmentManager({
       tiers: _tiers,
       projectLeadFracNumerator: projectLeadFracNumerator,
       projectLeadFracDenominator: projectLeadFracDenominator,
@@ -65,12 +65,12 @@ contract InitialiseDim is Interface {
   }
 
   function getDim() public override returns (DecentralisedInvestmentManager dim) {
-    dim = _dim;
+    dim = _DIM;
     return dim;
   }
 
   function getExposedDim() public override returns (ExposedDecentralisedInvestmentManager exposedDim) {
-    exposedDim = _exposedDim;
+    exposedDim = _EXPOSED_DIM;
     return exposedDim;
   }
 
@@ -83,7 +83,7 @@ contract InitialiseDim is Interface {
 
   */
   function withdraw(uint256 amount) public override {
-    require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
+    require(msg.sender == _PROJECT_LEAD, "Withdraw attempted by someone other than project lead.");
     // Check if contract has sufficient balance
     require(address(this).balance >= amount, "Insufficient contract balance");
 

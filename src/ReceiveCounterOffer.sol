@@ -29,8 +29,8 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   bool private _isDecided;
 
   Offer[] private _offers;
-  address private _projectLead;
-  address private _owner;
+  address private immutable _PROJECT_LEAD;
+  address private immutable _OWNER;
 
   /**
   @notice This contract serves as a framework for facilitating counteroffers within a project.
@@ -49,8 +49,8 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   **/
   // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead) public {
-    _owner = payable(msg.sender);
-    _projectLead = projectLead;
+    _OWNER = payable(msg.sender);
+    _PROJECT_LEAD = projectLead;
   }
 
   /**
@@ -100,7 +100,7 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   function performs the following actions:
 
       Validates that the function caller is the project lead (enforced by the require statement
-      with msg.sender == _projectLead).
+      with msg.sender == _PROJECT_LEAD).
 
       Ensures the offer hasn't already been decided upon (enforced by the require statement
       with !_offers[offerId]._isDecided).
@@ -128,7 +128,7 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   @param accept A boolean indicating the project lead's decision (true for accept, false for reject).
   **/
   function acceptOrRejectOffer(uint256 offerId, bool accept) public override {
-    require(msg.sender == _projectLead, "Only project lead can accept offer");
+    require(msg.sender == _PROJECT_LEAD, "Only project lead can accept offer");
 
     require(!_offers[offerId]._isDecided, "Offer already rejected or accepted.");
     // miners can manipulate time(stamps) seconds, not hours/days.
@@ -140,7 +140,7 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
       _offers[offerId]._offerIsAccepted = true;
       _offers[offerId]._isDecided = true;
 
-      DecentralisedInvestmentManager dim = DecentralisedInvestmentManager(_owner);
+      DecentralisedInvestmentManager dim = DecentralisedInvestmentManager(_OWNER);
       dim.receiveAcceptedOffer{ value: _offers[offerId]._investmentAmount }(_offers[offerId]._offerInvestor);
 
       // the transaction is rejected e.g. because the investmentCeiling is reached.
