@@ -5,7 +5,6 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { Tier } from "../../src/Tier.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
@@ -22,7 +21,6 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
 
   address payable private _investorWallet0;
   address private _userWallet;
-  Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.

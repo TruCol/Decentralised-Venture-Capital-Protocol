@@ -4,10 +4,8 @@ pragma solidity >=0.8.25 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { Tier } from "../../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../../src/DecentralisedInvestmentManager.sol";
 
-import { TierInvestment } from "../../../src/TierInvestment.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
@@ -27,12 +25,7 @@ interface Interface {
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
-  Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
-
-  TierInvestment[] private _tierInvestments;
-  address[] private _withdrawers;
-  uint256[] private _owedDai;
   WorkerGetReward private _workerGetReward;
 
   /// @dev A function invoked before each test case is run.

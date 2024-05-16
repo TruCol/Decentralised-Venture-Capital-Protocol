@@ -5,7 +5,6 @@ import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
@@ -21,7 +20,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
   address payable private _investorWallet0;
   address payable private _investorWalletA;
-  Tier[] private _tiers;
+
   uint256 private _investmentAmount0;
 
   DecentralisedInvestmentManager private _dim;

@@ -5,7 +5,7 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { Tier } from "../../src/Tier.sol";
+
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
@@ -31,7 +31,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   uint256 private _investmentAmount0;
   uint256 private _investmentAmount1;
   address private _userWallet;
-  Tier[] private _tiers;
 
   DecentralisedInvestmentManager private _dim;
 

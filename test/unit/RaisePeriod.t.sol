@@ -7,7 +7,6 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
-import { Tier } from "../../src/Tier.sol";
 
 interface Interface {
   function setUp() external;
@@ -23,7 +22,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
   address payable private _investorWallet0;
   address payable private _investorWalletA;
-  Tier[] private _tiers;
+
   uint256 private _investmentAmount0;
 
   DecentralisedInvestmentManager private _dim;

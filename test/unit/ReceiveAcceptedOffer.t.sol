@@ -5,7 +5,6 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-import { TierInvestment } from "../../src/TierInvestment.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
 interface Interface {
@@ -20,11 +19,6 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
   address payable private _investorWallet;
   address private _userWallet;
   DecentralisedInvestmentManager private _dim;
-
-  TierInvestment[] private _tierInvestments;
-
-  address[] private _withdrawers;
-  uint256[] private _owedDai;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {

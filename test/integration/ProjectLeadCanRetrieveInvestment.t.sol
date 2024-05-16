@@ -4,7 +4,6 @@ pragma solidity >=0.8.25 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
@@ -20,7 +19,7 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
 
   address payable private _investorWallet;
   address private _userWallet;
-  Tier[] private _tiers;
+
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.

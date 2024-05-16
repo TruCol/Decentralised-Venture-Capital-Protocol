@@ -47,16 +47,13 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
   address private _investorWallet;
   address private _userWallet;
-  Tier[] private _tiers;
+
   DecentralisedInvestmentManager private _dim;
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   ExposedDecentralisedInvestmentManager private _exposedDim;
-
-  address[] private _withdrawers;
-  uint256[] private _owedDai;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public override {
