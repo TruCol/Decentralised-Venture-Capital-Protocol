@@ -30,6 +30,7 @@ contract InitialiseDim is Interface {
     uint256 projectLeadFracDenominator
   ) public {
     // Initialise the private attributes.
+    require(projectLead != address(0), "projectLead address can't be 0.");
     _PROJECT_LEAD = projectLead;
 
     // Specify the investment tiers in ether.

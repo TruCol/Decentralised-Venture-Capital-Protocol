@@ -44,6 +44,7 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead) public {
     _OWNER = payable(msg.sender);
+    require(projectLead != address(0), "projectLead address can't be 0.");
     _PROJECT_LEAD = projectLead;
   }
 

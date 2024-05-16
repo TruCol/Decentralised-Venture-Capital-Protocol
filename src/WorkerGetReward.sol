@@ -31,6 +31,7 @@ contract WorkerGetReward is IWorkerGetReward {
   // solhint-disable-next-line comprehensive-interface
   // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead, uint256 minRetrievalDuration) public {
+    require(projectLead != address(0), "projectLead address can't be 0.");
     _PROJECT_LEAD = projectLead;
     _MIN_RETRIEVAL_DURATION = minRetrievalDuration;
     // miners can manipulate time(stamps) seconds, not hours/days.

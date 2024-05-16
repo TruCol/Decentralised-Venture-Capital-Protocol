@@ -50,6 +50,7 @@ contract TierInvestment is ITierInvestment {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _OWNER = msg.sender;
 
+    require(someInvestor != address(0), "someInvestor address can't be 0.");
     _INVESTOR = someInvestor;
     _NEW_INVESTMENT_AMOUNT = newInvestmentAmount;
     _TIER = tier;
