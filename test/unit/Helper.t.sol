@@ -8,7 +8,7 @@ import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
-interface Interface {
+interface IHelperTest {
   function setUp() external;
 
   function testExceedInvestmentCeiling() external;
@@ -32,7 +32,7 @@ interface Interface {
   function testHasReachedInvestmentCeiling() external;
 }
 
-contract HelperTest is PRBTest, StdCheats, Interface {
+contract HelperTest is PRBTest, StdCheats, IHelperTest {
   uint256 private _cumReceivedInvestments;
 
   Tier[] private _tiers;

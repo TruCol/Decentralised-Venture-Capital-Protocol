@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
 
-import "forge-std/src/Vm.sol" as vm; // For manipulating time
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IMultipleInvestmentTest {
   function setUp() external;
 
   function testProjectLeadCantWithdrawBeforeTargetIsReached() external;
@@ -18,7 +17,7 @@ interface Interface {
   function testKeepInvestmentsForSuccesfullRaise() external;
 }
 
-contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
+contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _investorWallet0;
   address payable private _investorWalletA;

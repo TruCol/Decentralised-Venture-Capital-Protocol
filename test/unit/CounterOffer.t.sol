@@ -13,7 +13,7 @@ import { ReceiveCounterOffer } from "../../src/ReceiveCounterOffer.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface ICounterOfferTest {
   function setUp() external;
 
   function testExpireCounterOffer() external;
@@ -29,7 +29,7 @@ interface Interface {
   function testPullbackOfferExpired() external;
 }
 
-contract CounterOfferTest is PRBTest, StdCheats, Interface {
+contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
   address internal _projectLead;
   address payable private _investorWallet;
   Tier[] private _tiers;

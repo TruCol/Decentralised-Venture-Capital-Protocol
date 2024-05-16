@@ -9,7 +9,7 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IPartialReturnTest {
   function setUp() external;
 
   function testInvestorGetsSaasRevenue() external;
@@ -17,7 +17,7 @@ interface Interface {
   function followUpCanMakeSaasPayment() external;
 }
 
-contract PartialReturnTest is PRBTest, StdCheats, Interface {
+contract PartialReturnTest is PRBTest, StdCheats, IPartialReturnTest {
   address internal _projectLead;
 
   uint256 private _projectLeadFracNumerator;

@@ -7,7 +7,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { Tier } from "../../src/Tier.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 
-interface Interface {
+interface ITierTest {
   function setUp() external;
 
   function testAttributes() external;
@@ -15,7 +15,7 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract TierTest is PRBTest, StdCheats, Interface {
+contract TierTest is PRBTest, StdCheats, ITierTest {
   address internal _testAddress;
   Tier internal _tierInterface;
 

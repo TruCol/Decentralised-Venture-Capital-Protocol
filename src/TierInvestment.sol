@@ -27,6 +27,8 @@ contract TierInvestment is ITierInvestment {
 
   address private immutable _OWNER;
 
+  event RemainingReturnDecreased(uint256 oldRemainingReturn, uint256 newRemainingReturn);
+
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is
    *   able to call/use functions that use this function (modifier).
@@ -69,7 +71,11 @@ contract TierInvestment is ITierInvestment {
   */
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public override onlyOwner {
     require(_INVESTOR == someInvestor, "Error, the new return is being set for the wrong investor.");
+
+    // Store the old remaining return for the event emit.
+    uint256 oldRemainingReturn = _remainingReturn;
     _remainingReturn = _remainingReturn - newlyReturnedAmount;
+    emit RemainingReturnDecreased(oldRemainingReturn, _remainingReturn);
   }
 
   /**

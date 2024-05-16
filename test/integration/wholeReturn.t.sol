@@ -8,7 +8,7 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IWholeReturn {
   function setUp() external;
 
   function testInvestorMadeWhole() external;
@@ -16,7 +16,7 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract WholeReturn is PRBTest, StdCheats, Interface {
+contract WholeReturn is PRBTest, StdCheats, IWholeReturn {
   address internal _projectLead;
 
   address payable private _investorWallet0;

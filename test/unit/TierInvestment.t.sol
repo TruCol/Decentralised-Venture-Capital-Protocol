@@ -7,7 +7,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
-interface Interface {
+interface ITierInvestmentTest {
   function setUp() external;
 
   function testTierInvestmentAttributes() external;
@@ -17,7 +17,7 @@ interface Interface {
   function testGetInvestor() external;
 }
 
-contract TierInvestmentTest is PRBTest, StdCheats, Interface {
+contract TierInvestmentTest is PRBTest, StdCheats, ITierInvestmentTest {
   TierInvestment internal _validTierInvestment;
   address private _testAddress;
   uint256 private _investmentAmount;

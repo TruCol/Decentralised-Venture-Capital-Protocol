@@ -8,7 +8,7 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IMultipleInvestmentTest {
   function setUp() external;
 
   function testIncreaseMultipleIndirectly() external;
@@ -18,7 +18,7 @@ interface Interface {
   function followUpSecondSaasPayment() external;
 }
 
-contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
+contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _investorWallet0;
   address payable private _investorWalletA;

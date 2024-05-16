@@ -204,7 +204,7 @@ repos:
            "-sn", # Don't display the score
          ]
      - id: solhint
-       name: Solidity style guide compliance.
+       name: SolHint Linter
        entry: solhint
        language: node
        verbose: true
@@ -220,8 +220,15 @@ repos:
        name: Slither analysis for smart contracts
       # Run on all checks on all files:
       #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
-       # Run only events-maths
-       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect missing-zero-check "$file"; done'
+
+       # Run only one detection
+       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect unimplemented-functions "$file"; done'
+
+      # Run on all checks on all files: Temporarily skip:  naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas
+      #  entry: bash -c 'for file in "$@"; do slither --exclude naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas,pragma,timestamp,unused-import --filter-paths="(node_modules)" "$file"; done'
+
+      # Irrelevant:unused-import
+
        files: ^(src/|test/)
 
       # Run on a single file:

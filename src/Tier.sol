@@ -18,6 +18,8 @@ contract Tier is ITier {
   uint256 private _multiple;
   address private immutable _OWNER;
 
+  event MultipleIncreased(uint256 oldMultiple, uint256 newMultiple);
+
   /**
   @notice Constructor for creating a Tier instance with specified configuration parameters.
   @dev This constructor initializes a Tier instance with the provided minimum value, maximum value, and ROI multiple.
@@ -53,7 +55,11 @@ contract Tier is ITier {
   function increaseMultiple(uint256 newMultiple) public virtual override {
     require(msg.sender == _OWNER, "Increasing the Tier object multiple attempted by someone other than project lead.");
     require(newMultiple > _multiple, "The new multiple was not larger than the old multiple.");
+
+    // Store old multiple for event.
+    uint256 oldMultiple = _multiple;
     _multiple = newMultiple;
+    emit MultipleIncreased(oldMultiple, newMultiple);
   }
 
   /**

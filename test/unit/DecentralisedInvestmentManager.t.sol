@@ -13,7 +13,7 @@ import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IDecentralisedInvestmentManagerTest {
   function setUp() external;
 
   function testProjectLeadFracNumerator() external;
@@ -43,7 +43,7 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
+contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralisedInvestmentManagerTest {
   address internal _projectLead;
   address private _investorWallet;
   address private _userWallet;

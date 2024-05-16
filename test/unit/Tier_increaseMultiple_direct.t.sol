@@ -8,7 +8,7 @@ import { Tier } from "../../src/Tier.sol";
 
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
-interface Interface {
+interface ITierTest {
   function setUp() external;
 
   function testTierDirectly() external;
@@ -20,7 +20,7 @@ interface Interface {
   function testTierDirectlySmallerMultiple() external;
 }
 
-contract TierTest is PRBTest, StdCheats, Interface {
+contract TierTest is PRBTest, StdCheats, ITierTest {
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.

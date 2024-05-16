@@ -8,7 +8,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IMultipleInvestmentTest {
   function setUp() external;
 
   function testRaisePeriodReturnSingleInvestment() external;
@@ -16,7 +16,7 @@ interface Interface {
   function testKeepInvestmentsForSuccesfullRaise() external;
 }
 
-contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
+contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _investorWallet0;
   address payable private _investorWalletA;

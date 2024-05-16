@@ -5,7 +5,7 @@ import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 
-interface Interface {
+interface IInitialiseDim {
   function getDim() external returns (DecentralisedInvestmentManager dim);
 
   function getExposedDim() external returns (ExposedDecentralisedInvestmentManager exposedDim);
@@ -13,7 +13,7 @@ interface Interface {
   function withdraw(uint256 amount) external;
 }
 
-contract InitialiseDim is Interface {
+contract InitialiseDim is IInitialiseDim {
   Tier[] private _tiers;
   DecentralisedInvestmentManager private immutable _DIM;
   ExposedDecentralisedInvestmentManager private immutable _EXPOSED_DIM;

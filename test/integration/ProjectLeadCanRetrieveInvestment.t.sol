@@ -8,13 +8,13 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IProjectLeadCanRetrieveInvestmentTest {
   function setUp() external;
 
   function testInvestorGetsSaasRevenue() external;
 }
 
-contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
+contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, IProjectLeadCanRetrieveInvestmentTest {
   address internal _projectLead;
 
   address payable private _investorWallet;

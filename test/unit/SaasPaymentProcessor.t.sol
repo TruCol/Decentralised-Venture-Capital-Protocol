@@ -8,7 +8,7 @@ import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Tier } from "../../src/Tier.sol";
 import { Helper } from "../../src/Helper.sol";
 
-interface Interface {
+interface ISaasPaymentProcessorTest {
   function setUp() external;
 
   function testOnlyOwnerTriggered() external;
@@ -18,7 +18,7 @@ interface Interface {
   function testZeroInvestorReturn() external;
 }
 
-contract SaasPaymentProcessorTest is PRBTest, StdCheats, Interface {
+contract SaasPaymentProcessorTest is PRBTest, StdCheats, ISaasPaymentProcessorTest {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;

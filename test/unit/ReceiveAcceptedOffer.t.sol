@@ -7,7 +7,7 @@ import { InitialiseDim } from "test/InitialiseDim.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
-interface Interface {
+interface IReveiveAcceptedOfferTest {
   function setUp() external;
 
   function testReceiveZeroInvestmentOffer() external;
@@ -15,7 +15,7 @@ interface Interface {
   function testReceiveInvestmentOfferCeilingReached() external;
 }
 
-contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
+contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, IReveiveAcceptedOfferTest {
   address payable private _investorWallet;
   address private _userWallet;
   DecentralisedInvestmentManager private _dim;

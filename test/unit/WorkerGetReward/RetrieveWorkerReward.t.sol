@@ -9,7 +9,7 @@ import { DecentralisedInvestmentManager } from "../../../src/DecentralisedInvest
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IRetrieveWorkerRewardTest {
   function setUp() external;
 
   function testRetrieveTooLargeRewardForWorker() external;
@@ -17,7 +17,7 @@ interface Interface {
   function testRetrieveWorkerRewardSuccessfully() external;
 }
 
-contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
+contract RetrieveWorkerRewardTest is PRBTest, StdCheats, IRetrieveWorkerRewardTest {
   DecentralisedInvestmentManager private _dim;
 
   WorkerGetReward private _workerGetReward;

@@ -6,7 +6,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../src/Tier.sol";
 
-interface Interface {
+interface ITierTest {
   function setUp() external;
 
   function testAttributes() external;
@@ -18,7 +18,7 @@ interface Interface {
   function testThrowsOnOneMultiple() external;
 }
 
-contract TierTest is PRBTest, StdCheats, Interface {
+contract TierTest is PRBTest, StdCheats, ITierTest {
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.

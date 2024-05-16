@@ -4,13 +4,13 @@ pragma solidity >=0.8.25 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { Deploy } from "../../script/Deploy.s.sol";
 
-interface Interface {
+interface ITestDeploy {
   function setUp() external;
 
   function testRunTier() external;
 }
 
-contract TestDeploy is PRBTest, Interface {
+contract TestDeploy is PRBTest, ITestDeploy {
   Deploy private _deploy;
 
   function setUp() public override {

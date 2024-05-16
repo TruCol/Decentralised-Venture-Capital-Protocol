@@ -6,7 +6,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Helper } from "../../src/Helper.sol";
 
-interface Interface {
+interface IComputeRemainingInvestorPayoutTest {
   function setUp() external;
 
   function testPayout0() external;
@@ -20,7 +20,7 @@ interface Interface {
   function testPayout4() external;
 }
 
-contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats, Interface {
+contract ComputeRemainingInvestorPayoutTest is PRBTest, StdCheats, IComputeRemainingInvestorPayoutTest {
   Helper private _helper;
 
   /// @dev A function invoked before each test case is run.

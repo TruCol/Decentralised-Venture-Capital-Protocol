@@ -9,7 +9,7 @@ import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmen
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IMultipleInvestmentTest {
   function setUp() external;
 
   function testMultipleInvestments() external;
@@ -23,7 +23,7 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
+contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
 
   address payable private _investorWallet0;

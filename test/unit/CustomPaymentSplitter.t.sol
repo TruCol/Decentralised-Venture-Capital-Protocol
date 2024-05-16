@@ -6,7 +6,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 
-interface Interface {
+interface ICustomPaymentSplitterTest {
   function setUp() external;
 
   function testAttributes() external;
@@ -40,7 +40,7 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract CustomPaymentSplitterTest is PRBTest, StdCheats, Interface {
+contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitterTest {
   address private _projectLead;
   address[] private _withdrawers;
   uint256[] private _owedDai;

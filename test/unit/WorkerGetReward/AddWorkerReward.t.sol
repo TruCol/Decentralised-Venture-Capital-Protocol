@@ -12,7 +12,7 @@ import { TierInvestment } from "../../../src/TierInvestment.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IAddWorkerRewardTest {
   function setUp() external;
 
   function testAddWorkerRewardOfZero() external;
@@ -28,7 +28,7 @@ interface Interface {
   function testSetRetrievalDurationBelowMin() external;
 }
 
-contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
+contract AddWorkerRewardTest is PRBTest, StdCheats, IAddWorkerRewardTest {
   address internal _projectLead;
   address private _userWallet;
   Tier[] private _tiers;
