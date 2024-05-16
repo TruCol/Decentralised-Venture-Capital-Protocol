@@ -120,17 +120,20 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
 
   function testGetRemainingAmountInCurrentTierBelow() public override {
     vm.expectRevert(bytes("Error: Tier's minimum value exceeds received investments."));
-    _helper.getRemainingAmountInCurrentTier(1 wei, _tiers[0]);
+    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier(1 wei, _tiers[0]);
+    assertEq(someRemainingAmountInTier, 0, "Got a return value.");
   }
 
   function testGetRemainingAmountInCurrentTierAbove() public override {
     vm.expectRevert(bytes("Error: Tier's maximum value is not larger than received investments."));
-    _helper.getRemainingAmountInCurrentTier(4 ether + 1 wei, _tiers[0]);
+    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier(4 ether + 1 wei, _tiers[0]);
+    assertEq(someRemainingAmountInTier, 0, "Got a return value.");
   }
 
   function testComputeRemainingInvestorPayoutNegativeFraction() public override {
     vm.expectRevert(bytes("investorFracNumerator is smaller than investorFracDenominator."));
-    _helper.computeRemainingInvestorPayout(0, 1, 0, 0);
+    uint256 someCumRemainingInvestorReturn = _helper.computeRemainingInvestorPayout(0, 1, 0, 0);
+    assertEq(someCumRemainingInvestorReturn, 0, "Got a return value.");
   }
 
   function testGetInvestmentCeiling() public override {

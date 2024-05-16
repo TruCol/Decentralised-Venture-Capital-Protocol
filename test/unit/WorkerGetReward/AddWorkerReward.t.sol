@@ -39,7 +39,7 @@ contract AddWorkerRewardTest is PRBTest, StdCheats, IAddWorkerRewardTest {
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
   ExposedDecentralisedInvestmentManager private _exposedDim;
-  uint256 private _investmentAmount1;
+  uint256 private _secondInvestmentAmount;
 
   address[] private _withdrawers;
   uint256[] private _owedDai;

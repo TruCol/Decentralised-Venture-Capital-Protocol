@@ -22,7 +22,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address payable private _firstInvestorWallet;
   address payable private _secondInvestorWallet;
 
-  uint256 private _investmentAmount0;
+  uint256 private _firstInvestmentAmount;
 
   DecentralisedInvestmentManager private _dim;
 
@@ -52,12 +52,12 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     deal(_firstInvestorWallet, 3 ether);
     _secondInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("2"))))));
     deal(_secondInvestorWallet, 4 ether);
-    _investmentAmount0 = 0.5 ether;
+    _firstInvestmentAmount = 0.5 ether;
 
     // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
     vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: _investmentAmount0 }();
+    _dim.receiveInvestment{ value: _firstInvestmentAmount }();
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
   }
 
@@ -68,7 +68,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
     vm.prank(_projectLead);
     vm.expectRevert(bytes("Investment target is not yet reached."));
-    _dim.withdraw(_investmentAmount0);
+    _dim.withdraw(_firstInvestmentAmount);
     _dim.receiveInvestment{ value: 5 ether }();
 
     vm.prank(_projectLead);

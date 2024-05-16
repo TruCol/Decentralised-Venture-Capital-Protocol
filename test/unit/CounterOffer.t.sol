@@ -41,7 +41,7 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
   TierInvestment[] private _tierInvestments;
   ExposedDecentralisedInvestmentManager private _exposedDim;
   address payable private _secondInvestorWallet;
-  uint256 private _investmentAmount1;
+  uint256 private _secondInvestmentAmount;
 
   address[] private _withdrawers;
   uint256[] private _owedDai;

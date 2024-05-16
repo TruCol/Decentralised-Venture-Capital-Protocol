@@ -28,8 +28,8 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
   address payable private _firstInvestorWallet;
   address payable private _secondInvestorWallet;
-  uint256 private _investmentAmount0;
-  uint256 private _investmentAmount1;
+  uint256 private _firstInvestmentAmount;
+  uint256 private _secondInvestmentAmount;
   address private _userWallet;
 
   DecentralisedInvestmentManager private _dim;
@@ -71,30 +71,30 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   /// @dev Test to simulate a larger balance using `deal`.
   function testMultipleInvestments() public virtual override {
     uint256 startBalance = _firstInvestorWallet.balance;
-    _investmentAmount0 = 0.5 ether;
+    _firstInvestmentAmount = 0.5 ether;
 
     // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
     vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: _investmentAmount0 }();
+    _dim.receiveInvestment{ value: _firstInvestmentAmount }();
 
     // Assert that user balance decreased by the investment amount
     uint256 endBalance = _firstInvestorWallet.balance;
     assertEq(
       startBalance - endBalance,
-      _investmentAmount0,
-      "_investmentAmount0 not equal to difference in investorWalletBalance"
+      _firstInvestmentAmount,
+      "_firstInvestmentAmount not equal to difference in investorWalletBalance"
     );
 
     // TODO: assert the tierInvestment(s) are made as expected.
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0,
+      _firstInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // _investmentAmount0*10, // Tier 0 has a multiple of 10.
+      // _firstInvestmentAmount*10, // Tier 0 has a multiple of 10.
       10 * 0.5 ether,
       "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
     );
@@ -119,7 +119,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     assertTrue(paymentSplitter.isPayee(_firstInvestorWallet), "The _firstInvestorWallet is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0,
+      _firstInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -147,20 +147,20 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   function followUpSecondInvestment() public virtual override {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // _investmentAmount0*10, // Tier 0 has a multiple of 10.
+      // _firstInvestmentAmount*10, // Tier 0 has a multiple of 10.
       0 ether,
       "Error, the cumRemainingInvestorReturn was not as expected before the second investment."
     );
 
-    _investmentAmount1 = 4 ether;
+    _secondInvestmentAmount = 4 ether;
     vm.prank(address(_secondInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: _investmentAmount1 }();
+    _dim.receiveInvestment{ value: _secondInvestmentAmount }();
 
     // TODO: assert the tierInvestment(s) are made as expected.
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0 + _investmentAmount1,
+      _firstInvestmentAmount + _secondInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -201,7 +201,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0 + _investmentAmount1,
+      _firstInvestmentAmount + _secondInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
