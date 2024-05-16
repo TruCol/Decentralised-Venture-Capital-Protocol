@@ -89,9 +89,12 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
     _amountsOwed = amountsOwed;
 
     uint256 nrOfPayees = payees.length;
+    uint256 totalDaiCounter = _totalDai; // Prevent updating state var in loop.
     for (uint256 i = 0; i < nrOfPayees; ++i) {
       _addPayee(payees[i], _amountsOwed[i]);
+      totalDaiCounter += _amountsOwed[i];
     }
+    _totalDai += totalDaiCounter;
   }
 
   /**
@@ -286,7 +289,6 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
 
     _payees.push(account);
     _dai[account] = dai_;
-    _totalDai = _totalDai + dai_;
     emit PayeeAdded(account, dai_);
   }
 }

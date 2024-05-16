@@ -88,7 +88,8 @@ contract InitialiseDim is Interface {
     require(address(this).balance >= amount, "Insufficient contract balance");
 
     // Transfer funds to user using call{value: } (safer approach).
-    (bool success, ) = payable(msg.sender).call{ value: amount }("");
-    require(success, "Investment withdraw by project lead failed");
+    // (bool success, ) = payable(msg.sender).call{ value: amount }("");
+    // require(success, "Investment withdraw by project lead failed");
+    payable(msg.sender).transfer(amount);
   }
 }

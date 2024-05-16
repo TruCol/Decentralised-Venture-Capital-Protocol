@@ -221,7 +221,7 @@ repos:
       # Run on all checks on all files:
       #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
        # Run only
-       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect costly-loop "$file"; done'
+       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect low-level-calls "$file"; done'
        files: ^(src/|test/)
 
       # Run on a single file:
