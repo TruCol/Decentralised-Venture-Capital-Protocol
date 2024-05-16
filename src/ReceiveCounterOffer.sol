@@ -22,12 +22,6 @@ interface IReceiveCounterOffer {
 }
 
 contract ReceiveCounterOffer is IReceiveCounterOffer {
-  uint16 private _offerMultiplier;
-  uint256 private _offerDuration; // Time in seconds for project lead to decide
-  uint256 private _offerStartTime;
-  bool private _offerIsAccepted;
-  bool private _isDecided;
-
   Offer[] private _offers;
   address private immutable _PROJECT_LEAD;
   address private immutable _OWNER;

@@ -33,8 +33,6 @@ interface Interface {
 }
 
 contract HelperTest is PRBTest, StdCheats, Interface {
-  TierInvestment internal _validTierInvestment;
-
   uint256 private _cumReceivedInvestments;
 
   Tier[] private _tiers;
@@ -74,7 +72,6 @@ contract HelperTest is PRBTest, StdCheats, Interface {
   }
 
   function testNegativeInvestment() public override {
-    // vm.prank(address(_validTierInvestment));
     vm.expectRevert(
       bytes(
         string(
@@ -136,8 +133,6 @@ contract HelperTest is PRBTest, StdCheats, Interface {
   }
 
   function testGetInvestmentCeiling() public override {
-    // vm.prank(address(_validTierInvestment));
-
     assertEq(_helper.getInvestmentCeiling(_tiers), 30 ether);
   }
 

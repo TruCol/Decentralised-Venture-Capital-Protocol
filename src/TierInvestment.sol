@@ -25,11 +25,6 @@ contract TierInvestment is ITierInvestment {
    */
   uint256 private _remainingReturn;
 
-  /**
-   * The amount of DAI that the investor can collect as ROI.
-   */
-  uint256 public collectivleReturn;
-
   address private immutable _OWNER;
 
   /**

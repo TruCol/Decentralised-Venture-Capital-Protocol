@@ -54,8 +54,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, Interface {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   ExposedDecentralisedInvestmentManager private _exposedDim;
-  address private _investorWalletA;
-  uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
   uint256[] private _owedDai;

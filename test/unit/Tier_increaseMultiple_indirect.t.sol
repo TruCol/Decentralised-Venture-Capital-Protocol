@@ -28,9 +28,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   uint256 private _investmentAmount0;
   uint256 private _investmentAmount1;
 
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
-
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.

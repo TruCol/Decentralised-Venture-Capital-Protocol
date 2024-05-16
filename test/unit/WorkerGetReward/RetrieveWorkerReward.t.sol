@@ -6,9 +6,9 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../../src/DecentralisedInvestmentManager.sol";
-import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
+
 import { SaasPaymentProcessor } from "../../../src/SaasPaymentProcessor.sol";
-import { Helper } from "../../../src/Helper.sol";
+
 import { TierInvestment } from "../../../src/TierInvestment.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
@@ -22,19 +22,13 @@ interface Interface {
 }
 
 contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
-  address payable private _investorWallet;
-  address private _userWallet;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   SaasPaymentProcessor private _saasPaymentProcessor;
-  Helper private _helper;
-  TierInvestment[] private _tierInvestments;
-  ExposedDecentralisedInvestmentManager private _exposedDim;
-  address payable private _investorWalletA;
-  uint256 private _investmentAmount1;
 
+  TierInvestment[] private _tierInvestments;
   address[] private _withdrawers;
   uint256[] private _owedDai;
 

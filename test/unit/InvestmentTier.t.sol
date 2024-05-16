@@ -16,8 +16,6 @@ interface Interface {
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
 contract TierTest is PRBTest, StdCheats, Interface {
-  Tier internal _validTier;
-
   address internal _testAddress;
   Tier internal _tierInterface;
 

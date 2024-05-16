@@ -7,9 +7,8 @@ import { InitialiseDim } from "test/InitialiseDim.sol";
 
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
+
 import { Helper } from "../../src/Helper.sol";
-import { ReceiveCounterOffer } from "../../src/ReceiveCounterOffer.sol";
 
 interface Interface {
   function setUp() external;
@@ -23,16 +22,12 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
   address payable private _investorWallet;
   address private _userWallet;
   DecentralisedInvestmentManager private _dim;
-  SaasPaymentProcessor private _saasPaymentProcessor;
+
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
-  address payable private _investorWalletA;
-  uint256 private _investmentAmount1;
 
   address[] private _withdrawers;
   uint256[] private _owedDai;
-
-  ReceiveCounterOffer private _receiveCounterOfferContract;
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
