@@ -9,12 +9,15 @@ interface Interface {
   function getDim() external returns (DecentralisedInvestmentManager dim);
 
   function getExposedDim() external returns (ExposedDecentralisedInvestmentManager exposedDim);
+
+  function withdraw(uint256 amount) external;
 }
 
 contract InitialiseDim is Interface {
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
   ExposedDecentralisedInvestmentManager private _exposedDim;
+  address private _projectLead;
 
   // solhint-disable-next-line comprehensive-interface
   constructor(
@@ -26,6 +29,9 @@ contract InitialiseDim is Interface {
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator
   ) public {
+    // Initialise the private attributes.
+    _projectLead = projectLead;
+
     // Specify the investment tiers in ether.
     uint256 nrOfTiers = ceilings.length;
     uint256 nrOfMultiples = multiples.length;
@@ -66,5 +72,23 @@ contract InitialiseDim is Interface {
   function getExposedDim() public override returns (ExposedDecentralisedInvestmentManager exposedDim) {
     exposedDim = _exposedDim;
     return exposedDim;
+  }
+
+  /**
+  @notice This function exists only to resolve the Slither warning: "Contract locking ether found". This contract is
+  not actually deployed, it is only used by tests.
+
+  @param amount The amount of DAI the project lead wants to withdraw.
+
+
+  */
+  function withdraw(uint256 amount) public override {
+    require(msg.sender == _projectLead, "Withdraw attempted by someone other than project lead.");
+    // Check if contract has sufficient balance
+    require(address(this).balance >= amount, "Insufficient contract balance");
+
+    // Transfer funds to user using call{value: } (safer approach).
+    (bool success, ) = payable(msg.sender).call{ value: amount }("");
+    require(success, "Investment withdraw by project lead failed");
   }
 }

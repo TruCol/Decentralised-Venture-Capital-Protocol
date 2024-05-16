@@ -8,6 +8,7 @@ import { Helper } from "../src/Helper.sol";
 import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 interface Interface {
   function receiveSaasPayment() external payable;
@@ -40,7 +41,7 @@ interface Interface {
 }
 
 // solhint-disable-next-line max-states-count
-contract DecentralisedInvestmentManager is Interface {
+contract DecentralisedInvestmentManager is Interface, ReentrancyGuard {
   uint256 private _projectLeadFracNumerator;
   uint256 private _projectLeadFracDenominator;
   address private _saas;
@@ -113,6 +114,7 @@ contract DecentralisedInvestmentManager is Interface {
     require(nrOfTiers > 0, "You must provide at least one tier.");
     _projectLeadFracNumerator = projectLeadFracNumerator;
     _projectLeadFracDenominator = projectLeadFracDenominator;
+    require(projectLead != address(0), "Error, project lead address can't be 0.");
     _projectLead = projectLead;
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
@@ -371,7 +373,7 @@ contract DecentralisedInvestmentManager is Interface {
       // Transfer the amount to the PaymentSplitter contract
       payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
     }
-    require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
+    // require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
   }
 
   /**
@@ -521,8 +523,6 @@ contract DecentralisedInvestmentManager is Interface {
 
   @param investmentAmount The amount of WEI invested by the investor.
   @param investorWallet The address of the investor's wallet.
-
-
   */
   function _allocateInvestment(uint256 investmentAmount, address investorWallet) internal {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");

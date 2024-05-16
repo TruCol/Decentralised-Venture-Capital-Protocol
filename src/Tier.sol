@@ -2,7 +2,7 @@
 pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
 error InvalidMinVal(uint256 providedVal, string errorMessage);
 
-interface ITier {
+interface Interface {
   function increaseMultiple(uint256 newMultiple) external;
 
   function getMinVal() external view returns (uint256 _minVal);
@@ -12,7 +12,7 @@ interface ITier {
   function getMultiple() external view returns (uint256 _multiple);
 }
 
-contract Tier is ITier {
+contract Tier is Interface {
   uint256 private _minVal;
   uint256 private _maxVal;
   uint256 private _multiple;
@@ -35,11 +35,6 @@ contract Tier is ITier {
     string memory errorMessage = string(
       abi.encodePacked("A tier minimum amount should always be 0 or greater. Provided value:")
     );
-    // This is a redundant assertion, uint (unsigned) cannot be negative.
-    // require(minVal >= 0, errorMessage);
-    if (minVal < 0) {
-      revert InvalidMinVal(minVal, errorMessage);
-    }
 
     require(maxVal > minVal, "The maximum amount should be larger than the minimum.");
     require(multiple > 1, "A ROI multiple should be at larger than 1.");

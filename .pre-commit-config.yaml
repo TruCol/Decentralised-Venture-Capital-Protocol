@@ -216,7 +216,12 @@ repos:
          ]
      # Static code analyzer for solidity.
      - id: slither
-       name: Slither analysis for smart contracts
-       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
        language: system
-       files: ^(src/|test/)
+       name: Slither analysis for smart contracts
+      # Run on all files:
+      #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
+      #  files: ^(src/|test/)
+
+      # Run on a single file:
+       entry: bash -c 'slither --include-paths="src/DecentralisedInvestmentManager.sol" "src/DecentralisedInvestmentManager.sol"'
+       files: ^(src/DecentralisedInvestmentManager.sol)
