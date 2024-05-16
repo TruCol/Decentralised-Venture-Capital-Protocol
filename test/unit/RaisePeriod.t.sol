@@ -19,8 +19,8 @@ interface IMultipleInvestmentTest {
 
 contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
-  address payable private _investorWallet0;
-  address payable private _investorWalletA;
+  address payable private _firstInvestorWallet;
+  address payable private _secondInvestorWallet;
 
   uint256 private _investmentAmount0;
 
@@ -48,14 +48,14 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     });
     _dim = initDim.getDim();
 
-    _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet0, 3 ether);
-    _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
-    deal(_investorWalletA, 4 ether);
+    _firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
+    deal(_firstInvestorWallet, 3 ether);
+    _secondInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("2"))))));
+    deal(_secondInvestorWallet, 4 ether);
     _investmentAmount0 = 0.5 ether;
 
-    // Set the msg.sender address to that of the _investorWallet0 for the next call.
-    vm.prank(address(_investorWallet0));
+    // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
+    vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: _investmentAmount0 }();
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
@@ -107,8 +107,8 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
-    // Set the msg.sender address to that of the _investorWallet0 for the next call.
-    vm.prank(address(_investorWallet0));
+    // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
+    vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: 2.5 ether }();
 

@@ -26,8 +26,8 @@ interface IMultipleInvestmentTest {
 contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
 
-  address payable private _investorWallet0;
-  address payable private _investorWalletA;
+  address payable private _firstInvestorWallet;
+  address payable private _secondInvestorWallet;
   uint256 private _investmentAmount0;
   uint256 private _investmentAmount1;
   address private _userWallet;
@@ -57,10 +57,10 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     });
     _dim = initDim.getDim();
 
-    _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet0, 3 ether);
-    _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
-    deal(_investorWalletA, 4 ether);
+    _firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
+    deal(_firstInvestorWallet, 3 ether);
+    _secondInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("2"))))));
+    deal(_secondInvestorWallet, 4 ether);
 
     _userWallet = address(uint160(uint256(keccak256(bytes("3")))));
     deal(_userWallet, 100 ether);
@@ -70,16 +70,16 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
   /// @dev Test to simulate a larger balance using `deal`.
   function testMultipleInvestments() public virtual override {
-    uint256 startBalance = _investorWallet0.balance;
+    uint256 startBalance = _firstInvestorWallet.balance;
     _investmentAmount0 = 0.5 ether;
 
-    // Set the msg.sender address to that of the _investorWallet0 for the next call.
-    vm.prank(address(_investorWallet0));
+    // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
+    vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: _investmentAmount0 }();
 
     // Assert that user balance decreased by the investment amount
-    uint256 endBalance = _investorWallet0.balance;
+    uint256 endBalance = _firstInvestorWallet.balance;
     assertEq(
       startBalance - endBalance,
       _investmentAmount0,
@@ -116,7 +116,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWallet0), "The _investorWallet0 is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_firstInvestorWallet), "The _firstInvestorWallet is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
       _investmentAmount0,
@@ -132,10 +132,14 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    vm.prank(_investorWallet0);
+    vm.prank(_firstInvestorWallet);
     paymentSplitter.release();
-    assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
-    assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
+    assertEq(paymentSplitter.released(_firstInvestorWallet), 5 ether, "The amount released was unexpected.");
+    assertEq(
+      _firstInvestorWallet.balance,
+      3 ether - 0.5 ether + 5 ether,
+      "The balance of the investor was unexpected."
+    );
 
     followUpSecondInvestment();
   }
@@ -149,7 +153,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     );
 
     _investmentAmount1 = 4 ether;
-    vm.prank(address(_investorWalletA));
+    vm.prank(address(_secondInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: _investmentAmount1 }();
 
@@ -193,7 +197,7 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWalletA), "The _investorWallet0 is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_secondInvestorWallet), "The _firstInvestorWallet is not recognised as payee.");
 
     assertEq(
       _dim.getCumReceivedInvestments(),
@@ -208,17 +212,17 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    vm.prank(_investorWalletA);
+    vm.prank(_secondInvestorWallet);
     paymentSplitter.release();
 
     assertEq(
-      paymentSplitter.released(_investorWalletA),
+      paymentSplitter.released(_secondInvestorWallet),
       0.6 ether,
       "The amount released was unexpected for investorWallet1."
     );
 
     assertEq(
-      _investorWalletA.balance,
+      _secondInvestorWallet.balance,
       4 ether - 4 ether + 0.6 ether,
       "The balance of the investorWallet1 was unexpected."
     );

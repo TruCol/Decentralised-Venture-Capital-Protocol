@@ -151,7 +151,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
 
   function testCannotInitialiseConstructorWithoutOwedAmounts() public override {
     address[] memory somePayees = new address[](2);
-    uint256[] memory someOwedDai;
+    uint256[] memory someOwedDai = new uint256[](0);
     somePayees[0] = address(10);
     somePayees[1] = address(11);
 
@@ -160,9 +160,9 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
   }
 
   function testCannotInitialiseConstructorWithoutPayees() public override {
-    address[] memory somePayees;
+    address[] memory somePayees = new address[](0);
     // uint256[] memory someOwedDai = new uint256[](2);
-    uint256[] memory someOwedDai;
+    uint256[] memory someOwedDai = new uint256[](0);
     // someOwedDai[0] = 10;
     // someOwedDai[1] = 11;
 

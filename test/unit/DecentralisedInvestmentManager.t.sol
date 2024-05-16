@@ -187,7 +187,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
     _saasPaymentProcessor = new SaasPaymentProcessor();
 
     uint256 saasRevenueForInvestors = 2;
-    uint256 cumRemainingInvestorReturn0;
+    uint256 cumRemainingInvestorReturn0 = 0;
 
     vm.expectRevert(
       bytes(
@@ -202,7 +202,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
       )
     );
 
-    TierInvestment[] memory emptyTierInvestments;
+    TierInvestment[] memory emptyTierInvestments = new TierInvestment[](0);
     (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) = _saasPaymentProcessor
       .computeInvestorReturns(_helper, emptyTierInvestments, saasRevenueForInvestors, cumRemainingInvestorReturn0);
     // Perform the allocations.

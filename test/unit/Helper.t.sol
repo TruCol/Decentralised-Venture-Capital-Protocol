@@ -108,7 +108,8 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
     // assertEq(_helper.computeCurrentInvestmentTier(1 wei, _tiers).getMultiple(), 10);
 
     // Try empty tier.
-    Tier[] memory emptyTiers;
+    // Tier[] memory emptyTiers;
+    Tier[] memory emptyTiers = new Tier[](0);
     vm.expectRevert(bytes("There were no investmentTiers received."));
     _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
   }
@@ -138,7 +139,7 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
 
   function testComputeCumRemainingInvestorReturn() public override {
     // Assert 0 is returned for empty list.
-    TierInvestment[] memory emptyTierInvestments;
+    TierInvestment[] memory emptyTierInvestments = new TierInvestment[](0);
     assertEq(_helper.computeCumRemainingInvestorReturn(emptyTierInvestments), 0);
   }
 
