@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
-interface Interface {
+interface IWorkerGetReward {
   function addWorkerReward(address worker, uint256 retrievalDuration) external payable;
 
   function retreiveWorkerReward(uint256 amount) external;
@@ -11,7 +11,7 @@ interface Interface {
   function getProjectLeadCanRecoverFromTime() external returns (uint256 projectLeadCanRecoverFrom);
 }
 
-contract WorkerGetReward is Interface {
+contract WorkerGetReward is IWorkerGetReward {
   address private _projectLead;
   uint256 private _projectLeadCanRecoverFrom;
   uint256 private _minRetrievalDuration;

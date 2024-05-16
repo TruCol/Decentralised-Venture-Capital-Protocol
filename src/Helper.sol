@@ -5,7 +5,7 @@ import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
-interface Interface {
+interface IHelper {
   function computeCumRemainingInvestorReturn(
     TierInvestment[] memory tierInvestments
   ) external view returns (uint256 cumRemainingInvestorReturn);
@@ -46,7 +46,7 @@ interface Interface {
   ) external pure returns (uint256 returnCumRemainingInvestorReturn);
 }
 
-contract Helper is Interface {
+contract Helper is IHelper {
   /**
   @notice This function calculates the total remaining investment return across all TierInvestments.
 

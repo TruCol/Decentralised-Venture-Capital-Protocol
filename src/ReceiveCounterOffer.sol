@@ -13,7 +13,7 @@ struct Offer {
   uint256 _offerStartTime;
 }
 
-interface Interface {
+interface IReceiveCounterOffer {
   function makeOffer(uint16 multiplier, uint256 duration) external payable;
 
   function acceptOrRejectOffer(uint256 offerId, bool accept) external;
@@ -21,7 +21,7 @@ interface Interface {
   function pullbackOffer(uint256 offerId) external;
 }
 
-contract ReceiveCounterOffer is Interface {
+contract ReceiveCounterOffer is IReceiveCounterOffer {
   uint16 private _offerMultiplier;
   uint256 private _offerDuration; // Time in seconds for project lead to decide
   uint256 private _offerStartTime;

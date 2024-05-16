@@ -7,7 +7,7 @@ import { Helper } from "../src/Helper.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-interface Interface {
+interface ISaasPaymentProcessor {
   function computeInvestorReturns(
     Helper helper,
     TierInvestment[] memory tierInvestments,
@@ -31,7 +31,7 @@ interface Interface {
   ) external returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment);
 }
 
-contract SaasPaymentProcessor is Interface, ReentrancyGuard {
+contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
   address private _owner;
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is

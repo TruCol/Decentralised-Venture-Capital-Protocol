@@ -3,7 +3,7 @@ pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 
-interface Interface {
+interface ITierInvestment {
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) external;
 
   function getInvestor() external view returns (address investor);
@@ -15,7 +15,7 @@ interface Interface {
   function getOwner() external view returns (address owner);
 }
 
-contract TierInvestment is Interface {
+contract TierInvestment is ITierInvestment {
   address private _investor;
   uint256 private _newInvestmentAmount;
   Tier private _tier;

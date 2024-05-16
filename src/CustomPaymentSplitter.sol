@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
-interface Interface {
+interface ICustomPaymentSplitter {
   function deposit() external payable;
 
   function release() external;
@@ -20,7 +20,7 @@ interface Interface {
  * @dev This contract can be used when payments need to be received by a group
  * of people and split proportionately to some number of dai they own.
  */
-contract CustomPaymentSplitter is Interface {
+contract CustomPaymentSplitter is ICustomPaymentSplitter {
   uint256 private _totalDai;
   uint256 private _totalReleased;
 

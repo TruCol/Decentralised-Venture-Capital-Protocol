@@ -4,13 +4,13 @@ pragma solidity >=0.8.25;
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
-interface Interface {
+interface IEdim {
   function allocateInvestment(uint256 investmentAmount, address investorWallet) external;
 
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) external;
 }
 
-contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager, Interface {
+contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager, IEdim {
   // solhint-disable-next-line comprehensive-interface
   constructor(
     Tier[] memory tiers,
