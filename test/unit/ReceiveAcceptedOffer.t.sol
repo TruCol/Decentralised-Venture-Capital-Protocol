@@ -8,8 +8,6 @@ import { InitialiseDim } from "test/InitialiseDim.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
-import { Helper } from "../../src/Helper.sol";
-
 interface Interface {
   function setUp() external;
 
@@ -23,7 +21,6 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, Interface {
   address private _userWallet;
   DecentralisedInvestmentManager private _dim;
 
-  Helper private _helper;
   TierInvestment[] private _tierInvestments;
 
   address[] private _withdrawers;

@@ -7,8 +7,6 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 import { Tier } from "../../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../../src/DecentralisedInvestmentManager.sol";
 
-import { SaasPaymentProcessor } from "../../../src/SaasPaymentProcessor.sol";
-
 import { TierInvestment } from "../../../src/TierInvestment.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
@@ -31,7 +29,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
   Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
-  SaasPaymentProcessor private _saasPaymentProcessor;
+
   TierInvestment[] private _tierInvestments;
   address[] private _withdrawers;
   uint256[] private _owedDai;

@@ -25,7 +25,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address payable private _investorWalletA;
   Tier[] private _tiers;
   uint256 private _investmentAmount0;
-  uint256 private _investmentAmount1;
 
   DecentralisedInvestmentManager private _dim;
 

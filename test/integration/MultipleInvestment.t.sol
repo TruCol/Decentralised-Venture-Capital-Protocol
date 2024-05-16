@@ -26,8 +26,6 @@ interface Interface {
 contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
 
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
   address payable private _investorWallet0;
   address payable private _investorWalletA;
   uint256 private _investmentAmount0;

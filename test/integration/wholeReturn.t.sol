@@ -19,8 +19,7 @@ interface Interface {
 /// https://book.getfoundry.sh/forge/writing-tests
 contract WholeReturn is PRBTest, StdCheats, Interface {
   address internal _projectLead;
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
+
   address payable private _investorWallet0;
   address private _userWallet;
   Tier[] private _tiers;

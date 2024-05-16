@@ -17,8 +17,7 @@ interface Interface {
 
 contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
   address internal _projectLead;
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
+
   address payable private _investorWallet;
   address private _userWallet;
   Tier[] private _tiers;
