@@ -52,7 +52,7 @@ contract TierTest is PRBTest, StdCheats, ITierTest {
    */
   function testThrowsOnMaxValLargerThanMinVal() public override {
     // Act (call the function that might throw)
-    bool didThrow;
+    bool didThrow = false;
     // Pass invalid maxVal 9 which is smaller than minVal (10)
     try new Tier(10, 9, 11) {
       // Reaching this statement means the constructor did not throw an error.
@@ -74,7 +74,7 @@ contract TierTest is PRBTest, StdCheats, ITierTest {
    */
   function testThrowsOnZeroMultiple() public override {
     // Act (call the function that might throw)
-    bool didThrow;
+    bool didThrow = false;
     // Pass invalid multiple (0)
     try new Tier(2, 9, 0) {
       // Reaching this statement means the constructor did not throw an error.
@@ -100,7 +100,7 @@ contract TierTest is PRBTest, StdCheats, ITierTest {
    */
   function testThrowsOnOneMultiple() public override {
     // Act (call the function that might throw)
-    bool didThrow;
+    bool didThrow = false;
     // Pass invalid multiple (1)
     try new Tier(2, 9, 1) {
       // Reaching this statement means the constructor did not throw an error.

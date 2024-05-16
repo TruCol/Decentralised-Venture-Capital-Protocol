@@ -96,7 +96,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
 
   function testEmptyTiers() public override {
     // Test empty tiers are not allowed.
-    Tier[] memory emptyTiers;
+    Tier[] memory emptyTiers = new Tier[](0);
     vm.expectRevert(bytes("You must provide at least one tier."));
     new DecentralisedInvestmentManager({
       tiers: emptyTiers,
