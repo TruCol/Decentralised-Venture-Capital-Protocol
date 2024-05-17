@@ -9,6 +9,12 @@ import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {console2} from "forge-std/src/console2.sol";
+struct AllocatedInvestment {
+  Tier tier;
+  address investorWallet;
+  uint256 amount;
+}
 
 interface IDim {
   function receiveSaasPayment() external payable;
@@ -519,6 +525,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
 
     if (!_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+      _computeInvestmentAllocation({ investmentAmount: investmentAmount, investorWallet: investorWallet });
       Tier currentTier = _HELPER.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
 
       uint256 remainingAmountInTier = _HELPER.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
@@ -560,6 +567,63 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     } else {
       revert("Remaining funds should be returned if the investment ceiling is reached.");
     }
+  }
+
+  function _computeInvestmentAllocation(uint256 investmentAmount, address investorWallet) internal {
+    uint256 remainingInvestment = investmentAmount;
+    AllocatedInvestment[] memory allocatedInvestments = new AllocatedInvestment[](_tiers.length + 1);
+    uint256 allocationCounter = 0;
+    while (remainingInvestment > 0) {
+      uint256 trackedCumReceivedInvestments = _cumReceivedInvestments +
+        _getTrackedCumReceivedInvestments(allocatedInvestments);
+        console2.log("trackedCumReceivedInvestments=",trackedCumReceivedInvestments);
+      if (!_HELPER.hasReachedInvestmentCeiling(trackedCumReceivedInvestments, _tiers)) {
+        (Tier trackedTier, uint256 remainingInTrackedTier) = _getNextTrackedTier({
+          trackedCumReceivedInvestments: trackedCumReceivedInvestments
+        });
+        console2.log("remainingInTrackedTier=",remainingInTrackedTier);
+
+        // Only invest the amount this tier can take, or the amount available, whichever is less.
+        uint256 investableAmountInCurrentTier = _HELPER.minimum(remainingInvestment, remainingInTrackedTier);
+
+        // Store the investment for later processing.
+        allocatedInvestments[allocationCounter] = AllocatedInvestment({
+          tier: trackedTier,
+          investorWallet: investorWallet,
+          amount: investableAmountInCurrentTier
+        });
+        console2.log("allocationCounter=",allocationCounter);
+        console2.log("investableAmountInCurrentTier=",investableAmountInCurrentTier);
+        console2.log("trackedTier=",trackedTier.getMinVal(), trackedTier.getMaxVal());
+        ++allocationCounter;
+
+        // Track changes. TODO: verify no underflow/negative value can occur.
+        remainingInvestment -= investableAmountInCurrentTier;
+        // remainingAmountInTier-=investableAmountInCurrentTier;
+      } else {
+        console2.log("FIlled tiers\n\n");
+        break;
+      }
+    }
+  }
+
+  function _getNextTrackedTier(
+    uint256 trackedCumReceivedInvestments
+  ) internal returns (Tier trackedTier, uint256 remainingInTrackedTier) {
+    // Check if you can retrieve the next Tier or whether the ceiling has been reached. If ceiling, revert. Else:
+    trackedTier = _HELPER.computeCurrentInvestmentTier(trackedCumReceivedInvestments, _tiers);
+    remainingInTrackedTier = _HELPER.getRemainingAmountInCurrentTier(trackedCumReceivedInvestments, trackedTier);
+    return (trackedTier, remainingInTrackedTier);
+  }
+
+  function _getTrackedCumReceivedInvestments(
+    AllocatedInvestment[] memory allocatedInvestments
+  ) internal returns (uint256 trackedInvestments) {
+    for (uint256 i = 0; i < allocatedInvestments.length; ++i) {
+      trackedInvestments += allocatedInvestments[i].amount;
+    }
+
+    return trackedInvestments;
   }
 
   /**

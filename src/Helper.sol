@@ -116,9 +116,7 @@ contract Helper is IHelper {
   /**
   @notice This function identifies the current investment tier based on the total received investments.
 
-  @dev This function is a view function and does not modify the contract's state. It iterates through the provided
-  `tiers` array to find the tier where the `cumReceivedInvestments` (total received WEI) falls within the defined
-  investment range.
+  @dev If Tier x ends at 12 wei, and Tier y starts at 12 wei, it will return the next Tier, so Tier y.
 
   @param cumReceivedInvestments The cumulative amount of WEI received from investors.
   @param tiers An array of `Tier` structs representing the investment tiers and their configurations.
@@ -347,5 +345,9 @@ contract Helper is IHelper {
       inRange = false;
     }
     return inRange;
+  }
+
+  function minimum(uint256 a, uint256 b) public pure returns (uint256) {
+    return a < b ? a : b;
   }
 }
