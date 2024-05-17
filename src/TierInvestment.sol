@@ -27,7 +27,7 @@ contract TierInvestment is ITierInvestment {
 
   address private immutable _OWNER;
 
-  event RemainingReturnDecreased(uint256 oldRemainingReturn, uint256 newRemainingReturn);
+  event RemainingReturnDecreased(uint256 indexed oldRemainingReturn, uint256 indexed newRemainingReturn);
 
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is

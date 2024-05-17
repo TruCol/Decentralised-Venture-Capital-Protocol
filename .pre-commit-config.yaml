@@ -222,12 +222,13 @@ repos:
       #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
 
        # Run only one detection: calls-loop, similar-names
-       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect similar-names "$file"; done'
+       entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect reentrancy-no-eth "$file"; done'
 
       # Run on all checks on all files: Temporarily skip:  naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas
-      #  entry: bash -c 'for file in "$@"; do slither --exclude naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas,pragma,timestamp,unused-import,unused-return --filter-paths="(node_modules)" "$file"; done'
+      #  entry: bash -c 'for file in "$@"; do slither --exclude naming-convention,solc-version,reentrancy-benign,reentrancy-events,reentrancy-unlimited-gas,pragma,timestamp,unused-import,unused-return --filter-paths="(node_modules)" "$file"; done'
 
       # Irrelevant:unused-import, unused-return (in test only).
+      # Fixed:reentrancy-eth,
 
        files: ^(src/|test/)
 

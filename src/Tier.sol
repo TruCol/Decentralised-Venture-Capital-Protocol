@@ -18,7 +18,7 @@ contract Tier is ITier {
   uint256 private _multiple;
   address private immutable _OWNER;
 
-  event MultipleIncreased(uint256 oldMultiple, uint256 newMultiple);
+  event MultipleIncreased(uint256 indexed oldMultiple, uint256 indexed newMultiple);
 
   /**
   @notice Constructor for creating a Tier instance with specified configuration parameters.

@@ -61,13 +61,9 @@ contract Helper is IHelper {
   function computeCumRemainingInvestorReturn(
     TierInvestment[] memory tierInvestments
   ) public view override returns (uint256 cumRemainingInvestorReturn) {
-    // Initialise cumRemainingInvestorReturn.
-    // cumRemainingInvestorReturn = 0;
-
     // Sum the returns of all tiers.
     uint256 nrOfTierInvestments = tierInvestments.length;
     for (uint256 i = 0; i < nrOfTierInvestments; ++i) {
-      // TODO: assert tierInvestments[i].getRemainingReturn() >= 0.
       cumRemainingInvestorReturn += tierInvestments[i].getRemainingReturn();
     }
 
