@@ -22,6 +22,8 @@ interface IDecentralisedInvestmentManagerTest {
 
   function testReturnFunds() external;
 
+  function testZeroInvestmentThrowsError() external;
+
   function testTierGap() external;
 
   function testZeroSAASPayment() external;
@@ -84,7 +86,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
     assertEq(_dim.getCumReceivedInvestments(), 0);
 
     _investorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet, 3 ether);
+    deal(_investorWallet, 5555 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
   }
@@ -109,9 +111,14 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   }
 
   function testReturnFunds() public override {
-    vm.expectRevert(bytes("Remaining funds should be returned if the investment ceiling is reached."));
+    vm.prank(_investorWallet);
+    assertEq(_investorWallet.balance, 3 ether, "_investorWallet balance unexpected.");
+    // vm.expectRevert(bytes("Remaining funds should be returned if the investment ceiling is reached."));
     _dim.receiveInvestment{ value: 5555 ether }();
+    assertEq(_investorWallet.balance, 5552 ether, "_investorWallet balance after investment was unexpected.");
+  }
 
+  function testZeroInvestmentThrowsError() public override {
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
     _dim.receiveInvestment{ value: 0 ether }();
   }

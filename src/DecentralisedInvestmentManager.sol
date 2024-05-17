@@ -9,11 +9,11 @@ import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {console2} from "forge-std/src/console2.sol";
 struct AllocatedInvestment {
   Tier tier;
   address investorWallet;
   uint256 amount;
+  uint256 remainingAmountInTier;
 }
 
 interface IDim {
@@ -525,63 +525,51 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
 
     if (!_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
-      _computeInvestmentAllocation({ investmentAmount: investmentAmount, investorWallet: investorWallet });
-      Tier currentTier = _HELPER.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
+      (AllocatedInvestment[] memory allocatedInvestments, uint256 allocationCounter) = _computeInvestmentAllocation({
+        investmentAmount: investmentAmount,
+        investorWallet: investorWallet
+      });
 
-      uint256 remainingAmountInTier = _HELPER.getRemainingAmountInCurrentTier(_cumReceivedInvestments, currentTier);
+      TierInvestment[] memory localTierInvestments = new TierInvestment[](allocationCounter);
 
-      TierInvestment tierInvestment;
-      if (investmentAmount > remainingAmountInTier) {
-        // Invest remaining amount in current tier
-        (_cumReceivedInvestments, tierInvestment) = _SAAS_PAYMENT_PROCESSOR.addInvestmentToCurrentTier(
-          _cumReceivedInvestments,
-          investorWallet,
-          currentTier,
-          remainingAmountInTier
-        );
-
+      for (uint256 i = 0; i < allocationCounter; ++i) {
+        TierInvestment tierInvestment;
+        (_cumReceivedInvestments, tierInvestment) = _SAAS_PAYMENT_PROCESSOR.addInvestmentToCurrentTier({
+          cumReceivedInvestments: _cumReceivedInvestments,
+          investorWallet: allocatedInvestments[i].investorWallet,
+          currentTier: allocatedInvestments[i].tier,
+          newInvestmentAmount: allocatedInvestments[i].amount
+        });
         require(
           tierInvestment.getOwner() == address(_SAAS_PAYMENT_PROCESSOR),
           "The TierInvestment was not created through this contract 0."
         );
-        _tierInvestments.push(tierInvestment);
 
-        // Invest remaining amount from user
-        uint256 remainingInvestmentAmount = investmentAmount - remainingAmountInTier;
-
-        _allocateInvestment(remainingInvestmentAmount, investorWallet);
-      } else {
-        // Invest full amount in current tier
-        (_cumReceivedInvestments, tierInvestment) = _SAAS_PAYMENT_PROCESSOR.addInvestmentToCurrentTier(
-          _cumReceivedInvestments,
-          investorWallet,
-          currentTier,
-          investmentAmount
-        );
-        require(
-          tierInvestment.getOwner() == address(_SAAS_PAYMENT_PROCESSOR),
-          "The TierInvestment was not created through this contract 1."
-        );
-        _tierInvestments.push(tierInvestment);
+        localTierInvestments[i] = tierInvestment;
+      }
+      for (uint256 i = 0; i < allocationCounter; ++i) {
+        _tierInvestments.push(localTierInvestments[i]);
       }
     } else {
       revert("Remaining funds should be returned if the investment ceiling is reached.");
     }
   }
 
-  function _computeInvestmentAllocation(uint256 investmentAmount, address investorWallet) internal {
+  function _computeInvestmentAllocation(
+    uint256 investmentAmount,
+    address investorWallet
+  ) internal returns (AllocatedInvestment[] memory allocatedInvestments, uint256 allocationCounter) {
     uint256 remainingInvestment = investmentAmount;
-    AllocatedInvestment[] memory allocatedInvestments = new AllocatedInvestment[](_tiers.length + 1);
+    allocatedInvestments = new AllocatedInvestment[](_tiers.length + 1);
     uint256 allocationCounter = 0;
     while (remainingInvestment > 0) {
       uint256 trackedCumReceivedInvestments = _cumReceivedInvestments +
         _getTrackedCumReceivedInvestments(allocatedInvestments);
-        console2.log("trackedCumReceivedInvestments=",trackedCumReceivedInvestments);
+
       if (!_HELPER.hasReachedInvestmentCeiling(trackedCumReceivedInvestments, _tiers)) {
         (Tier trackedTier, uint256 remainingInTrackedTier) = _getNextTrackedTier({
           trackedCumReceivedInvestments: trackedCumReceivedInvestments
         });
-        console2.log("remainingInTrackedTier=",remainingInTrackedTier);
 
         // Only invest the amount this tier can take, or the amount available, whichever is less.
         uint256 investableAmountInCurrentTier = _HELPER.minimum(remainingInvestment, remainingInTrackedTier);
@@ -590,21 +578,21 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
         allocatedInvestments[allocationCounter] = AllocatedInvestment({
           tier: trackedTier,
           investorWallet: investorWallet,
-          amount: investableAmountInCurrentTier
+          amount: investableAmountInCurrentTier,
+          remainingAmountInTier: remainingInTrackedTier
         });
-        console2.log("allocationCounter=",allocationCounter);
-        console2.log("investableAmountInCurrentTier=",investableAmountInCurrentTier);
-        console2.log("trackedTier=",trackedTier.getMinVal(), trackedTier.getMaxVal());
+
         ++allocationCounter;
 
         // Track changes. TODO: verify no underflow/negative value can occur.
         remainingInvestment -= investableAmountInCurrentTier;
         // remainingAmountInTier-=investableAmountInCurrentTier;
       } else {
-        console2.log("FIlled tiers\n\n");
         break;
       }
     }
+
+    return (allocatedInvestments, allocationCounter);
   }
 
   function _getNextTrackedTier(
@@ -619,7 +607,8 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   function _getTrackedCumReceivedInvestments(
     AllocatedInvestment[] memory allocatedInvestments
   ) internal returns (uint256 trackedInvestments) {
-    for (uint256 i = 0; i < allocatedInvestments.length; ++i) {
+    uint256 nrOfAllocatedInvestments = allocatedInvestments.length;
+    for (uint256 i = 0; i < nrOfAllocatedInvestments; ++i) {
       trackedInvestments += allocatedInvestments[i].amount;
     }
 

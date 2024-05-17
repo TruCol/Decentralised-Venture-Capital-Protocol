@@ -44,6 +44,8 @@ interface IHelper {
     uint256 investorFracDenominator,
     uint256 paidAmount
   ) external pure returns (uint256 returnCumRemainingInvestorReturn);
+
+  function minimum(uint256 a, uint256 b) external pure returns (uint256 minVal);
 }
 
 contract Helper is IHelper {
@@ -347,7 +349,8 @@ contract Helper is IHelper {
     return inRange;
   }
 
-  function minimum(uint256 a, uint256 b) public pure returns (uint256) {
-    return a < b ? a : b;
+  function minimum(uint256 a, uint256 b) public pure override returns (uint256 minVal) {
+    minVal = a < b ? a : b;
+    return minVal;
   }
 }
