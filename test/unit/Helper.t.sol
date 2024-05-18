@@ -68,7 +68,8 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
         "Investment ceiling is reached."
       )
     );
-    _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
+    Tier currentTier = _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
+    assertEq(address(currentTier), address(0));
   }
 
   function testNegativeInvestment() public override {
@@ -83,7 +84,8 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
         )
       )
     );
-    _helper.computeCurrentInvestmentTier(1 wei, _tiers);
+    Tier currentTier = _helper.computeCurrentInvestmentTier(1 wei, _tiers);
+    assertEq(address(currentTier), address(0));
   }
 
   function testCanInvestInNextTier() public override {
@@ -111,7 +113,8 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
     // Tier[] memory emptyTiers;
     Tier[] memory emptyTiers = new Tier[](0);
     vm.expectRevert(bytes("There were no investmentTiers received."));
-    _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
+    Tier currentTier = _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
+    assertEq(address(currentTier), address(0));
   }
 
   function testGetRemainingAmountInCurrentTier() public override {

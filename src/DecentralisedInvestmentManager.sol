@@ -561,7 +561,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   ) internal returns (AllocatedInvestment[] memory allocatedInvestments, uint256 allocationCounter) {
     uint256 remainingInvestment = investmentAmount;
     allocatedInvestments = new AllocatedInvestment[](_tiers.length + 1);
-    uint256 allocationCounter = 0;
+    allocationCounter = 0;
     while (remainingInvestment > 0) {
       uint256 trackedCumReceivedInvestments = _cumReceivedInvestments +
         _getTrackedCumReceivedInvestments(allocatedInvestments);
