@@ -144,8 +144,8 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
     // it computes how much that address is owed, and immediately pays it. If
     // this function is not called, one does not calculate how much an address
     // is owed.
-    account.transfer(payment);
     emit PaymentReleased(account, payment);
+    account.transfer(payment);
   }
 
   /**

@@ -204,6 +204,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       )
     );
     require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
+    emit PaymentReceived(msg.sender, msg.value);
 
     // Distribute remaining amount to investors (if applicable).
     if (saasRevenueForInvestors > 0) {
@@ -221,7 +222,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
     // Perform transaction and administration for project lead (if applicable)
     _performSaasRevenueAllocation(saasRevenueForProjectLead, _PROJECT_LEAD);
-    emit PaymentReceived(msg.sender, msg.value);
   }
 
   /**
@@ -255,15 +255,12 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   */
   function receiveInvestment() external payable override {
     require(msg.value > 0, "The amount invested was not larger than 0.");
-
     require(
       !_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
       "The investor ceiling is not reached."
     );
-
-    _allocateInvestment(msg.value, msg.sender);
-
     emit InvestmentReceived(msg.sender, msg.value);
+    _allocateInvestment(msg.value, msg.sender);
   }
 
   /**
@@ -289,9 +286,8 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       "The contract calling this function was not counterOfferContract."
     );
     require(!_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers), "The investor ceiling is reached.");
-    _allocateInvestment(msg.value, offerInvestor);
-
     emit InvestmentReceived(offerInvestor, msg.value);
+    _allocateInvestment(msg.value, offerInvestor);
   }
 
   /**
