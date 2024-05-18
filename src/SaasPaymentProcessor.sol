@@ -191,7 +191,7 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
     bool incomingHasRoundedUp
-  ) public view override returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
+  ) public pure override returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
     require(denominator > 0, "Denominator not larger than 0");

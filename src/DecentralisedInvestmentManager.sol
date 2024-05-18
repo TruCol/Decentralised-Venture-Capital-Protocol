@@ -591,26 +591,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     return (allocatedInvestments, allocationCounter);
   }
 
-  function _getNextTrackedTier(
-    uint256 trackedCumReceivedInvestments
-  ) internal returns (Tier trackedTier, uint256 remainingInTrackedTier) {
-    // Check if you can retrieve the next Tier or whether the ceiling has been reached. If ceiling, revert. Else:
-    trackedTier = _HELPER.computeCurrentInvestmentTier(trackedCumReceivedInvestments, _tiers);
-    remainingInTrackedTier = _HELPER.getRemainingAmountInCurrentTier(trackedCumReceivedInvestments, trackedTier);
-    return (trackedTier, remainingInTrackedTier);
-  }
-
-  function _getTrackedCumReceivedInvestments(
-    AllocatedInvestment[] memory allocatedInvestments
-  ) internal returns (uint256 trackedInvestments) {
-    uint256 nrOfAllocatedInvestments = allocatedInvestments.length;
-    for (uint256 i = 0; i < nrOfAllocatedInvestments; ++i) {
-      trackedInvestments += allocatedInvestments[i].amount;
-    }
-
-    return trackedInvestments;
-  }
-
   /**
   @notice This internal function allocates SAAS revenue to a designated wallet address.
 
@@ -669,5 +649,25 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     } else {
       _PAYMENT_SPLITTER.publicAddSharesToPayee(receivingWallet, amount);
     }
+  }
+
+  function _getNextTrackedTier(
+    uint256 trackedCumReceivedInvestments
+  ) internal view returns (Tier trackedTier, uint256 remainingInTrackedTier) {
+    // Check if you can retrieve the next Tier or whether the ceiling has been reached. If ceiling, revert. Else:
+    trackedTier = _HELPER.computeCurrentInvestmentTier(trackedCumReceivedInvestments, _tiers);
+    remainingInTrackedTier = _HELPER.getRemainingAmountInCurrentTier(trackedCumReceivedInvestments, trackedTier);
+    return (trackedTier, remainingInTrackedTier);
+  }
+
+  function _getTrackedCumReceivedInvestments(
+    AllocatedInvestment[] memory allocatedInvestments
+  ) internal pure returns (uint256 trackedInvestments) {
+    uint256 nrOfAllocatedInvestments = allocatedInvestments.length;
+    for (uint256 i = 0; i < nrOfAllocatedInvestments; ++i) {
+      trackedInvestments += allocatedInvestments[i].amount;
+    }
+
+    return trackedInvestments;
   }
 }

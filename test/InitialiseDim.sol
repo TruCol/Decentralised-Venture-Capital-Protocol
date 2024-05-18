@@ -65,16 +65,6 @@ contract InitialiseDim is IInitialiseDim {
     });
   }
 
-  function getDim() public override returns (DecentralisedInvestmentManager dim) {
-    dim = _DIM;
-    return dim;
-  }
-
-  function getExposedDim() public override returns (ExposedDecentralisedInvestmentManager exposedDim) {
-    exposedDim = _EXPOSED_DIM;
-    return exposedDim;
-  }
-
   /**
   @notice This function exists only to resolve the Slither warning: "Contract locking ether found". This contract is
   not actually deployed, it is only used by tests.
@@ -92,5 +82,15 @@ contract InitialiseDim is IInitialiseDim {
     // (bool success, ) = payable(msg.sender).call{ value: amount }("");
     // require(success, "Investment withdraw by project lead failed");
     payable(msg.sender).transfer(amount);
+  }
+
+  function getDim() public view override returns (DecentralisedInvestmentManager dim) {
+    dim = _DIM;
+    return dim;
+  }
+
+  function getExposedDim() public view override returns (ExposedDecentralisedInvestmentManager exposedDim) {
+    exposedDim = _EXPOSED_DIM;
+    return exposedDim;
   }
 }

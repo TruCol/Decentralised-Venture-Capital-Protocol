@@ -50,7 +50,6 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, IWorkerGetRewardTest {
       projectLeadFracDenominator: 10
     });
     _dim = initDim.getDim();
-
     _workerGetReward = _dim.getWorkerGetReward();
   }
 
