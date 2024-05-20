@@ -59,7 +59,9 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, IReveiveAcceptedOfferTe
   }
 
   function testReceiveInvestmentOfferCeilingReached() public virtual override {
+    vm.prank(_investorWallet);
     _dim.receiveInvestment{ value: 30 }();
+    // TODO: Assert the investment ceiling is reached
 
     vm.deal(address(_dim.getReceiveCounterOffer()), 10);
     vm.prank(address(_dim.getReceiveCounterOffer()));

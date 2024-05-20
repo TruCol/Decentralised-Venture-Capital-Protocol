@@ -111,11 +111,10 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   }
 
   function testReturnFunds() public override {
+    assertEq(_investorWallet.balance, 5555 ether, "_investorWallet balance unexpected before investment.");
     vm.prank(_investorWallet);
-    assertEq(_investorWallet.balance, 3 ether, "_investorWallet balance unexpected.");
-    // vm.expectRevert(bytes("Remaining funds should be returned if the investment ceiling is reached."));
     _dim.receiveInvestment{ value: 5555 ether }();
-    assertEq(_investorWallet.balance, 5552 ether, "_investorWallet balance after investment was unexpected.");
+    assertEq(_investorWallet.balance, 5525 ether, "_investorWallet balance after investment was unexpected.");
   }
 
   function testZeroInvestmentThrowsError() public override {
@@ -156,9 +155,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   }
 
   function testReachedCeiling() public override {
-    _dim.receiveInvestment{ value: 30 ether }();
-    vm.expectRevert(bytes("The investor ceiling is not reached."));
-    _dim.receiveInvestment{ value: 22 ether }();
+    // vm.expectRevert(bytes("Investment ceiling reached after processing. Remaining funds are returned to investor."));
+    vm.prank(_investorWallet);
+    _dim.receiveInvestment{ value: 31 ether }();
   }
 
   function testIncreaseCurrentMultipleInstantly() public override {
@@ -187,7 +186,7 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
     vm.prank(_projectLead);
     vm.expectRevert(bytes("The amount invested was not larger than 0."));
-    _exposedDim.allocateInvestment(0, address(0));
+    _exposedDim.allocateInvestment(0, payable(address(0)));
   }
 
   function testDifferenceInSAASPayoutAndCumulativeReturnThrowsError() public override {

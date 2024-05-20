@@ -5,7 +5,7 @@ import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
 interface IEdim {
-  function allocateInvestment(uint256 investmentAmount, address investorWallet) external;
+  function allocateInvestment(uint256 investmentAmount, address payable investorWallet) external;
 
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) external;
 }
@@ -33,7 +33,7 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
     // Additional logic for ExposedDecentralisedInvestmentManager if needed
   }
 
-  function allocateInvestment(uint256 investmentAmount, address investorWallet) public override {
+  function allocateInvestment(uint256 investmentAmount, address payable investorWallet) public override {
     return _allocateInvestment(investmentAmount, investorWallet);
   }
 

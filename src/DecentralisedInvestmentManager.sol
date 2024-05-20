@@ -254,13 +254,15 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
   */
   function receiveInvestment() external payable override {
+    require(msg.sender != address(this), "This contract cannot invest in itself.");
     require(msg.value > 0, "The amount invested was not larger than 0.");
     require(
       !_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
       "The investor ceiling is not reached."
     );
+
     emit InvestmentReceived(msg.sender, msg.value);
-    _allocateInvestment(msg.value, msg.sender);
+    _allocateInvestment(msg.value, payable(msg.sender));
   }
 
   /**
@@ -280,6 +282,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
   */
   function receiveAcceptedOffer(address payable offerInvestor) public payable override {
+    require(offerInvestor != address(this), "Cannot accept offer from this contract.");
     require(msg.value > 0, "The amount invested was not larger than 0.");
     require(
       msg.sender == address(_RECEIVE_COUNTER_OFFER),
@@ -517,7 +520,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   @param investmentAmount The amount of WEI invested by the investor.
   @param investorWallet The address of the investor's wallet.
   */
-  function _allocateInvestment(uint256 investmentAmount, address investorWallet) internal {
+  function _allocateInvestment(uint256 investmentAmount, address payable investorWallet) internal {
     require(investmentAmount > 0, "The amount invested was not larger than 0.");
 
     if (!_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
@@ -536,59 +539,33 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
           currentTier: allocatedInvestments[i].tier,
           newInvestmentAmount: allocatedInvestments[i].amount
         });
+
         require(
           tierInvestment.getOwner() == address(_SAAS_PAYMENT_PROCESSOR),
           "The TierInvestment was not created through this contract 0."
         );
-
         localTierInvestments[i] = tierInvestment;
       }
+      uint256 acceptedInvestmentAmount = 0;
       for (uint256 i = 0; i < allocationCounter; ++i) {
         _tierInvestments.push(localTierInvestments[i]);
+        acceptedInvestmentAmount += localTierInvestments[i].getNewInvestmentAmount();
+      }
+      if (_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
+        uint256 overshoot = investmentAmount - acceptedInvestmentAmount;
+
+        if (address(this).balance >= overshoot) {
+          require(address(this).balance >= overshoot, "Not enough to send overshoot.");
+          require(address(this) != investorWallet, "Can't send currency to self.");
+
+          require(investorWallet.send(overshoot), "Returning investor funds failed.");
+        }
+
+        // revert("Investment ceiling reached after processing. Remaining funds are returned to investor.");
       }
     } else {
-      revert("Remaining funds should be returned if the investment ceiling is reached.");
+      revert("The investmentcontract is already full. Funds are returned to investor.");
     }
-  }
-
-  function _computeInvestmentAllocation(
-    uint256 investmentAmount,
-    address investorWallet
-  ) internal returns (AllocatedInvestment[] memory allocatedInvestments, uint256 allocationCounter) {
-    uint256 remainingInvestment = investmentAmount;
-    allocatedInvestments = new AllocatedInvestment[](_tiers.length + 1);
-    allocationCounter = 0;
-    while (remainingInvestment > 0) {
-      uint256 trackedCumReceivedInvestments = _cumReceivedInvestments +
-        _getTrackedCumReceivedInvestments(allocatedInvestments);
-
-      if (!_HELPER.hasReachedInvestmentCeiling(trackedCumReceivedInvestments, _tiers)) {
-        (Tier trackedTier, uint256 remainingInTrackedTier) = _getNextTrackedTier({
-          trackedCumReceivedInvestments: trackedCumReceivedInvestments
-        });
-
-        // Only invest the amount this tier can take, or the amount available, whichever is less.
-        uint256 investableAmountInCurrentTier = _HELPER.minimum(remainingInvestment, remainingInTrackedTier);
-
-        // Store the investment for later processing.
-        allocatedInvestments[allocationCounter] = AllocatedInvestment({
-          tier: trackedTier,
-          investorWallet: investorWallet,
-          amount: investableAmountInCurrentTier,
-          remainingAmountInTier: remainingInTrackedTier
-        });
-
-        ++allocationCounter;
-
-        // Track changes. TODO: verify no underflow/negative value can occur.
-        remainingInvestment -= investableAmountInCurrentTier;
-        // remainingAmountInTier-=investableAmountInCurrentTier;
-      } else {
-        break;
-      }
-    }
-
-    return (allocatedInvestments, allocationCounter);
   }
 
   /**
@@ -649,6 +626,46 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     } else {
       _PAYMENT_SPLITTER.publicAddSharesToPayee(receivingWallet, amount);
     }
+  }
+
+  function _computeInvestmentAllocation(
+    uint256 investmentAmount,
+    address investorWallet
+  ) internal view returns (AllocatedInvestment[] memory allocatedInvestments, uint256 allocationCounter) {
+    uint256 remainingInvestment = investmentAmount;
+    allocatedInvestments = new AllocatedInvestment[](_tiers.length + 1);
+    allocationCounter = 0;
+    while (remainingInvestment > 0) {
+      uint256 trackedCumReceivedInvestments = _cumReceivedInvestments +
+        _getTrackedCumReceivedInvestments(allocatedInvestments);
+
+      if (!_HELPER.hasReachedInvestmentCeiling(trackedCumReceivedInvestments, _tiers)) {
+        (Tier trackedTier, uint256 remainingInTrackedTier) = _getNextTrackedTier({
+          trackedCumReceivedInvestments: trackedCumReceivedInvestments
+        });
+
+        // Only invest the amount this tier can take, or the amount available, whichever is less.
+        uint256 investableAmountInCurrentTier = _HELPER.minimum(remainingInvestment, remainingInTrackedTier);
+
+        // Store the investment for later processing.
+        allocatedInvestments[allocationCounter] = AllocatedInvestment({
+          tier: trackedTier,
+          investorWallet: investorWallet,
+          amount: investableAmountInCurrentTier,
+          remainingAmountInTier: remainingInTrackedTier
+        });
+
+        ++allocationCounter;
+
+        // Track changes. TODO: verify no underflow/negative value can occur.
+        remainingInvestment -= investableAmountInCurrentTier;
+        // remainingAmountInTier-=investableAmountInCurrentTier;
+      } else {
+        break;
+      }
+    }
+
+    return (allocatedInvestments, allocationCounter);
   }
 
   function _getNextTrackedTier(
