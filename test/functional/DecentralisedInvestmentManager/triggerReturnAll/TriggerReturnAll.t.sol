@@ -5,7 +5,7 @@ import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
 interface IMultipleInvestmentTest {
@@ -16,6 +16,14 @@ interface IMultipleInvestmentTest {
   function testKeepInvestmentsForSuccesfullRaise() external;
 }
 
+/**
+Tests whether the _dim.triggerReturnAll() function ensures the investments are:
+- returned if the investment target is not reached, after the raisePeriod has passed.
+- not returned if the investment target is reached, after the raisePeriod has passed.
+TODO: test whether the investments are:
+- not returned if the investment target is not reached, before the raisePeriod has passed.
+- not returned if the investment target is reached, before the raisePeriod has passed.
+*/
 contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _firstInvestorWallet;
@@ -63,10 +71,8 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   }
 
   /**
-  @dev The investor has invested 0.5 eth, at a multiple of 10. Then the
-  multiple of that tier gets increased to 20, but that was after the investment
-  was made, so the investor still gets a multiple of 10, yielding a return of 5
-  ether.
+  @dev The investor has invested 0.5 eth, and the investment target is 0.6 eth after 12 weeks.
+  So the investment target is not reached, so all the funds should be returned.
    */
   function testRaisePeriodReturnSingleInvestment() public virtual override {
     // Simulate 3 weeks passing by
@@ -82,9 +88,13 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
     vm.prank(_projectLead);
     _dim.triggerReturnAll();
-    assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether.");
+    assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether after returning all investments.");
   }
 
+  /**
+  Tests whether two investments together that reach the investment target result prevents the
+  funds from being returned to the investors. (Because if the investment target is reached, the funds
+  should be allocated to development, instead of being returned.) */
   function testKeepInvestmentsForSuccesfullRaise() public virtual override {
     // Simulate 3 weeks passing by
     // solhint-disable-next-line not-rely-on-time
@@ -104,6 +114,6 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
     vm.expectRevert(bytes("Investment target reached!"));
     _dim.triggerReturnAll();
-    assertEq(address(_dim).balance, 3 ether, "The _dim did not contain 0 ether.");
+    assertEq(address(_dim).balance, 3 ether, "The _dim did not contain 3 ether.");
   }
 }

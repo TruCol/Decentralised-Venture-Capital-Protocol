@@ -628,6 +628,17 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     }
   }
 
+  /**
+   * @dev Computes an investment allocation for a given investor and investment amount.
+   * @notice This function iterates through investment tiers and allocates investment amount
+   * based on tier definitions and investment caps.
+   *
+   * @param investmentAmount The total amount of investment to be allocated.
+   * @param investorWallet The wallet address of the investor.
+   *
+   * @return allocatedInvestments An array containing investment allocations for each tier.
+   * @return allocationCounter The number of tiers that received investment.
+   */
   function _computeInvestmentAllocation(
     uint256 investmentAmount,
     address investorWallet
@@ -668,6 +679,16 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     return (allocatedInvestments, allocationCounter);
   }
 
+  /**
+   * @dev Retrieves the next investment tier based on the cumulative received investments
+   * and calculates the remaining investable amount within that tier.
+   *
+   * @param trackedCumReceivedInvestments The total amount of investment received so far,
+   * considering previous allocations (if any).
+   *
+   * @return trackedTier The tier identified based on the cumulative received investments.
+   * @return remainingInTrackedTier The amount remaining that can be invested in the identified tier.
+   */
   function _getNextTrackedTier(
     uint256 trackedCumReceivedInvestments
   ) internal view returns (Tier trackedTier, uint256 remainingInTrackedTier) {
@@ -677,6 +698,13 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     return (trackedTier, remainingInTrackedTier);
   }
 
+  /**
+   * @dev Calculates the total amount invested across all provided allocations.
+   *
+   * @param allocatedInvestments An array containing investment allocations for each tier.
+   *
+   * @return trackedInvestments The total amount of investment accumulated from the provided allocations.
+   */
   function _getTrackedCumReceivedInvestments(
     AllocatedInvestment[] memory allocatedInvestments
   ) internal pure returns (uint256 trackedInvestments) {
