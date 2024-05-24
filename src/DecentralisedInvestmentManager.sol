@@ -9,6 +9,7 @@ import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
 import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 struct AllocatedInvestment {
   Tier tier;
   address investorWallet;
@@ -81,6 +82,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
     require(block.timestamp >= _START_TIME + _RAISE_PERIOD, "The fund raising period has not passed yet.");
+
     require(_cumReceivedInvestments < _INVESTMENT_TARGET, "Investment target reached!");
     _; // Allows execution of the decorated (triggerReturnAll) function.
   }
@@ -111,6 +113,9 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   ) public {
     uint256 nrOfTiers = tiers.length;
     require(nrOfTiers > 0, "You must provide at least one tier.");
+    require(projectLeadFracDenominator > 0, "projectLeadFracDenominator should be larger than 0.");
+    require(raisePeriod > 0, "raisePeriod should be larger than 0.");
+    require(investmentTarget > 0, "investmentTarget should be larger than 0.");
     _PROJECT_LEAD_FRAC_NUMERATOR = projectLeadFracNumerator;
     _PROJECT_LEAD_FRAC_DENOMINATOR = projectLeadFracDenominator;
     require(projectLead != address(0), "Error, project lead address can't be 0.");

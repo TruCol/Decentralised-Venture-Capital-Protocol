@@ -141,7 +141,10 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
     uint256 newInvestmentAmount
   ) public override onlyOwner returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment) {
     newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+
     cumReceivedInvestments += newInvestmentAmount;
+    require(newInvestmentAmount > 0, "can't add investment of 0.");
+    require(cumReceivedInvestments >= newInvestmentAmount, "Overflow occurred.");
     updatedCumReceivedInvestments = cumReceivedInvestments;
     return (updatedCumReceivedInvestments, newTierInvestment);
   }

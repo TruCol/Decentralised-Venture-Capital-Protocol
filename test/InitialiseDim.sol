@@ -23,11 +23,11 @@ contract InitialiseDim is IInitialiseDim {
   constructor(
     uint256[] memory ceilings,
     uint8[] memory multiples,
-    uint32 raisePeriod,
     uint256 investmentTarget,
-    address projectLead,
     uint256 projectLeadFracNumerator,
-    uint256 projectLeadFracDenominator
+    uint256 projectLeadFracDenominator,
+    address projectLead,
+    uint32 raisePeriod
   ) public {
     // Initialise the private attributes.
     require(projectLead != address(0), "projectLead address can't be 0.");
