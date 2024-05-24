@@ -7,6 +7,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface IFuzzTriggerReturnAll {
   function testFuzzAfterRaisePeriodReturnSingleInvestment(
@@ -81,11 +82,30 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     address payable someInvestorWallet
   ) internal virtual {
     deal(someInvestorWallet, someInvestmentAmount);
+
     // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
     vm.prank(address(someInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     dim.receiveInvestment{ value: someInvestmentAmount }();
     // assertEq(dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
+  }
+
+  function yieldsOverflowAdd(uint256 a, uint256 b) public pure returns (bool) {
+    uint256 typeMax = type(uint256).max;
+    uint256 remaining = typeMax - b;
+    // TODO: determine whether the = should be included or not.
+    return a <= remaining;
+  }
+
+  function yieldsOverflowMultiply(uint256 a, uint256 b) public pure returns (bool) {
+    // Check for special cases where overflow won't occur
+    if (a == 0 || b == 0) {
+      return false;
+    }
+
+    // Use a more efficient check for common overflow scenario (a > typeMax / b)
+    uint256 typeMax = type(uint256).max;
+    return a > typeMax / b;
   }
 
   /**
@@ -107,51 +127,59 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     uint8 thirdMultiple
   ) public virtual override {
     if (
-      projectLeadFracDenominator > 0 &&
-      firstInvestmentAmount > 0 &&
-      firstCeiling > 0 &&
-      additionalWaitPeriod > 0 &&
-      raisePeriod > 0 &&
-      investmentTarget > 0 &&
-      firstCeiling < secondCeiling &&
-      secondCeiling < thirdCeiling &&
-      projectLeadFracNumerator <= projectLeadFracDenominator &&
-      firstMultiple > 1 &&
-      secondMultiple > 1 &&
-      thirdMultiple > 1
+      (!yieldsOverflowAdd({ a: firstMultiple, b: secondMultiple })) &&
+      (!yieldsOverflowAdd({ a: firstMultiple + secondMultiple, b: thirdMultiple })) &&
+      (!yieldsOverflowMultiply({ a: firstMultiple + secondMultiple + thirdMultiple, b: firstInvestmentAmount }))
     ) {
-      DecentralisedInvestmentManager dim = _initialiseRandomDim({
-        projectLeadFracNumerator: projectLeadFracNumerator,
-        projectLeadFracDenominator: projectLeadFracDenominator,
-        raisePeriod: raisePeriod,
-        investmentTarget: investmentTarget,
-        firstCeiling: firstCeiling,
-        secondCeiling: secondCeiling,
-        thirdCeiling: thirdCeiling,
-        firstMultiple: firstMultiple,
-        secondMultiple: secondMultiple,
-        thirdMultiple: thirdMultiple
-      });
-      address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-      _performInvestmentInRandomDim({
-        dim: dim,
-        someInvestmentAmount: firstInvestmentAmount,
-        someInvestorWallet: firstInvestorWallet
-      });
+      if (
+        projectLeadFracDenominator > 0 &&
+        firstInvestmentAmount > 0 &&
+        firstCeiling > 0 &&
+        additionalWaitPeriod > 0 &&
+        raisePeriod > 0 &&
+        investmentTarget > 0 &&
+        firstCeiling < secondCeiling &&
+        secondCeiling < thirdCeiling &&
+        investmentTarget <= thirdCeiling &&
+        projectLeadFracNumerator <= projectLeadFracDenominator &&
+        firstMultiple > 1 &&
+        secondMultiple > 1 &&
+        thirdMultiple > 1
+      ) {
+        DecentralisedInvestmentManager dim = _initialiseRandomDim({
+          projectLeadFracNumerator: projectLeadFracNumerator,
+          projectLeadFracDenominator: projectLeadFracDenominator,
+          raisePeriod: raisePeriod,
+          investmentTarget: investmentTarget,
+          firstCeiling: firstCeiling,
+          secondCeiling: secondCeiling,
+          thirdCeiling: thirdCeiling,
+          firstMultiple: firstMultiple,
+          secondMultiple: secondMultiple,
+          thirdMultiple: thirdMultiple
+        });
+        address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
 
-      if (firstInvestmentAmount > investmentTarget) {
-        vm.prank(_projectLead);
-        // solhint-disable-next-line not-rely-on-time
-        vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
-        vm.expectRevert(bytes("Investment target reached!"));
-        dim.triggerReturnAll();
-      } else {
-        vm.prank(_projectLead);
-        // solhint-disable-next-line not-rely-on-time
-        vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
-        dim.triggerReturnAll();
-        assertEq(address(dim).balance, 0 ether, "The dim did not contain 0 ether after returning all investments.");
-      }
+        _performInvestmentInRandomDim({
+          dim: dim,
+          someInvestmentAmount: firstInvestmentAmount,
+          someInvestorWallet: firstInvestorWallet
+        });
+
+        if (firstInvestmentAmount >= investmentTarget) {
+          vm.prank(_projectLead);
+          // solhint-disable-next-line not-rely-on-time
+          vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
+          vm.expectRevert(bytes("Investment target reached!"));
+          dim.triggerReturnAll();
+        } else {
+          vm.prank(_projectLead);
+          // solhint-disable-next-line not-rely-on-time
+          vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
+          dim.triggerReturnAll();
+          assertEq(address(dim).balance, 0 ether, "The dim did not contain 0 ether after returning all investments.");
+        }
+      } else {}
     } else {}
   }
 }

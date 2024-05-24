@@ -6,6 +6,7 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 import { Helper } from "../src/Helper.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface ISaasPaymentProcessor {
   function computeInvestorReturns(
@@ -142,10 +143,12 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
   ) public override onlyOwner returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment) {
     newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
 
-    cumReceivedInvestments += newInvestmentAmount;
     require(newInvestmentAmount > 0, "can't add investment of 0.");
+    cumReceivedInvestments += newInvestmentAmount;
+
     require(cumReceivedInvestments >= newInvestmentAmount, "Overflow occurred.");
     updatedCumReceivedInvestments = cumReceivedInvestments;
+
     return (updatedCumReceivedInvestments, newTierInvestment);
   }
 
