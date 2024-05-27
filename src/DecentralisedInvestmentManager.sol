@@ -150,6 +150,10 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       Tier tierOwnedByThisContract = new Tier({ minVal: someMin, maxVal: someMax, multiple: someMultiple });
       _tiers.push(tierOwnedByThisContract);
     }
+    require(
+      investmentTarget <= _tiers[nrOfTiers - 1].getMaxVal(),
+      "The investment target should be supported by the max Tier ceiling."
+    );
     _RECEIVE_COUNTER_OFFER = new ReceiveCounterOffer(projectLead);
   }
 
@@ -536,8 +540,10 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       });
 
       TierInvestment[] memory localTierInvestments = new TierInvestment[](allocationCounter);
-
+      
+      console2.log("allocationCounter=",allocationCounter);
       for (uint256 i = 0; i < allocationCounter; ++i) {
+        console2.log("_cumReceivedInvestments=",_cumReceivedInvestments);
         TierInvestment tierInvestment;
         (_cumReceivedInvestments, tierInvestment) = _SAAS_PAYMENT_PROCESSOR.addInvestmentToCurrentTier({
           cumReceivedInvestments: _cumReceivedInvestments,
@@ -545,7 +551,9 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
           currentTier: allocatedInvestments[i].tier,
           newInvestmentAmount: allocatedInvestments[i].amount
         });
-
+        console2.log("After _cumReceivedInvestments=",_cumReceivedInvestments);
+        console2.log("allocatedInvestments[i].tier=",allocatedInvestments[i].tier.getMaxVal());
+        
         require(
           tierInvestment.getOwner() == address(_SAAS_PAYMENT_PROCESSOR),
           "The TierInvestment was not created through this contract 0."

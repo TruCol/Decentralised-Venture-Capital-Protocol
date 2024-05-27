@@ -16,7 +16,7 @@
   test = "test"
 
 [profile.ci]
-  fuzz = { runs = 10_000 }
+  fuzz = { runs = 10_000}
   verbosity = 4
 
 #[etherscan]
