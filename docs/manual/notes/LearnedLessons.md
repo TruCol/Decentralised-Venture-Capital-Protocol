@@ -173,6 +173,17 @@ forge test --vv
 
 to show check up to where the print statements were printed.
 
+## Logging
+
+In a test you can use:
+
+```sol
+import "@openzeppelin/contracts/utils/Strings.sol";
+emit Log("Made investment.");
+emit Log("In investment getCumReceivedInvestments=");
+emit Log(Strings.toString(dim.getCumReceivedInvestments()));
+```
+
 ## msg.sender
 
 - If function `foo` in contract `Hello` is called from a contract `Caller`,

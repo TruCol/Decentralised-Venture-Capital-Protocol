@@ -6,10 +6,15 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
+import { Helper } from "../../../../src/Helper.sol";
 import { TestHelper } from "../../../TestHelper.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 import { console2 } from "forge-std/src/console2.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+// uint32 private constant _MAX_NR_OF_TIERS= 100;
+uint32 constant _MAX_NR_OF_TIERS = 100;
 
 interface IFuzzTriggerReturnAll {
   function setUp() external;
@@ -17,18 +22,13 @@ interface IFuzzTriggerReturnAll {
   function testFuzzAfterRaisePeriodReturnSingleInvestment(
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
-    uint256 firstInvestmentAmount,
     uint256 investmentTarget,
-    uint256 firstCeiling,
-    uint256 secondCeiling,
-    uint256 thirdCeiling,
-    uint32 raisePeriod,
+    uint256 firstInvestmentAmount,
     uint32 additionalWaitPeriod,
-    uint8 firstMultiple,
-    uint8 secondMultiple,
-    uint8 thirdMultiple,
-    uint256[100] memory someList,
-    uint256[55] memory anotherList
+    uint32 raisePeriod,
+    uint8 randNrOfInvestmentTiers,
+    uint256[_MAX_NR_OF_TIERS] memory randomCeilings,
+    uint8[_MAX_NR_OF_TIERS] memory randomMultiples
   ) external;
 }
 
@@ -43,9 +43,51 @@ TODO: test whether the investments are:
 contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
   address internal _projectLead;
   TestHelper private _testHelper;
+  Helper private _helper;
 
   function setUp() public virtual override {
     _testHelper = new TestHelper();
+    _helper = new Helper();
+  }
+
+  /**
+   * @notice Generates random multiples and corresponding ceiling values for a specified number of investment tiers.
+   * @dev This function selects a random subset of unique investment ceilings and ensures
+   * multiples are greater than 1. It leverages helper functions for sorting, uniquing,
+   * and minimum/maximum calculations.
+   *
+   * @param randomCeilings An array of random ceiling values (unused length, replaced with actual length).
+   * @param randomMultiples An array of random multiples (unused length, replaced with actual length).
+   * @param randNrOfInvestmentTiers The randomly chosen number of investment tiers.
+   *
+   * @return multiples A dynamic array containing the selected random multiples.
+   * @return sameNrOfCeilings A dynamic array containing the corresponding unique ceiling values for each tier.
+   */
+  function getRandomMultiplesAndCeilings(
+    uint256[_MAX_NR_OF_TIERS] memory randomCeilings,
+    uint8[_MAX_NR_OF_TIERS] memory randomMultiples,
+    uint8 randNrOfInvestmentTiers
+  ) public virtual returns (uint8[] memory multiples, uint256[] memory sameNrOfCeilings) {
+    // Change the fixed array length from _MAX_NR_OF_TIERS to array of variable length (dynamic array).
+    uint256[] memory duplicateCeilings = new uint256[](randomCeilings.length);
+    for (uint256 i = 0; i < randomCeilings.length; ++i) {
+      // +1 to ensure a ceiling of 0 is shifted to a minimum of 1.
+      duplicateCeilings[i] = _testHelper.maximum(1, randomCeilings[i]);
+    }
+    // Removes duplicate values and sorts the ceilings from small to large.
+    uint256[] memory ceilings = _testHelper.getSortedUniqueArray(duplicateCeilings);
+
+    // From the selected unique, ascending Tier investment ceilings, select subset of random size.
+    uint256 nrOfInvestmentTiers = (randNrOfInvestmentTiers % ceilings.length) + 1;
+    // Recreate the multiples and ceilings of the selected random size (nr. of Tiers).
+    uint8[] memory multiples = new uint8[](nrOfInvestmentTiers);
+    uint256[] memory sameNrOfCeilings = new uint256[](nrOfInvestmentTiers);
+    for (uint256 i = 0; i < nrOfInvestmentTiers; ++i) {
+      multiples[i] = uint8(_testHelper.maximum(2, randomMultiples[i])); // Filter out the 0 and 1 values.
+      sameNrOfCeilings[i] = ceilings[i];
+    }
+
+    return (multiples, sameNrOfCeilings);
   }
 
   /**
@@ -84,11 +126,6 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
       emit Log("Initialised");
       return true;
     } catch Error(string memory reason) {
-      if (
-        keccak256(abi.encodePacked(reason)) ==
-        keccak256(abi.encodePacked("The maximum amount should be larger than the minimum."))
-      ) {}
-
       emit Log(reason);
       return false;
     } catch (bytes memory reason) {
@@ -108,13 +145,8 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
    * @param projectLeadFracNumerator The numerator representing the project lead's fractional share.
    * @param projectLeadFracDenominator The denominator for the project lead's fractional share.
    * @param investmentTarget The target amount of investment for the project.
-   * @param firstCeiling The first maximum allowed value (e.g., contribution limit).
-   * @param secondCeiling The second maximum allowed value (e.g., contribution limit).
-   * @param thirdCeiling The third maximum allowed value (e.g., contribution limit).
+
    * @param raisePeriod The duration (in seconds) for the investment raise period.
-   * @param firstMultiple The first multiple for something (e.g., investment tier).
-   * @param secondMultiple The second multiple for something (e.g., investment tier).
-   * @param thirdMultiple The third multiple for something (e.g., investment tier).
    *
    * @return dim A `DecentralisedInvestmentManager` object initialized with the provided parameters.
    */
@@ -122,24 +154,12 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     uint256 investmentTarget,
-    uint256 firstCeiling,
-    uint256 secondCeiling,
-    uint256 thirdCeiling,
     uint32 raisePeriod,
-    uint8 firstMultiple,
-    uint8 secondMultiple,
-    uint8 thirdMultiple
+    uint256[] memory ceilings,
+    uint8[] memory multiples
   ) internal virtual returns (DecentralisedInvestmentManager dim) {
     // Instantiate the attribute for the contract-under-test.
     _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    uint256[] memory ceilings = new uint256[](3);
-    ceilings[0] = firstCeiling;
-    ceilings[1] = secondCeiling;
-    ceilings[2] = thirdCeiling;
-    uint8[] memory multiples = new uint8[](3);
-    multiples[0] = firstMultiple;
-    multiples[1] = secondMultiple;
-    multiples[2] = thirdMultiple;
 
     InitialiseDim initDim = new InitialiseDim({
       ceilings: ceilings,
@@ -177,9 +197,6 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     vm.prank(address(someInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     try dim.receiveInvestment{ value: someInvestmentAmount }() {
-      emit Log("Made investment.");
-      emit Log("In investment getCumReceivedInvestments=");
-      emit Log(Strings.toString(dim.getCumReceivedInvestments()));
       return true;
     } catch Error(string memory reason) {
       emit Log(reason);
@@ -199,61 +216,28 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     uint256 projectLeadFracDenominator,
     uint256 investmentTarget,
     uint256 firstInvestmentAmount,
-    uint256 firstCeiling,
-    uint256 secondCeiling,
-    uint256 thirdCeiling,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
-    uint8 firstMultiple,
-    uint8 secondMultiple,
-    uint8 thirdMultiple,
-    uint256[100] memory someList,
-    uint256[55] memory anotherList
-
+    uint8 randNrOfInvestmentTiers,
+    uint256[_MAX_NR_OF_TIERS] memory randomCeilings,
+    uint8[_MAX_NR_OF_TIERS] memory randomMultiples
   ) public virtual override {
-    // Assume requirements on contract initialisation by project lead are valid.
-    // vm.assume(projectLeadFracDenominator > 0);
-    // vm.assume(firstCeiling > 0);
-    // vm.assume(additionalWaitPeriod > 0);
-    // vm.assume(raisePeriod > 0);
-    // vm.assume(investmentTarget > 0);
-    // vm.assume(firstCeiling < secondCeiling);
-    // vm.assume(secondCeiling < thirdCeiling);
-    // vm.assume(investmentTarget <= thirdCeiling);
-    // vm.assume(projectLeadFracNumerator <= projectLeadFracDenominator);
-    // vm.assume(firstMultiple > 1);
-    // vm.assume(secondMultiple > 1);
-    // vm.assume(thirdMultiple > 1);
-
-    // Assume an investor tries to invest at least 1 wei.
-    // vm.assume(firstInvestmentAmount > 0);
-    console2.log("someList=",someList.length);
-    // Store multiples in an array to assert they do not lead to an overflow when computing the investor return.
-    uint8[] memory multiples = new uint8[](3);
-    multiples[0] = firstMultiple;
-    multiples[1] = secondMultiple;
-    multiples[2] = thirdMultiple;
-    // vm.assume(!_testHelper.sumOfNrsThrowsOverFlow({ numbers: multiples }));
-    // vm.assume(
-    // !_testHelper.yieldsOverflowMultiply({
-    // a: firstMultiple + secondMultiple + thirdMultiple,
-    // b: firstInvestmentAmount
-    // })
-    // );
-
+    uint8[] memory multiples;
+    uint256[] memory sameNrOfCeilings;
+    (multiples, sameNrOfCeilings) = getRandomMultiplesAndCeilings({
+      randomCeilings: randomCeilings,
+      randomMultiples: randomMultiples,
+      randNrOfInvestmentTiers: randNrOfInvestmentTiers
+    });
+    uint256 investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
     _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    uint256[] memory ceilings = new uint256[](3);
-    ceilings[0] = firstCeiling;
-    ceilings[1] = secondCeiling;
-    ceilings[2] = thirdCeiling;
-
     if (
       _canInitialiseRandomDim({
         projectLeadFracNumerator: projectLeadFracNumerator,
         projectLeadFracDenominator: projectLeadFracDenominator,
         raisePeriod: raisePeriod,
         investmentTarget: investmentTarget,
-        ceilings: ceilings,
+        ceilings: sameNrOfCeilings,
         multiples: multiples
       })
     ) {
@@ -263,12 +247,8 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
         projectLeadFracDenominator: projectLeadFracDenominator,
         raisePeriod: raisePeriod,
         investmentTarget: investmentTarget,
-        firstCeiling: firstCeiling,
-        secondCeiling: secondCeiling,
-        thirdCeiling: thirdCeiling,
-        firstMultiple: firstMultiple,
-        secondMultiple: secondMultiple,
-        thirdMultiple: thirdMultiple
+        ceilings: sameNrOfCeilings,
+        multiples: multiples
       });
 
       // Generate a non-random investor wallet address and make an investment.

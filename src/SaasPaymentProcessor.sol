@@ -144,10 +144,8 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
     newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
 
     require(newInvestmentAmount > 0, "can't add investment of 0.");
-    console2.log("Adding: newInvestmentAmount",newInvestmentAmount);
-    console2.log("to: cumReceivedInvestments",cumReceivedInvestments);
+
     cumReceivedInvestments += newInvestmentAmount;
-    
 
     require(cumReceivedInvestments >= newInvestmentAmount, "Overflow occurred.");
     updatedCumReceivedInvestments = cumReceivedInvestments;
