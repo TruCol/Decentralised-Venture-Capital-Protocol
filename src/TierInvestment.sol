@@ -48,7 +48,7 @@ contract TierInvestment is ITierInvestment {
   @param tier The Tier object containing investment details like multiplier and lockin period.
   */
   // solhint-disable-next-line comprehensive-interface
-  constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) public {
+  constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) {
     require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     _OWNER = msg.sender;
 

@@ -81,7 +81,7 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
   allocated to each payee.
   */
   // solhint-disable-next-line comprehensive-interface
-  constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
+  constructor(address[] memory payees, uint256[] memory amountsOwed) payable {
     require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
     require(payees.length > 0, "There are not more than 0 payees.");
 

@@ -110,7 +110,7 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     address projectLead,
     uint32 raisePeriod,
     uint256 investmentTarget
-  ) public {
+  ) {
     uint256 nrOfTiers = tiers.length;
     require(nrOfTiers > 0, "You must provide at least one tier.");
     require(projectLeadFracDenominator > 0, "projectLeadFracDenominator should be larger than 0.");

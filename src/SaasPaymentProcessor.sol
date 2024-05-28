@@ -47,7 +47,7 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
   @dev This constructor sets the sender of the transaction as the owner of the contract.
   */
   // solhint-disable-next-line comprehensive-interface
-  constructor() public {
+  constructor() {
     _OWNER = msg.sender;
   }
 

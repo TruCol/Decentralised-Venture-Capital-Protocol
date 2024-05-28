@@ -215,17 +215,34 @@ repos:
            "--noPrompt", # Do not ask for backup before fix.
          ]
      # Static code analyzer for solidity.
-     - id: slither
+     - id: Slither on src
        language: system
-       name: Slither analysis for smart contracts
+       name: Slither analysis for smart contracts in src/
+       # Run on all checks on all files: Temporarily skip:  naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas
+      #  entry: bash -c 'for file in "$@"; do slither --exclude naming-convention,solc-version,pragma,timestamp,unused-import --filter-paths="(node_modules|test)" "$file"; done'
+      #  entry: bash -c 'for file in "$@"; do if [[ $file == src/* ]]; then echo "$file" >> list_src.txt; fi; done'
+       entry: bash -c 'for file in "$@"; do if [[ $file == src/* ]]; then slither --filter-paths="(node_modules)" "$file"; fi; done'
+
+
+     - id: Slither on test
+       language: system
+       name: Slither analysis for smart contracts in test/
+       # Run on all checks on all files: Temporarily skip:  naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas
+      #  entry: bash -c 'for file in "$@"; do slither --exclude naming-convention,solc-version,pragma,timestamp,unused-import --filter-paths="(node_modules|src)" "$file"; done'
+      #  entry: bash -c 'for file in "$@"; do if [[ $file == test/* ]]; then echo "$file" >> list_test.txt; fi; done'
+       entry: bash -c 'for file in "$@"; do if [[ $file == test/* ]]; then slither --exclude naming-convention,solc-version,pragma,timestamp,unused-import --filter-paths="(node_modules)" "$file"; fi; done'
+
       # Run on all checks on all files:
       #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" "$file"; done'
 
        # Run only one detection: calls-loop, similar-names
       #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect shadowing-local "$file"; done'
 
-      # Run on all checks on all files: Temporarily skip:  naming-convention,solc-version,reentrancy-benign,reentrancy-eth,reentrancy-no-eth,reentrancy-events,reentrancy-unlimited-gas
-       entry: bash -c 'for file in "$@"; do slither --exclude naming-convention,solc-version,pragma,timestamp,unused-import --filter-paths="(node_modules)" "$file"; done'
+
+      # manual command:
+      # clear && slither src/DecentralisedInvestmentManager.sol --filter-paths="(node_modules)"
+      # clear && slither test/functional/DecentralisedInvestmentManager/triggerReturnAll/FuzzTriggerReturnAll.t.sol --filter-paths="(node_modules)"
+
 
       # Irrelevant:unused-import, unused-return (in test only).
       # Fixed:reentrancy-eth,

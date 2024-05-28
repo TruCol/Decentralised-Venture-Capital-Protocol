@@ -89,8 +89,8 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     // From the selected unique, ascending Tier investment ceilings, select subset of random size.
     uint256 nrOfInvestmentTiers = (randNrOfInvestmentTiers % ceilings.length) + 1;
     // Recreate the multiples and ceilings of the selected random size (nr. of Tiers).
-    uint8[] memory multiples = new uint8[](nrOfInvestmentTiers);
-    uint256[] memory sameNrOfCeilings = new uint256[](nrOfInvestmentTiers);
+    multiples = new uint8[](nrOfInvestmentTiers);
+    sameNrOfCeilings = new uint256[](nrOfInvestmentTiers);
     for (uint256 i = 0; i < nrOfInvestmentTiers; ++i) {
       multiples[i] = uint8(_testMathHelper.maximum(2, randomMultiples[i])); // Filter out the 0 and 1 values.
       sameNrOfCeilings[i] = ceilings[i];
@@ -122,7 +122,7 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
       randomMultiples: randomMultiples,
       randNrOfInvestmentTiers: randNrOfInvestmentTiers
     });
-    uint256 investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
+    investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
     //projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     if (
       _testInitialisationHelper.canInitialiseRandomDim({

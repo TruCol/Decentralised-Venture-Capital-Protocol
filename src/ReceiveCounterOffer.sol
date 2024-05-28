@@ -42,7 +42,7 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   @param projectLead The address of the project lead who can make and accept counteroffers.
   **/
   // solhint-disable-next-line comprehensive-interface
-  constructor(address projectLead) public {
+  constructor(address projectLead) {
     _OWNER = payable(msg.sender);
     require(projectLead != address(0), "projectLead address can't be 0.");
     _PROJECT_LEAD = projectLead;

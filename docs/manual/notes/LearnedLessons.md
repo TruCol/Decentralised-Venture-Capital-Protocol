@@ -199,3 +199,7 @@ nested/sequential calls in with the same `msg.sender` in the same contract, but
 as soon as one function is in another contract, the `msg.sender` is that of the
 contract that called that function (still the same if the first call of the
 chain was also in that first contract).
+
+## Vscode
+
+If you only install the Solidity  extension by Juan Blanco, the F12 jump to function works.

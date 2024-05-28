@@ -7,6 +7,12 @@
     "foundry-test-functions": [
       "off"
     ],
+    "func-visibility": [
+      "error",
+      {
+        "ignoreConstructors": true
+      }
+    ],
     "gas-custom-errors": [
       "off"
     ],

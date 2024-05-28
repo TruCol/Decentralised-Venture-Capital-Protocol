@@ -20,7 +20,6 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
     uint32 raisePeriod,
     uint256 investmentTarget
   )
-    public
     DecentralisedInvestmentManager(
       tiers,
       projectLeadFracNumerator,

@@ -31,7 +31,7 @@ contract Tier is ITier {
   @param multiple The ROI multiple for this tier.
   */
   // solhint-disable-next-line comprehensive-interface
-  constructor(uint256 minVal, uint256 maxVal, uint256 multiple) public {
+  constructor(uint256 minVal, uint256 maxVal, uint256 multiple) {
     _OWNER = msg.sender;
 
     require(maxVal > minVal, "The maximum amount should be larger than the minimum.");

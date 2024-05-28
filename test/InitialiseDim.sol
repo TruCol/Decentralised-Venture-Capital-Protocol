@@ -28,7 +28,7 @@ contract InitialiseDim is IInitialiseDim {
     uint256 projectLeadFracDenominator,
     address projectLead,
     uint32 raisePeriod
-  ) public {
+  ) {
     // Initialise the private attributes.
     require(projectLead != address(0), "projectLead address can't be 0.");
     _PROJECT_LEAD = projectLead;
