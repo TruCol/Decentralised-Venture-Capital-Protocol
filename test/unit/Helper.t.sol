@@ -134,7 +134,14 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
   }
 
   function testComputeRemainingInvestorPayoutNegativeFraction() public override {
-    vm.expectRevert(bytes("investorFracNumerator is smaller than investorFracDenominator."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvalidInvestorFraction(string,uint256,uint256)",
+        "Numerator smaller than denominator",
+        0,
+        1
+      )
+    );
     uint256 someCumRemainingInvestorReturn = _helper.computeRemainingInvestorPayout(0, 1, 0, 0);
     assertEq(someCumRemainingInvestorReturn, 0, "Got a return value.");
   }

@@ -4,6 +4,7 @@ pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
+error InvalidInvestorFraction(string message, uint256 numerator, uint256 denominator);
 
 interface IHelper {
   function computeCumRemainingInvestorReturn(
@@ -262,10 +263,17 @@ contract Helper is IHelper {
     uint256 investorFracDenominator,
     uint256 paidAmount
   ) public pure override returns (uint256 returnCumRemainingInvestorReturn) {
-    require(
-      investorFracDenominator >= investorFracNumerator,
-      "investorFracNumerator is smaller than investorFracDenominator."
-    );
+    // require(
+    // investorFracDenominator >= investorFracNumerator,
+    // "investorFracNumerator is smaller than investorFracDenominator."
+    // );
+    if (investorFracDenominator < investorFracNumerator) {
+      revert InvalidInvestorFraction(
+        "Numerator smaller than denominator",
+        investorFracDenominator,
+        investorFracNumerator
+      );
+    }
 
     // If the investors are made whole, return 0.
     if (cumRemainingInvestorReturn == 0) {

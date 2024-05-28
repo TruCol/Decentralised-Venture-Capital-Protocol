@@ -239,11 +239,6 @@ repos:
       #  entry: bash -c 'for file in "$@"; do slither --filter-paths="(node_modules)" --detect shadowing-local "$file"; done'
 
 
-      # manual command:
-      # clear && slither src/DecentralisedInvestmentManager.sol --filter-paths="(node_modules)"
-      # clear && slither test/functional/DecentralisedInvestmentManager/triggerReturnAll/FuzzTriggerReturnAll.t.sol --filter-paths="(node_modules)"
-
-
       # Irrelevant:unused-import, unused-return (in test only).
       # Fixed:reentrancy-eth,
 

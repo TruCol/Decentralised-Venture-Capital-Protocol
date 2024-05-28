@@ -14,7 +14,7 @@
       }
     ],
     "gas-custom-errors": [
-      "off"
+      "error"
     ],
     "gas-small-strings": [
       "off"
