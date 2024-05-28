@@ -6,7 +6,6 @@ import { TierInvestment } from "../src/TierInvestment.sol";
 import { Helper } from "../src/Helper.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 interface ISaasPaymentProcessor {
   function computeInvestorReturns(
