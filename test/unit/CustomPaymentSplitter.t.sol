@@ -96,18 +96,39 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
   }
 
   function testContractCannotAddItselfAsPayee() public override {
-    vm.expectRevert(bytes("This account is equal to the address of this account."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "ReleaseAccountIsContractAddress(string,address,address)",
+        "This account is equal to the address of this account.",
+        address(_paymentSplitter),
+        address(_paymentSplitter)
+      )
+    );
     _paymentSplitter.publicAddPayee(address(_paymentSplitter), 20);
   }
 
   function testPayeeAmountOfZeroReverts() public override {
-    vm.expectRevert(bytes("The number of incoming dai is not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "ZeroDaiForAddingNewPayee(string,address,uint256)",
+        "The number of incoming dai is not larger than 0.",
+        address(0),
+        0
+      )
+    );
     _paymentSplitter.publicAddPayee(address(0), 0);
   }
 
   function testCannotAddPayeeThatAlreadyIsPayee() public override {
     _paymentSplitter.publicAddPayee(address(0), 5);
-    vm.expectRevert(bytes("This account already has some currency."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "NonEmptyAccountForNewPayee(string,address,uint256)",
+        "This account already has some currency.",
+        address(0),
+        5
+      )
+    );
     _paymentSplitter.publicAddPayee(address(0), 5);
   }
 
@@ -151,18 +172,40 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
     _paymentSplitter.release();
 
     // Release payment again but now 0. TODO: determine why this does not revert.
-    vm.expectRevert("The amount to be paid was not larger than 0.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "ZeroPaymentForAccount(string,address,uint256)",
+        "The amount to be paid was not larger than 0.",
+        // address(9001),
+        investorWallet0,
+        0
+      )
+    );
     vm.prank(investorWallet0);
     _paymentSplitter.release();
 
-    vm.expectRevert(bytes("The dai for account, was not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "ZeroDaiSharesReleasedForAccount(string,address,uint256)",
+        "The dai for account, was not larger than 0.",
+        address(9001),
+        0
+      )
+    );
     vm.prank(address(9001));
     _paymentSplitter.release();
   }
 
   function testCannotAddZeroShares() public override {
     address payable investorWallet0 = payable(address(4));
-    vm.expectRevert(bytes("There were 0 dai shares incoming."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "ZeroDaiSharesIncoming(string,address,uint256)",
+        "There were 0 dai shares incoming.",
+        investorWallet0,
+        0
+      )
+    );
     _paymentSplitter.publicAddSharesToPayee(investorWallet0, 0);
 
     _paymentSplitter.publicAddSharesToPayee(investorWallet0, 10);
@@ -174,18 +217,29 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
     somePayees[0] = address(10);
     somePayees[1] = address(11);
 
-    vm.expectRevert(bytes("The nr of payees is not equal to the nr of amounts owed."));
+    
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "DifferentNrOfPayeesThanAmountsOwed(string,uint256,uint256)",
+        "Nr of payees not equal to nr of amounts owed.",
+        somePayees.length,
+        someOwedDai.length
+      )
+    );
     _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
   }
 
   function testCannotInitialiseConstructorWithoutPayees() public override {
     address[] memory somePayees = new address[](0);
-    // uint256[] memory someOwedDai = new uint256[](2);
     uint256[] memory someOwedDai = new uint256[](0);
-    // someOwedDai[0] = 10;
-    // someOwedDai[1] = 11;
-
-    vm.expectRevert(bytes("There are not more than 0 payees."));
+    
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "LessThanOnePayee(string,uint256)",
+        "There are not more than 0 payees.",
+        somePayees.length
+      )
+    );
     _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
   }
 

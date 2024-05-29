@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 error AccountIsNotNewPayee(string message, address account, uint256 accountBalance);
+error DifferentNrOfPayeesThanAmountsOwed(string message, uint256 nrOfPayees, uint256 nrOfAmountsOwed);
+error LessThanOnePayee(string message, uint256 nrOfPayees);
+
+error ZeroDaiSharesIncoming(string message, address account, uint256 dai);
+error ZeroDaiSharesReleasedForAccount(string message, address account, uint256 dai);
+error ZeroPaymentForAccount(string message, address account, uint256 dai);
+error ReleaseAccountIsContractAddress(string message, address account, address thisAddress);
+
+error ZeroDaiForAddingNewPayee(string message, address account, uint256 amountToAddToAccount);
+error NonEmptyAccountForNewPayee(string message, address account, uint256 accountBalance);
+
+
 error CustomPaymentSplitterOnlyOwner(string message, address owner, address msgSender);
 import { console2 } from "forge-std/src/console2.sol";
 
@@ -87,8 +99,13 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
   */
   // solhint-disable-next-line comprehensive-interface
   constructor(address[] memory payees, uint256[] memory amountsOwed) payable {
-    require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
-    require(payees.length > 0, "There are not more than 0 payees.");
+    if (payees.length != amountsOwed.length) {
+      revert DifferentNrOfPayeesThanAmountsOwed("Nr of payees not equal to nr of amounts owed.", payees.length, amountsOwed.length);
+    }
+    
+    if (payees.length <1) {
+      revert LessThanOnePayee("There are not more than 0 payees.", payees.length);
+    }
 
     _OWNER = msg.sender;
     _amountsOwed = amountsOwed;
@@ -131,13 +148,18 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
   */
   function release() public override {
     address payable account = payable(msg.sender);
-    require(_dai[account] > 0, "The dai for account, was not larger than 0.");
+    if (_dai[account] < 1) {
+      revert ZeroDaiSharesReleasedForAccount("The dai for account, was not larger than 0.", account, _dai[account]);
+    }
 
     // The amount the payee may receive is equal to the amount of outstanding
     // DAI, subtracted by the amount that has been released to that account.
     uint256 payment = _dai[account] - _released[account];
 
-    require(payment > 0, "The amount to be paid was not larger than 0.");
+    if (payment < 1) {
+      revert ZeroPaymentForAccount("The amount to be paid was not larger than 0.", account, payment);
+    }
+    
     // Track the amount of DAI the payee has received through the release
     // process.
     _released[account] = _released[account] + (payment);
@@ -158,9 +180,16 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
    *   funds after constructor initialisation.
    */
   function publicAddPayee(address account, uint256 dai_) public override onlyOwner {
-    require(account != address(this), "This account is equal to the address of this account.");
-    require(dai_ > 0, "The number of incoming dai is not larger than 0.");
-    require(_dai[account] == 0, "This account already has some currency.");
+    if (account == address(this)) {
+      revert ReleaseAccountIsContractAddress("This account is equal to the address of this account.", account, address(this));
+    }
+    if (dai_ < 1) {
+      revert ZeroDaiForAddingNewPayee("The number of incoming dai is not larger than 0.", account, dai_);
+    }
+    
+    if (_dai[account] != 0) {
+      revert NonEmptyAccountForNewPayee("This account already has some currency.", account, _dai[account]);
+    }
 
     _payees.push(account);
     _dai[account] = dai_;
@@ -198,7 +227,10 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
 
   */
   function publicAddSharesToPayee(address account, uint256 dai) public override onlyOwner {
-    require(dai > 0, "There were 0 dai shares incoming.");
+    if (dai < 1) {
+      revert ZeroDaiSharesIncoming("There were 0 dai shares incoming.", account, dai);
+    }
+
 
     // One can not assert the account is already in _dai, because inherently in
     // Solidity, a mapping contains all possible options already. So it will
