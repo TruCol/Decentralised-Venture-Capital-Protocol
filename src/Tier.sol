@@ -2,6 +2,11 @@
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 error TierMinNotBelowMax(string message, uint256 minVal, uint256 maxVal);
 
+error MultipleTooSmall(string message, uint256 multiple);
+error MultipleIncreaseByOtherThanOwner(string message, address msgSender, address owner);
+
+error DecreasingMultiple(string message, uint256 minVal, uint256 maxVal);
+
 interface ITier {
   function increaseMultiple(uint256 newMultiple) external;
 
@@ -34,12 +39,13 @@ contract Tier is ITier {
   constructor(uint256 minVal, uint256 maxVal, uint256 multiple) {
     _OWNER = msg.sender;
 
-    // require(maxVal > minVal, "The maximum amount should be larger than the minimum.");
     if (maxVal <= minVal) {
       revert TierMinNotBelowMax("Tier's min not below tier max.", minVal, maxVal);
     }
 
-    require(multiple > 1, "A ROI multiple should be at larger than 1.");
+    if (multiple < 2) {
+      revert MultipleTooSmall("ROI multiple should be larger than 1.", multiple);
+    }
 
     // The minVal is public, so you can get it directly from another
     // contract.
@@ -57,8 +63,13 @@ contract Tier is ITier {
   @param newMultiple The new ROI multiple to set for this Tier object.
   */
   function increaseMultiple(uint256 newMultiple) public virtual override {
-    require(msg.sender == _OWNER, "Increasing the Tier object multiple attempted by someone other than project lead.");
-    require(newMultiple > _multiple, "The new multiple was not larger than the old multiple.");
+    if (msg.sender != _OWNER) {
+      revert MultipleIncreaseByOtherThanOwner("Only owner can increase ROI multiple.", msg.sender, _OWNER);
+    }
+
+    if (_multiple >= newMultiple) {
+      revert DecreasingMultiple("Can only increase ROI multiple.", _multiple, newMultiple);
+    }
 
     // Store old multiple for event.
     uint256 oldMultiple = _multiple;

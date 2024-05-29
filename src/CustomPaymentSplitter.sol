@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
+error AccountIsNotNewPayee(string message, address account, uint256 accountBalance);
+error CustomPaymentSplitterOnlyOwner(string message, address owner, address msgSender);
+import { console2 } from "forge-std/src/console2.sol";
 
 interface ICustomPaymentSplitter {
   function deposit() external payable;
@@ -46,7 +49,9 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _OWNER, "CustomPaymentSplitter: The sender of this message is not the owner.");
+    if (msg.sender != _OWNER) {
+      revert CustomPaymentSplitterOnlyOwner("Message sender is not owner.", _OWNER, msg.sender);
+    }
     _;
   }
 
@@ -285,7 +290,9 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
 
   */
   function _addPayee(address account, uint256 dai_) private {
-    require(_dai[account] == 0, "This account already is owed some currency.");
+    if (_dai[account] != 0) {
+      revert AccountIsNotNewPayee("Account is not a new payee.", account, _dai[account]);
+    }
 
     _payees.push(account);
     _dai[account] = dai_;

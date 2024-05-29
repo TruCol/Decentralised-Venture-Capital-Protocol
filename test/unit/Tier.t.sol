@@ -61,23 +61,10 @@ contract TierTest is PRBTest, StdCheats, ITierTest {
    * Test the tier object throws an error if the multiple is 1 or smaller.
    */
   function testThrowsOnZeroMultiple() public override {
-    // Act (call the function that might throw)
-    bool didThrow = false;
-    // Pass invalid multiple (0)
-    try new Tier(2, 9, 0) {
-      // Reaching this statement means the constructor did not throw an error.
-      didThrow = false;
-    } catch Error(string memory reason) {
-      didThrow = true;
-      // You can use Forge's assertEq for string comparison.
-      assertEq(reason, "A ROI multiple should be at larger than 1.");
-    } catch (bytes memory) {
-      // Catch unexpected exceptions.
-      didThrow = true;
-    }
-
-    // Assert (verify the expected outcome)
-    assert(didThrow);
+    vm.expectRevert(
+      abi.encodeWithSignature("MultipleTooSmall(string,uint256)", "ROI multiple should be larger than 1.", 0)
+    );
+    new Tier(2, 9, 0);
   }
 
   /**
@@ -87,22 +74,9 @@ contract TierTest is PRBTest, StdCheats, ITierTest {
    * multiple is large enough.
    */
   function testThrowsOnOneMultiple() public override {
-    // Act (call the function that might throw)
-    bool didThrow = false;
-    // Pass invalid multiple (1)
-    try new Tier(2, 9, 1) {
-      // Reaching this statement means the constructor did not throw an error.
-      didThrow = false;
-    } catch Error(string memory reason) {
-      didThrow = true;
-      // You can use Forge's assertEq for string comparison.
-      assertEq(reason, "A ROI multiple should be at larger than 1.");
-    } catch (bytes memory) {
-      // Catch unexpected exceptions
-      didThrow = true;
-    }
-
-    // Assert (verify the expected outcome)
-    assert(didThrow);
+    vm.expectRevert(
+      abi.encodeWithSignature("MultipleTooSmall(string,uint256)", "ROI multiple should be larger than 1.", 1)
+    );
+    new Tier(2, 9, 1);
   }
 }

@@ -113,11 +113,7 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
     // Tier[] memory emptyTiers;
     Tier[] memory emptyTiers = new Tier[](0);
     vm.expectRevert(
-      abi.encodeWithSignature(
-        "NoInvestmentTiersGiven(string message, uint256 nrOfTiers)",
-        "No investmentTiers received.",
-        0
-      )
+      abi.encodeWithSignature("NoInvestmentTiersGiven(string,uint256)", "No investmentTiers received.", 0)
     );
     Tier currentTier = _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
     assertEq(address(currentTier), address(0));

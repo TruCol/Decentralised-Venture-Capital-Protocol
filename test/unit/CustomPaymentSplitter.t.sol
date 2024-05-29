@@ -5,6 +5,7 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface ICustomPaymentSplitterTest {
   function setUp() external;
@@ -65,14 +66,32 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
   }
 
   function testOnlyOwnerCanAddPayee() public override {
-    vm.prank(address(15));
-    vm.expectRevert(bytes("CustomPaymentSplitter: The sender of this message is not the owner."));
+    address unauthorisedAddress = address(15);
+    vm.prank(unauthorisedAddress);
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "CustomPaymentSplitterOnlyOwner(string,address,address)",
+        "Message sender is not owner.",
+        address(this),
+        unauthorisedAddress
+      )
+    );
+    // Assert an unauthorised entity cannot add the _paymentSplitter contract itself as payee.
     _paymentSplitter.publicAddPayee(address(_paymentSplitter), 20);
   }
 
   function testOnlyOwnerCanAddSharesToPayee() public override {
-    vm.prank(address(15));
-    vm.expectRevert(bytes("CustomPaymentSplitter: The sender of this message is not the owner."));
+    address unauthorisedAddress = address(15);
+    vm.prank(unauthorisedAddress);
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "CustomPaymentSplitterOnlyOwner(string,address,address)",
+        "Message sender is not owner.",
+        address(this),
+        unauthorisedAddress
+      )
+    );
+    // Assert an unauthorised entity cannot add shares to the _paymentSplitter contract.
     _paymentSplitter.publicAddSharesToPayee(address(_paymentSplitter), 20);
   }
 
@@ -178,7 +197,14 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
     somePayees[1] = address(10);
     someOwedDai[1] = 10;
 
-    vm.expectRevert(bytes("This account already is owed some currency."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "AccountIsNotNewPayee(string,address,uint256)",
+        "Account is not a new payee.",
+        address(10),
+        10
+      )
+    );
     _paymentSplitter = new CustomPaymentSplitter(somePayees, someOwedDai);
   }
 
