@@ -203,3 +203,22 @@ chain was also in that first contract).
 ## Vscode
 
 If you only install the Solidity  extension by Juan Blanco, the F12 jump to function works.
+
+## Expecting errors
+
+You cannot have any spaces in the types in the expected errors. Like in:
+
+```
+vm.expectRevert(
+      abi.encodeWithSignature(
+        "TierMaxBelowReceivedInvestments(string,uint256,uint256)",
+        "Tier's max below cumReceivedInvestments",
+        simulatedCumReceivedInvestment,
+        tierCeiling
+      )
+    );
+```
+
+The following would not work:
+`"TierMaxBelowReceivedInvestments(string, uint256,uint256)",`
+Because of the space after `string,`.

@@ -112,7 +112,13 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
     // Try empty tier.
     // Tier[] memory emptyTiers;
     Tier[] memory emptyTiers = new Tier[](0);
-    vm.expectRevert(bytes("There were no investmentTiers received."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "NoInvestmentTiersGiven(string message, uint256 nrOfTiers)",
+        "No investmentTiers received.",
+        0
+      )
+    );
     Tier currentTier = _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
     assertEq(address(currentTier), address(0));
   }
@@ -122,14 +128,40 @@ contract HelperTest is PRBTest, StdCheats, IHelperTest {
   }
 
   function testGetRemainingAmountInCurrentTierBelow() public override {
-    vm.expectRevert(bytes("Error: Tier's minimum value exceeds received investments."));
-    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier(1 wei, _tiers[0]);
+    // vm.expectRevert(bytes("Error: Tier's minimum value exceeds received investments."));
+    uint256 simulatedCumReceivedInvestment = 1 wei;
+    uint256 tierFloor = _tiers[0].getMinVal();
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "TierMinAboveReceivedInvestments(string,uint256,uint256)",
+        "Tier's min exceeds cumReceivedInvestments",
+        simulatedCumReceivedInvestment,
+        tierFloor
+      )
+    );
+    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier(
+      simulatedCumReceivedInvestment,
+      _tiers[0]
+    );
     assertEq(someRemainingAmountInTier, 0, "Got a return value.");
   }
 
   function testGetRemainingAmountInCurrentTierAbove() public override {
-    vm.expectRevert(bytes("Error: Tier's maximum value is not larger than received investments."));
-    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier(4 ether + 1 wei, _tiers[0]);
+    // vm.expectRevert(bytes("Error: Tier's maximum value is not larger than received investments."));
+    uint256 simulatedCumReceivedInvestment = 4 ether + 1 wei;
+    uint256 tierCeiling = _tiers[0].getMaxVal();
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "TierMaxBelowReceivedInvestments(string,uint256,uint256)",
+        "Tier's max below cumReceivedInvestments",
+        simulatedCumReceivedInvestment,
+        tierCeiling
+      )
+    );
+    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier({
+      cumReceivedInvestments: simulatedCumReceivedInvestment,
+      someTier: _tiers[0]
+    });
     assertEq(someRemainingAmountInTier, 0, "Got a return value.");
   }
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
-error InvalidMinVal(uint256 providedVal, string errorMessage);
+error TierMinNotBelowMax(string message, uint256 minVal, uint256 maxVal);
 
 interface ITier {
   function increaseMultiple(uint256 newMultiple) external;
@@ -34,7 +34,11 @@ contract Tier is ITier {
   constructor(uint256 minVal, uint256 maxVal, uint256 multiple) {
     _OWNER = msg.sender;
 
-    require(maxVal > minVal, "The maximum amount should be larger than the minimum.");
+    // require(maxVal > minVal, "The maximum amount should be larger than the minimum.");
+    if (maxVal <= minVal) {
+      revert TierMinNotBelowMax("Tier's min not below tier max.", minVal, maxVal);
+    }
+
     require(multiple > 1, "A ROI multiple should be at larger than 1.");
 
     // The minVal is public, so you can get it directly from another

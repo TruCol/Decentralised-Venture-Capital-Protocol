@@ -3,8 +3,12 @@ pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
+import { console2 } from "forge-std/src/console2.sol";
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 error InvalidInvestorFraction(string message, uint256 numerator, uint256 denominator);
+error NoInvestmentTiersGiven(string message, uint256 nrOfTiers);
+error TierMinAboveReceivedInvestments(string message, uint256 cumReceivedInvestments, uint256 tierFloor);
+error TierMaxBelowReceivedInvestments(string message, uint256 cumReceivedInvestments, uint256 tierCeiling);
 
 interface IHelper {
   function computeCumRemainingInvestorReturn(
@@ -138,7 +142,9 @@ contract Helper is IHelper {
     Tier[] memory tiers
   ) public view override returns (Tier currentTier) {
     uint256 nrOfTiers = tiers.length;
-    require(nrOfTiers > 0, "There were no investmentTiers received.");
+    if (nrOfTiers == 0) {
+      revert NoInvestmentTiersGiven("No investmentTiers received.", nrOfTiers);
+    }
 
     // Check for exceeding investment ceiling.
     if (hasReachedInvestmentCeiling(cumReceivedInvestments, tiers)) {
@@ -210,20 +216,26 @@ contract Helper is IHelper {
     uint256 cumReceivedInvestments,
     Tier someTier
   ) public view override returns (uint256 remainingAmountInTier) {
-    // TODO: Add assertion for current tier validation
-
-    // Validate input values
-    require(
-      someTier.getMinVal() <= cumReceivedInvestments,
-      "Error: Tier's minimum value exceeds received investments."
-    );
-    require(
-      someTier.getMaxVal() > cumReceivedInvestments,
-      "Error: Tier's maximum value is not larger than received investments."
-    );
+    // Assert the cumulative received investments fall within the scope of the current tier.
+    uint256 tierFloor = someTier.getMinVal();
+    uint256 tierCeiling = someTier.getMaxVal();
+    if (tierFloor > cumReceivedInvestments) {
+      revert TierMinAboveReceivedInvestments(
+        "Tier's min exceeds cumReceivedInvestments",
+        cumReceivedInvestments,
+        tierFloor
+      );
+    }
+    if (tierCeiling <= cumReceivedInvestments) {
+      revert TierMaxBelowReceivedInvestments(
+        "Tier's max below cumReceivedInvestments",
+        cumReceivedInvestments,
+        tierCeiling
+      );
+    }
 
     // Calculate remaining amount
-    remainingAmountInTier = someTier.getMaxVal() - cumReceivedInvestments;
+    remainingAmountInTier = tierCeiling - cumReceivedInvestments;
     return remainingAmountInTier;
   }
 
@@ -263,10 +275,6 @@ contract Helper is IHelper {
     uint256 investorFracDenominator,
     uint256 paidAmount
   ) public pure override returns (uint256 returnCumRemainingInvestorReturn) {
-    // require(
-    // investorFracDenominator >= investorFracNumerator,
-    // "investorFracNumerator is smaller than investorFracDenominator."
-    // );
     if (investorFracDenominator < investorFracNumerator) {
       revert InvalidInvestorFraction(
         "Numerator smaller than denominator",

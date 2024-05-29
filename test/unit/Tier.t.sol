@@ -51,22 +51,10 @@ contract TierTest is PRBTest, StdCheats, ITierTest {
    * Test the tier object throws an error if the maxValue is larger than the minValue.
    */
   function testThrowsOnMaxValLargerThanMinVal() public override {
-    // Act (call the function that might throw)
-    bool didThrow = false;
-    // Pass invalid maxVal 9 which is smaller than minVal (10)
-    try new Tier(10, 9, 11) {
-      // Reaching this statement means the constructor did not throw an error.
-      didThrow = false;
-    } catch Error(string memory reason) {
-      didThrow = true;
-      assertEq(reason, "The maximum amount should be larger than the minimum.");
-    } catch (bytes memory) {
-      // Catch unexpected exceptions.
-      didThrow = true;
-    }
-
-    // Assert (verify the expected outcome)
-    assert(didThrow);
+    vm.expectRevert(
+      abi.encodeWithSignature("TierMinNotBelowMax(string,uint256,uint256)", "Tier's min not below tier max.", 10, 9)
+    );
+    new Tier(10, 9, 11);
   }
 
   /**
