@@ -12,6 +12,7 @@ import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface IDecentralisedInvestmentManagerTest {
   function setUp() external;
@@ -99,7 +100,9 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   function testEmptyTiers() public override {
     // Test empty tiers are not allowed.
     Tier[] memory emptyTiers = new Tier[](0);
-    vm.expectRevert(bytes("You must provide at least one tier."));
+    // vm.expectRevert(bytes("You must provide at least one tier."));
+    vm.expectRevert(abi.encodeWithSignature("ProvideAtLeastOneTier(string,uint256)", "Provide at least one tier.", 0));
+
     new DecentralisedInvestmentManager({
       tiers: emptyTiers,
       projectLeadFracNumerator: _projectLeadFracNumerator,
@@ -118,7 +121,10 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   }
 
   function testZeroInvestmentThrowsError() public override {
-    vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    // vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature("InvestmentAmountTooSmall(string,uint256)", "Investments should be 1 or larger", 0)
+    );
     _dim.receiveInvestment{ value: 0 ether }();
   }
 
@@ -134,8 +140,16 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
     gappedTiers[1] = tier1;
     gappedTiers[2] = tier2;
 
+    // vm.expectRevert(
+    //   bytes("Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier.")
+    // );
     vm.expectRevert(
-      bytes("Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier.")
+      abi.encodeWithSignature(
+        "CeilingPreviousTierNotEqualToFloorNextTier(string,uint256,uint256)",
+        "Ceiling previous tier not equal to floor next tier.",
+        5,
+        6
+      )
     );
     _dim = new DecentralisedInvestmentManager({
       tiers: gappedTiers,
@@ -148,7 +162,8 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
   }
 
   function testZeroSAASPayment() public override {
-    vm.expectRevert(bytes("The SAAS payment was not larger than 0."));
+    // vm.expectRevert(bytes("The SAAS payment was not larger than 0."));
+    vm.expectRevert(abi.encodeWithSignature("SAASPaymentSmallerThanOne(string,uint256)", "SAAS payment below 1.", 0));
     // vm.prank(address(_userWallet));
     // Directly call the function on the deployed contract.
     _dim.receiveSaasPayment{ value: 0 }();
@@ -162,30 +177,65 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
 
   function testIncreaseCurrentMultipleInstantly() public override {
     _dim.receiveInvestment{ value: 20 ether }();
-    vm.prank(address(0));
+
     vm.expectRevert(
-      bytes("Increasing the current investment tier multiple attempted by someone other than project lead.")
+      abi.encodeWithSignature(
+        "OnlyProjectLeadCanIncreaseCurrentMultiple(string,address,address)",
+        "Only projectLead can increase multiple.",
+        _projectLead,
+        address(0)
+      )
     );
+    vm.prank(address(0));
     _dim.increaseCurrentMultipleInstantly(1);
+
+    // vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "CanOnlyIncreaseMultiple(string,uint256,uint256)",
+        "New multiple not larger than old multiple.",
+        2,
+        1
+      )
+    );
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
     _dim.increaseCurrentMultipleInstantly(1);
   }
 
   function testWithdraw() public override {
+    // vm.expectRevert(bytes("Insufficient contract balance"));
+
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InsufficientContractBalanceForWithdraw(string,uint256,uint256)",
+        "Insufficient contract balance for withdrawal.",
+        address(_projectLead).balance,
+        500 ether
+      )
+    );
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Insufficient contract balance"));
     _dim.withdraw(500 ether);
 
     _dim.receiveInvestment{ value: 20 ether }();
 
-    vm.expectRevert(bytes("Withdraw attempted by someone other than project lead."));
+    // vm.expectRevert(bytes("Withdraw attempted by someone other than project lead."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "OnlyProjectLeadCanWithdraw(string,address,address)",
+        "Only projectLead can withdraw.",
+        address(this),
+        _projectLead
+      )
+    );
     _dim.withdraw(1);
   }
 
   function testAllocateDoesNotAcceptZeroAmountAllocation() public override {
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    // vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature("InvestmentAmountTooLow(string,uint256)", "Investment needs to be at least 1.", 0)
+    );
     _exposedDim.allocateInvestment(0, payable(address(0)));
   }
 
@@ -196,15 +246,11 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
     uint256 cumRemainingInvestorReturn0 = 0;
 
     vm.expectRevert(
-      bytes(
-        // solhint-disable-next-line func-named-parameters
-        string.concat(
-          "The cumulativePayout (\n",
-          Strings.toString(cumRemainingInvestorReturn0),
-          ") is not equal to the saasRevenueForInvestors (\n",
-          Strings.toString(saasRevenueForInvestors),
-          ")."
-        )
+      abi.encodeWithSignature(
+        "CumulativePayoutMismatch(string,uint256,uint256)",
+        "cumulativePayout (~+1) not equal to saasRevenueForInvestors",
+        cumRemainingInvestorReturn0,
+        saasRevenueForInvestors
       )
     );
 
@@ -234,11 +280,26 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
     address receivingWallet = address(0);
 
     vm.prank(address(_dim));
-    vm.expectRevert(bytes("Error: Insufficient contract balance."));
+    // vm.expectRevert(bytes("Error: Insufficient contract balance."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "NotEnoughBalanceToAllocateSaasRevenue(string,uint256,uint256)",
+        "Insufficient contract balance.",
+        address(_dim).balance,
+        amountAboveContractBalance // amount
+      )
+    );
     _exposedDim.performSaasRevenueAllocation(amountAboveContractBalance, receivingWallet);
 
     vm.prank(address(_dim));
-    vm.expectRevert(bytes("The SAAS revenue allocation amount was not larger than 0."));
+    // vm.expectRevert(bytes("The SAAS revenue allocation amount was not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "CannotAllocateLessSAASThanOne(string,uint256)",
+        "SAAS revenue allocation smaller than 1",
+        0
+      )
+    );
     _exposedDim.performSaasRevenueAllocation(0, receivingWallet);
   }
 

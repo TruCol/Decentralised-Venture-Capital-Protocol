@@ -51,10 +51,26 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, IReveiveAcceptedOfferTe
   }
 
   function testReceiveZeroInvestmentOffer() public virtual override {
-    vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    // vm.expectRevert(bytes("The amount invested was not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "AcceptedInvestmentOfferSmallerThanOne(string,uint256)",
+        "Accepted investment offer payment below 1.",
+        0
+      )
+    );
     _dim.receiveAcceptedOffer{ value: 0 }(payable(address(0)));
 
-    vm.expectRevert(bytes("The contract calling this function was not counterOfferContract."));
+    // vm.expectRevert(bytes("The contract calling this function was not counterOfferContract."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "OfferMadeByDifferentAddressThanCounterOfferContract(string,address,address)",
+        "The contract calling this function was not counterOfferContract.",
+        address(this),
+        address(0)
+      )
+    );
+
     _dim.receiveAcceptedOffer{ value: 10 }(payable(address(0)));
   }
 
@@ -65,7 +81,14 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, IReveiveAcceptedOfferTe
 
     vm.deal(address(_dim.getReceiveCounterOffer()), 10);
     vm.prank(address(_dim.getReceiveCounterOffer()));
-    vm.expectRevert(bytes("The investor ceiling is reached."));
+    // vm.expectRevert(bytes("The investor ceiling is reached."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvestmentCeilingReachedForAcceptedOffer(string,uint256)",
+        "Cannot receive accepted investment, investment ceiling is reached.",
+        30
+      )
+    );
     _dim.receiveAcceptedOffer{ value: 10 }(payable(address(0)));
   }
 }

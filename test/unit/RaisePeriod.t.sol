@@ -12,12 +12,10 @@ interface IMultipleInvestmentTest {
 
   function testProjectLeadCantWithdrawBeforeTargetIsReached() external;
 
-  function testRaisePeriodReturnSingleInvestment() external;
-
   function testKeepInvestmentsForSuccesfullRaise() external;
 }
 
-contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
+contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _firstInvestorWallet;
   address payable private _secondInvestorWallet;
@@ -67,7 +65,15 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     vm.warp(block.timestamp + 3 weeks);
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Investment target is not yet reached."));
+    // vm.expectRevert(bytes("Investment target is not yet reached."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvestmentTargetIsNotYetReached(string,uint256,uint256)",
+        "Cannot withdraw, investment target is not yet reached.",
+        _firstInvestmentAmount,
+        0.6 ether
+      )
+    );
     _dim.withdraw(_firstInvestmentAmount);
     _dim.receiveInvestment{ value: 5 ether }();
 
@@ -77,45 +83,43 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     assertEq(_projectLead.balance, 5.5 ether, "The _dim did not contain 0 ether.");
   }
 
-  function testRaisePeriodReturnSingleInvestment() public virtual override {
-    // Simulate 3 weeks passing by
-    // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 3 weeks);
-
-    vm.expectRevert(bytes("The fund raising period has not passed yet."));
-    vm.prank(_projectLead);
-    _dim.triggerReturnAll();
-    assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
-
-    // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 15 weeks);
-
-    vm.expectRevert(bytes("Someone other than projectLead tried to return all investments."));
-    _dim.triggerReturnAll();
-
-    vm.prank(_projectLead);
-    _dim.triggerReturnAll();
-    assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether.");
-  }
-
   function testKeepInvestmentsForSuccesfullRaise() public virtual override {
     // Simulate 3 weeks passing by
+    uint256 startTime = block.timestamp;
     // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 3 weeks);
+    vm.warp(startTime + 3 weeks);
 
-    vm.expectRevert(bytes("The fund raising period has not passed yet."));
+    // vm.expectRevert(bytes("The fund raising period has not passed yet."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
+        "Fund raising period has not yet passed.",
+        startTime + 3 weeks,
+        startTime - 3 weeks,
+        12 weeks
+      )
+    );
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
     // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
     vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: 2.5 ether }();
+    uint256 secondInvestmentAmount = 2.5 ether;
+    _dim.receiveInvestment{ value: secondInvestmentAmount }();
 
     // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 15 weeks);
 
-    vm.expectRevert(bytes("Investment target reached!"));
+    // vm.expectRevert(bytes("Investment target reached!"));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvestmentTargetReached(string,uint256,uint256)",
+        "Investment target reached!",
+        _firstInvestmentAmount + secondInvestmentAmount,
+        0.6 ether
+      )
+    );
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 3 ether, "The _dim did not contain 0 ether.");
   }

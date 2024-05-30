@@ -217,7 +217,6 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
     somePayees[0] = address(10);
     somePayees[1] = address(11);
 
-    
     vm.expectRevert(
       abi.encodeWithSignature(
         "DifferentNrOfPayeesThanAmountsOwed(string,uint256,uint256)",
@@ -232,7 +231,7 @@ contract CustomPaymentSplitterTest is PRBTest, StdCheats, ICustomPaymentSplitter
   function testCannotInitialiseConstructorWithoutPayees() public override {
     address[] memory somePayees = new address[](0);
     uint256[] memory someOwedDai = new uint256[](0);
-    
+
     vm.expectRevert(
       abi.encodeWithSignature(
         "LessThanOnePayee(string,uint256)",

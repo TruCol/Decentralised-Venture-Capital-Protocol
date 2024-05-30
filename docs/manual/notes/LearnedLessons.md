@@ -202,13 +202,14 @@ chain was also in that first contract).
 
 ## Vscode
 
-If you only install the Solidity  extension by Juan Blanco, the F12 jump to function works.
+If you only install the Solidity  extension by Juan Blanco, the F12 jump to
+function works.
 
 ## Expecting errors
 
 You cannot have any spaces in the types in the expected errors. Like in:
 
-```
+```sol
 vm.expectRevert(
       abi.encodeWithSignature(
         "TierMaxBelowReceivedInvestments(string,uint256,uint256)",

@@ -163,7 +163,8 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
           firstInvestmentAmount: firstInvestmentAmount,
           investmentTarget: investmentTarget,
           additionalWaitPeriod: additionalWaitPeriod,
-          raisePeriod: raisePeriod
+          raisePeriod: raisePeriod,
+          maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1]
         });
       } else {
         emit Log("Could not make investment.");
@@ -179,13 +180,21 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
     uint256 investmentTarget,
     uint256 firstInvestmentAmount,
     uint32 additionalWaitPeriod,
-    uint32 raisePeriod
+    uint32 raisePeriod,
+    uint256 maxTierCeiling
   ) internal {
     if (firstInvestmentAmount >= investmentTarget) {
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
-      vm.expectRevert(bytes("Investment target reached!"));
+      vm.expectRevert(
+        abi.encodeWithSignature(
+          "InvestmentTargetReached(string,uint256,uint256)",
+          "Investment target reached!",
+          _helper.minimum(maxTierCeiling, firstInvestmentAmount),
+          investmentTarget
+        )
+      );
       dim.triggerReturnAll();
     } else {
       vm.prank(projectLead);

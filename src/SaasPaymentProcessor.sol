@@ -7,6 +7,13 @@ import { Helper } from "../src/Helper.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+error SaasPaymentProcessorOnlyOwner(string message, address owner, address msgSender);
+error SaasRevenueForInvestorsSmallerThanOne(string message, uint256 saasRevenueForInvestors);
+error CumulativePayoutMismatch(string message, uint256 cumulativePayout, uint256 saasRevenueForInvestors);
+error NewInvestmentAmountOfZero(string message, uint256 newInvestmentAmount);
+error OverflowOccurred(string message, uint256 cumReceivedInvestments, uint256 newInvestmentAmount);
+error DenominatorSmallerThanOne(string message, uint256 denominator);
+
 interface ISaasPaymentProcessor {
   function computeInvestorReturns(
     Helper helper,
@@ -38,7 +45,9 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _OWNER, "SaasPaymentProcessor: The sender of this message is not the owner.");
+    if (msg.sender != _OWNER) {
+      revert SaasPaymentProcessorOnlyOwner("Message sender is not owner.", _OWNER, msg.sender);
+    }
     _;
   }
 
@@ -73,7 +82,12 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
   ) public override returns (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) {
-    require(saasRevenueForInvestors > 0, "saasRevenueForInvestors is not larger than 0.");
+    if (saasRevenueForInvestors < 1) {
+      revert SaasRevenueForInvestorsSmallerThanOne(
+        "saasRevenueForInvestors is not larger than 0.",
+        saasRevenueForInvestors
+      );
+    }
     uint256 nrOfTierInvestments = tierInvestments.length;
 
     returnAmounts = new uint256[](nrOfTierInvestments);
@@ -105,17 +119,13 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
       }
     }
 
-    require(
-      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
-      // solhint-disable-next-line func-named-parameters
-      string.concat(
-        "The cumulativePayout (\n",
-        Strings.toString(cumulativePayout),
-        ") is not equal to the saasRevenueForInvestors (\n",
-        Strings.toString(saasRevenueForInvestors),
-        ")."
-      )
-    );
+    if (cumulativePayout != saasRevenueForInvestors && cumulativePayout + 1 != saasRevenueForInvestors) {
+      revert CumulativePayoutMismatch(
+        "cumulativePayout (~+1) not equal to saasRevenueForInvestors",
+        cumulativePayout,
+        saasRevenueForInvestors
+      );
+    }
     return (returnTiers, returnAmounts);
   }
 
@@ -142,11 +152,15 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
   ) public override onlyOwner returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment) {
     newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
 
-    require(newInvestmentAmount > 0, "can't add investment of 0.");
+    if (newInvestmentAmount < 1) {
+      revert NewInvestmentAmountOfZero("can't add investment of 0.", newInvestmentAmount);
+    }
 
     cumReceivedInvestments += newInvestmentAmount;
 
-    require(cumReceivedInvestments >= newInvestmentAmount, "Overflow occurred.");
+    if (cumReceivedInvestments < newInvestmentAmount) {
+      revert OverflowOccurred("Overflow occurred.", cumReceivedInvestments, newInvestmentAmount);
+    }
     updatedCumReceivedInvestments = cumReceivedInvestments;
 
     return (updatedCumReceivedInvestments, newTierInvestment);
@@ -200,7 +214,9 @@ contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
   ) public pure override returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
-    require(denominator > 0, "Denominator not larger than 0");
+    if (denominator < 1) {
+      revert DenominatorSmallerThanOne("Denominator not larger than 0", denominator);
+    }
 
     // Divide with round up.
     uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);

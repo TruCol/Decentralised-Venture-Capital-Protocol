@@ -12,7 +12,6 @@ error ReleaseAccountIsContractAddress(string message, address account, address t
 error ZeroDaiForAddingNewPayee(string message, address account, uint256 amountToAddToAccount);
 error NonEmptyAccountForNewPayee(string message, address account, uint256 accountBalance);
 
-
 error CustomPaymentSplitterOnlyOwner(string message, address owner, address msgSender);
 import { console2 } from "forge-std/src/console2.sol";
 
@@ -100,10 +99,14 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
   // solhint-disable-next-line comprehensive-interface
   constructor(address[] memory payees, uint256[] memory amountsOwed) payable {
     if (payees.length != amountsOwed.length) {
-      revert DifferentNrOfPayeesThanAmountsOwed("Nr of payees not equal to nr of amounts owed.", payees.length, amountsOwed.length);
+      revert DifferentNrOfPayeesThanAmountsOwed(
+        "Nr of payees not equal to nr of amounts owed.",
+        payees.length,
+        amountsOwed.length
+      );
     }
-    
-    if (payees.length <1) {
+
+    if (payees.length < 1) {
       revert LessThanOnePayee("There are not more than 0 payees.", payees.length);
     }
 
@@ -159,7 +162,7 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
     if (payment < 1) {
       revert ZeroPaymentForAccount("The amount to be paid was not larger than 0.", account, payment);
     }
-    
+
     // Track the amount of DAI the payee has received through the release
     // process.
     _released[account] = _released[account] + (payment);
@@ -181,12 +184,16 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
    */
   function publicAddPayee(address account, uint256 dai_) public override onlyOwner {
     if (account == address(this)) {
-      revert ReleaseAccountIsContractAddress("This account is equal to the address of this account.", account, address(this));
+      revert ReleaseAccountIsContractAddress(
+        "This account is equal to the address of this account.",
+        account,
+        address(this)
+      );
     }
     if (dai_ < 1) {
       revert ZeroDaiForAddingNewPayee("The number of incoming dai is not larger than 0.", account, dai_);
     }
-    
+
     if (_dai[account] != 0) {
       revert NonEmptyAccountForNewPayee("This account already has some currency.", account, _dai[account]);
     }
@@ -230,7 +237,6 @@ contract CustomPaymentSplitter is ICustomPaymentSplitter {
     if (dai < 1) {
       revert ZeroDaiSharesIncoming("There were 0 dai shares incoming.", account, dai);
     }
-
 
     // One can not assert the account is already in _dai, because inherently in
     // Solidity, a mapping contains all possible options already. So it will

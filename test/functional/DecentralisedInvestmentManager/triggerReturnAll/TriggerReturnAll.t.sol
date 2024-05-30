@@ -7,11 +7,12 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 interface IMultipleInvestmentTest {
   function setUp() external;
 
-  function testRaisePeriodReturnSingleInvestment() external;
+  function testRaisePeriodReturnSingleInvestmentTriggerReturnAll() external;
 
   function testKeepInvestmentsForSuccesfullRaise() external;
 }
@@ -24,7 +25,7 @@ TODO: test whether the investments are:
 - not returned if the investment target is not reached, before the raisePeriod has passed.
 - not returned if the investment target is reached, before the raisePeriod has passed.
 */
-contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
+contract TriggerReturnAllTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _firstInvestorWallet;
   address payable private _secondInvestorWallet;
@@ -74,12 +75,21 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   @dev The investor has invested 0.5 eth, and the investment target is 0.6 eth after 12 weeks.
   So the investment target is not reached, so all the funds should be returned.
    */
-  function testRaisePeriodReturnSingleInvestment() public virtual override {
+  function testRaisePeriodReturnSingleInvestmentTriggerReturnAll() public virtual override {
     // Simulate 3 weeks passing by
+    uint256 startTime = block.timestamp;
     // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 3 weeks);
+    vm.warp(startTime + 3 weeks);
 
-    vm.expectRevert(bytes("The fund raising period has not passed yet."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
+        "Fund raising period has not yet passed.",
+        startTime + 3 weeks,
+        startTime - 3 weeks,
+        12 weeks
+      )
+    );
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
@@ -96,23 +106,42 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   funds from being returned to the investors. (Because if the investment target is reached, the funds
   should be allocated to development, instead of being returned.) */
   function testKeepInvestmentsForSuccesfullRaise() public virtual override {
+    uint256 startTime = block.timestamp;
     // Simulate 3 weeks passing by
     // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 3 weeks);
+    vm.warp(startTime + 3 weeks);
 
-    vm.expectRevert(bytes("The fund raising period has not passed yet."));
+    // vm.expectRevert(bytes("The fund raising period has not passed yet."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
+        "Fund raising period has not yet passed.",
+        startTime + 3 weeks,
+        startTime - 3 weeks,
+        12 weeks
+      )
+    );
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
 
     // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
     vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: 2.5 ether }();
+    uint256 secondInvestmentAmount = 2.5 ether;
+    _dim.receiveInvestment{ value: secondInvestmentAmount }();
 
     // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 15 weeks);
+    vm.warp(startTime + 15 weeks);
 
-    vm.expectRevert(bytes("Investment target reached!"));
+    // vm.expectRevert(bytes("Investment target reached!"));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvestmentTargetReached(string,uint256,uint256)",
+        "Investment target reached!",
+        _firstInvestmentAmount + secondInvestmentAmount,
+        0.6 ether
+      )
+    );
     _dim.triggerReturnAll();
     assertEq(address(_dim).balance, 3 ether, "The _dim did not contain 3 ether.");
   }
