@@ -54,26 +54,53 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, IWorkerGetRewardTest {
   }
 
   function testRecoverRewardsWithNonprojectLead() public virtual override {
-    vm.expectRevert("Someone other than projectLead tried to recover rewards.");
+    // vm.expectRevert("Someone other than projectLead tried to recover rewards.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "UnauthorizedRewardRecovery(string,address)",
+        "Only project lead can recover rewards.",
+        address(this)
+      )
+    );
     _workerGetReward.projectLeadRecoversRewards(1);
   }
 
   function testRecoverMoreRewardThanContractContains() public virtual override {
     // Ask 0 when contract has 0.
     vm.prank(_projectLead);
-    vm.expectRevert("Tried to recover 0 wei.");
+    // vm.expectRevert("Tried to recover 0 wei.");
+    vm.expectRevert(
+      abi.encodeWithSignature("InvalidRecoveryAmount(string,uint256)", "Recovery amount must be greater than 0 wei.", 0)
+    );
+
     _workerGetReward.projectLeadRecoversRewards(0);
 
     // Ask 1 when contract has 0.
     vm.prank(_projectLead);
-    vm.expectRevert("Tried to recover more than the contract contains.");
+    // vm.expectRevert("Tried to recover more than the contract contains.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InsufficientFundsForTransfer(string,uint256,uint256)",
+        "Insufficient contract balance for transfer.",
+        1,
+        address(_workerGetReward).balance
+      )
+    );
     _workerGetReward.projectLeadRecoversRewards(1);
 
     // Ask 2 when contract has 1.
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
     vm.prank(_projectLead);
-    vm.expectRevert("Tried to recover more than the contract contains.");
+    // vm.expectRevert("Tried to recover more than the contract contains.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InsufficientFundsForTransfer(string,uint256,uint256)",
+        "Insufficient contract balance for transfer.",
+        2,
+        address(_workerGetReward).balance
+      )
+    );
     _workerGetReward.projectLeadRecoversRewards(2);
   }
 
@@ -82,7 +109,15 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, IWorkerGetRewardTest {
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 3 }(workerAddress, 8 weeks);
     vm.prank(_projectLead);
-    vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    // vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvalidTimeManipulation(string,uint256,uint256)",
+        "Project lead attempted recovery before allowed time.",
+        block.timestamp,
+        block.timestamp + 8 weeks
+      )
+    );
     _workerGetReward.projectLeadRecoversRewards(3);
     //
   }
@@ -94,7 +129,16 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, IWorkerGetRewardTest {
     vm.prank(_projectLead);
     // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 12 weeks - 1);
-    vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    // vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvalidTimeManipulation(string,uint256,uint256)",
+        "Project lead attempted recovery before allowed time.",
+        block.timestamp + 12 weeks - 1,
+        block.timestamp + 12 weeks
+      )
+    );
+
     _workerGetReward.projectLeadRecoversRewards(3);
   }
 
@@ -105,7 +149,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, IWorkerGetRewardTest {
     vm.prank(_projectLead);
     // solhint-disable-next-line not-rely-on-time
     vm.warp(block.timestamp + 12 weeks + 1);
-    // vm.expectRevert("ProjectLead tried to recover funds before workers got the chance.");
+
     _workerGetReward.projectLeadRecoversRewards(3);
   }
 }

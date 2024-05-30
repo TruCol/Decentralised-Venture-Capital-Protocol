@@ -67,7 +67,7 @@ contract ReveiveAcceptedOfferTest is PRBTest, StdCheats, IReveiveAcceptedOfferTe
         "OfferMadeByDifferentAddressThanCounterOfferContract(string,address,address)",
         "The contract calling this function was not counterOfferContract.",
         address(this),
-        address(0)
+        address(_dim.getReceiveCounterOffer())
       )
     );
 

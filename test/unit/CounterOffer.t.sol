@@ -98,15 +98,24 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     assertEq(_dim.getTierInvestmentLength(), 0, "C: The TierInvestment length was not 0.");
 
     // Assert revert when trying to accept the investment.
-    vm.expectRevert(bytes("Only project lead can accept offer"));
+    // vm.expectRevert(bytes("Only project lead can accept offer"));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "UnauthorizedOfferAcceptance(string,address)",
+        "Only project lead can accept offer.",
+        address(this)
+      )
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Offer expired"));
+    // vm.expectRevert(bytes("Offer expired"));
+    vm.expectRevert(abi.encodeWithSignature("ExpiredOffer(string,uint256)", "Offer has expired.", 0));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Offer expired"));
+    // vm.expectRevert(bytes("Offer expired"));
+    vm.expectRevert(abi.encodeWithSignature("ExpiredOffer(string,uint256)", "Offer has expired.", 0));
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
   }
 
@@ -127,7 +136,14 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     assertEq(_dim.getTierInvestmentLength(), 0, "C: The TierInvestment length was not 0.");
 
     // Assert revert when trying to accept the investment.
-    vm.expectRevert(bytes("Only project lead can accept offer"));
+    // vm.expectRevert(bytes("Only project lead can accept offer"));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "UnauthorizedOfferAcceptance(string,address)",
+        "Only project lead can accept offer.",
+        address(this)
+      )
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.prank(_projectLead);
@@ -136,11 +152,17 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     assertEq(_dim.getTierInvestmentLength(), 1, "D: The TierInvestment length was not 1.");
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    // vm.expectRevert(bytes("Offer already rejected or accepted."));
+    vm.expectRevert(
+      abi.encodeWithSignature("OfferAlreadyDecided(string,uint256)", "Offer has already been rejected or accepted.", 0)
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    // vm.expectRevert(bytes("Offer already rejected or accepted."));
+    vm.expectRevert(
+      abi.encodeWithSignature("OfferAlreadyDecided(string,uint256)", "Offer has already been rejected or accepted.", 0)
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
 
     // TODO: assert investor has investment back.
@@ -164,7 +186,14 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     assertEq(_dim.getTierInvestmentLength(), 0, "C: The TierInvestment length was not 0.");
 
     // Assert revert when trying to accept the investment.
-    vm.expectRevert(bytes("Only project lead can accept offer"));
+    // vm.expectRevert(bytes("Only project lead can accept offer"));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "UnauthorizedOfferAcceptance(string,address)",
+        "Only project lead can accept offer.",
+        address(this)
+      )
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
     assertEq(_investorWallet.balance, 1 ether, "Balance of investor unexpected after offer.");
 
@@ -180,11 +209,17 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     assertEq(_dim.getTierInvestmentLength(), 0, "D: The TierInvestment length was not 0.");
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    // vm.expectRevert(bytes("Offer already rejected or accepted."));
+    vm.expectRevert(
+      abi.encodeWithSignature("OfferAlreadyDecided(string,uint256)", "Offer has already been rejected or accepted.", 0)
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
     vm.prank(_projectLead);
-    vm.expectRevert(bytes("Offer already rejected or accepted."));
+    // vm.expectRevert(bytes("Offer already rejected or accepted."));
+    vm.expectRevert(
+      abi.encodeWithSignature("OfferAlreadyDecided(string,uint256)", "Offer has already been rejected or accepted.", 0)
+    );
     _receiveCounterOfferContract.acceptOrRejectOffer(0, false);
 
     // TODO: assert investor has investment back.
@@ -195,7 +230,15 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     _receiveCounterOfferContract.makeOffer{ value: 40 ether }(201, 4 weeks);
 
     vm.prank(address(111));
-    vm.expectRevert(bytes("Someone other than the investor tried to retrieve offer."));
+    // vm.expectRevert(bytes("Someone other than the investor tried to retrieve offer."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "UnauthorizedOfferRetrieval(string,uint256,address)",
+        "Only the investor can retrieve the offer.",
+        0,
+        address(111)
+      )
+    );
     _receiveCounterOfferContract.pullbackOffer(0);
   }
 
@@ -206,7 +249,11 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     vm.prank(_projectLead);
     _receiveCounterOfferContract.acceptOrRejectOffer(0, true);
 
-    vm.expectRevert(bytes("The offer has been accepted, so can't pull back."));
+    // vm.expectRevert(bytes("The offer has been accepted, so can't pull back."));
+    vm.expectRevert(
+      abi.encodeWithSignature("AlreadyAcceptedOffer(string,uint256)", "The offer has already been accepted.", 0)
+    );
+
     _receiveCounterOfferContract.pullbackOffer(0);
   }
 
@@ -218,7 +265,10 @@ contract CounterOfferTest is PRBTest, StdCheats, ICounterOfferTest {
     assertEq(_investorWallet.balance, 2 ether, "Start after investment balance of investor unexpected.");
 
     vm.prank(_investorWallet);
-    vm.expectRevert(bytes("The offer duration has not yet expired."));
+    // vm.expectRevert(bytes("The offer duration has not yet expired."));
+    vm.expectRevert(
+      abi.encodeWithSignature("OfferNotExpiredYet(string,uint256)", "Offer duration has not yet passed.", 0)
+    );
     _receiveCounterOfferContract.pullbackOffer(0);
 
     vm.prank(_investorWallet);

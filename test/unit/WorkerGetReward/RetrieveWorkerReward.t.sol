@@ -48,18 +48,41 @@ contract RetrieveWorkerRewardTest is PRBTest, StdCheats, IRetrieveWorkerRewardTe
 
   function testRetrieveTooLargeRewardForWorker() public virtual override {
     // Retrieve 0 if worker can get 0.
-    vm.expectRevert("Amount not larger than 0.");
+    // vm.expectRevert("Amount not larger than 0.");
+    vm.expectRevert(
+      abi.encodeWithSignature("InvalidRewardTransfer(string,uint256)", "Reward amount must be greater than zero.", 0)
+    );
+
     _workerGetReward.retreiveWorkerReward(0);
 
     // Retrieve 1 if worker can get 0.
-    vm.expectRevert("Asked more reward than worker can get.");
+    // vm.expectRevert("Asked more reward than worker can get.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InsufficientWorkerReward(string,address,uint256,uint256)",
+        "Insufficient worker reward balance.",
+        address(this),
+        1,
+        0
+      )
+    );
+
     _workerGetReward.retreiveWorkerReward(1);
 
     // Retrieve 2 if worker can get 1.
     // Add retrievable of 1 wei to worker.
     address workerAddress = address(0);
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
-    vm.expectRevert("Asked more reward than worker can get.");
+    // vm.expectRevert("Asked more reward than worker can get.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InsufficientWorkerReward(string,address,uint256,uint256)",
+        "Insufficient worker reward balance.",
+        address(this),
+        2,
+        0
+      )
+    );
     _workerGetReward.retreiveWorkerReward(2);
   }
 
@@ -74,7 +97,17 @@ contract RetrieveWorkerRewardTest is PRBTest, StdCheats, IRetrieveWorkerRewardTe
 
     // Assert worker can only retrieve reward once.
     vm.prank(workerAddress);
-    vm.expectRevert("Asked more reward than worker can get.");
+
+    // vm.expectRevert("Asked more reward than worker can get.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InsufficientWorkerReward(string,address,uint256,uint256)",
+        "Insufficient worker reward balance.",
+        workerAddress,
+        1,
+        0
+      )
+    );
     _workerGetReward.retreiveWorkerReward(1);
   }
 }

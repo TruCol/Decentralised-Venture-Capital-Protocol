@@ -75,7 +75,11 @@ contract AddWorkerRewardTest is PRBTest, StdCheats, IAddWorkerRewardTest {
   function testAddWorkerRewardOfZero() public virtual override {
     address workerAddress = address(0);
     // vm.deal(address(this),5 ether);
-    vm.expectRevert("Tried to add 0 value to worker reward.");
+    // vm.expectRevert("Tried to add 0 value to worker reward.");
+    vm.expectRevert(
+      abi.encodeWithSignature("ZeroRewardContribution(string)", "Cannot contribute zero wei to worker reward.")
+    );
+
     _workerGetReward.addWorkerReward{ value: 0 }(workerAddress, 5 weeks);
   }
 
@@ -116,7 +120,16 @@ contract AddWorkerRewardTest is PRBTest, StdCheats, IAddWorkerRewardTest {
 
   function testSetRetrievalDurationBelowMin() public virtual override {
     address workerAddress = address(0);
-    vm.expectRevert("Tried to set retrievalDuration below min.");
+    // vm.expectRevert("Tried to set retrievalDuration below min.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvalidRetrievalDuration(string,uint256,uint256)",
+        "Retrieval duration must be greater than or equal to minimum duration.",
+        7 weeks,
+        8 weeks
+      )
+    );
+
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 7 weeks);
   }
 }

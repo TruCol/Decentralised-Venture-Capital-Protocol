@@ -4,6 +4,13 @@ pragma solidity >=0.8.25;
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
+error InvalidProjectLeadAddress(string message);
+
+error TierMultipleMismatch(string message, uint256 tierCount, uint256 multipleCount);
+
+error UnauthorizedWithdrawal(string message, address sender);
+
+error InsufficientContractBalance(string message, uint256 requestedAmount, uint256 availableBalance);
 
 interface IInitialiseDim {
   function getDim() external returns (DecentralisedInvestmentManager dim);
@@ -30,13 +37,21 @@ contract InitialiseDim is IInitialiseDim {
     uint32 raisePeriod
   ) {
     // Initialise the private attributes.
-    require(projectLead != address(0), "projectLead address can't be 0.");
+    // require(projectLead != address(0), "projectLead address can't be 0.");
+    if (projectLead == address(0)) {
+      revert InvalidProjectLeadAddress("Project lead address cannot be zero.");
+    }
+
     _PROJECT_LEAD = projectLead;
 
     // Specify the investment tiers in ether.
     uint256 nrOfTiers = ceilings.length;
     uint256 nrOfMultiples = multiples.length;
-    require(nrOfTiers == nrOfMultiples, "The nr of tiers is not equal to the nr of multiples.");
+    // require(nrOfTiers == nrOfMultiples, "The nr of tiers is not equal to the nr of multiples.");
+    if (nrOfTiers != nrOfMultiples) {
+      revert TierMultipleMismatch("Number of tiers and multiples must be equal.", nrOfTiers, nrOfMultiples);
+    }
+
     for (uint256 i = 0; i < nrOfTiers; ++i) {
       if (i == 0) {
         _tiers.push(new Tier(0, ceilings[i], multiples[i]));
@@ -74,9 +89,21 @@ contract InitialiseDim is IInitialiseDim {
 
   */
   function withdraw(uint256 amount) public override {
-    require(msg.sender == _PROJECT_LEAD, "Withdraw attempted by someone other than project lead.");
+    // require(msg.sender == _PROJECT_LEAD, "Withdraw attempted by someone other than project lead.");
+    if (msg.sender != _PROJECT_LEAD) {
+      revert UnauthorizedWithdrawal("Only project lead can withdraw funds.", msg.sender);
+    }
+
     // Check if contract has sufficient balance
-    require(address(this).balance >= amount, "Insufficient contract balance");
+    // require(address(this).balance >= amount, "Insufficient contract balance");
+
+    if (address(this).balance < amount) {
+      revert InsufficientContractBalance(
+        "Insufficient contract balance for withdrawal.",
+        amount,
+        address(this).balance
+      );
+    }
 
     // Transfer funds to user using call{value: } (safer approach).
     // (bool success, ) = payable(msg.sender).call{ value: amount }("");

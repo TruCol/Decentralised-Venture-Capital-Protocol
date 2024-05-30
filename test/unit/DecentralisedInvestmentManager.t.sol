@@ -140,9 +140,6 @@ contract DecentralisedInvestmentManagerTest is PRBTest, StdCheats, IDecentralise
     gappedTiers[1] = tier1;
     gappedTiers[2] = tier2;
 
-    // vm.expectRevert(
-    //   bytes("Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier.")
-    // );
     vm.expectRevert(
       abi.encodeWithSignature(
         "CeilingPreviousTierNotEqualToFloorNextTier(string,uint256,uint256)",

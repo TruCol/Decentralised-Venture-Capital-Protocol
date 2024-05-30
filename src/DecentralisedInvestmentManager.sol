@@ -10,6 +10,13 @@ import { WorkerGetReward } from "../src/WorkerGetReward.sol";
 import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+struct AllocatedInvestment {
+  Tier tier;
+  address investorWallet;
+  uint256 amount;
+  uint256 remainingAmountInTier;
+}
+
 error FundRaisingPeriodNotPassed(string message, uint256 blockTimestamp, uint256 startTime, uint256 raisePeriod);
 error InvestmentTargetReached(string message, uint256 cumReceivedInvestments, uint256 investmentTarget);
 error ProvideAtLeastOneTier(string message, uint256 nrOfTiers);
@@ -45,13 +52,7 @@ error CannotSendCurrencyToSelf(string message, address thisAddress, address inve
 error ReturningInvestmentFailed(string message, address investorWallet, uint256 overshoot);
 error NotEnoughBalanceToAllocateSaasRevenue(string message, uint256 thisBalance, uint256 investmentAmount);
 error CannotAllocateLessSAASThanOne(string message, uint256 investmentAmount);
-
-struct AllocatedInvestment {
-  Tier tier;
-  address investorWallet;
-  uint256 amount;
-  uint256 remainingAmountInTier;
-}
+error InvestmentContractFull(string message, uint256 cumReceivedInvestments, uint256 investmentAmount);
 
 interface IDim {
   function receiveSaasPayment() external payable;
@@ -117,7 +118,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   modifier onlyAfterDelayAndUnderTarget() {
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
-    // require(block.timestamp >= _START_TIME + _RAISE_PERIOD, "The fund raising period has not passed yet.");
     if (block.timestamp < _START_TIME + _RAISE_PERIOD) {
       revert FundRaisingPeriodNotPassed(
         "Fund raising period has not yet passed.",
@@ -127,7 +127,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       );
     }
 
-    // require(_cumReceivedInvestments < _INVESTMENT_TARGET, "Investment target reached!");
     if (_cumReceivedInvestments >= _INVESTMENT_TARGET) {
       revert InvestmentTargetReached("Investment target reached!", _cumReceivedInvestments, _INVESTMENT_TARGET);
     }
@@ -159,28 +158,23 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     uint256 investmentTarget
   ) {
     uint256 nrOfTiers = tiers.length;
-    // require(nrOfTiers > 0, "You must provide at least one tier.");
     if (nrOfTiers <= 0) {
       revert ProvideAtLeastOneTier("Provide at least one tier.", nrOfTiers);
     }
-    // require(projectLeadFracDenominator > 0, "projectLeadFracDenominator should be larger than 0.");
     if (projectLeadFracDenominator < 1) {
       revert ProjectLeadFracSmallerThanOne(
         "projectLeadFracDenominator must be larger than 0.",
         projectLeadFracDenominator
       );
     }
-    // require(raisePeriod > 0, "raisePeriod should be larger than 0.");
     if (raisePeriod < 1) {
       revert RaisePeriodSmallerThanOne("raisePeriod must be larger than 0.", raisePeriod);
     }
-    // require(investmentTarget > 0, "investmentTarget should be larger than 0.");
     if (investmentTarget < 1) {
       revert InvestmentTargetSmallerThanOne("investmentTarget must be larger than 0.", investmentTarget);
     }
     _PROJECT_LEAD_FRAC_NUMERATOR = projectLeadFracNumerator;
     _PROJECT_LEAD_FRAC_DENOMINATOR = projectLeadFracDenominator;
-    // require(projectLead != address(0), "Error, project lead address can't be 0.");
     if (projectLead == address(0)) {
       revert ProjectLeadAddressIsZero("projectLead address can't be address(0).", projectLead);
     }
@@ -202,10 +196,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
     for (uint256 i = 0; i < nrOfTiers; ++i) {
       if (i > 0) {
-        // require(
-        // tiers[i - 1].getMaxVal() == tiers[i].getMinVal(),
-        // "Error, the ceiling of the previous investment tier is not equal to the floor of the next investment tier."
-        // );
         if (tiers[i - 1].getMaxVal() != tiers[i].getMinVal()) {
           revert CeilingPreviousTierNotEqualToFloorNextTier(
             "Ceiling previous tier not equal to floor next tier.",
@@ -221,10 +211,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       Tier tierOwnedByThisContract = new Tier({ minVal: someMin, maxVal: someMax, multiple: someMultiple });
       _tiers.push(tierOwnedByThisContract);
     }
-    // require(
-    // investmentTarget <= _tiers[nrOfTiers - 1].getMaxVal(),
-    // "The investment target should be supported by the max Tier ceiling."
-    // );
     if (investmentTarget > _tiers[nrOfTiers - 1].getMaxVal()) {
       revert InvestmentTargetAboveMaxTierCeiling(
         "investmentTarget larger than max Tier ceiling.",
@@ -260,7 +246,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   @notice When a saaspayment is received, the total amount the investors may
   still receive, is calculated and stored in cumRemainingInvestorReturn. */
   function receiveSaasPayment() external payable override {
-    // require(msg.value > 0, "The SAAS payment was not larger than 0.");
     if (msg.value < 1) {
       revert SAASPaymentSmallerThanOne("SAAS payment below 1.", msg.value);
     }
@@ -294,7 +279,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
         paidAmount
       )
     );
-    // require(saasRevenueForInvestors + saasRevenueForProjectLead == paidAmount, errorMessage);
     if (saasRevenueForInvestors + saasRevenueForProjectLead != paidAmount) {
       revert SAASPaymentAmountDoesNotAddUp(
         "combined SAAS for investors and project lead revenue not equal to paidAmount",
@@ -353,18 +337,12 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
   */
   function receiveInvestment() external payable override {
-    // require(msg.sender != address(this), "This contract cannot invest in itself.");
     if (msg.sender == address(this)) {
       revert ContractCannotInvestInItself("This contract cannot invest in itself.", address(this), msg.sender);
     }
-    // require(msg.value > 0, "The amount invested was not larger than 0.");
     if (msg.value < 1) {
       revert InvestmentAmountTooSmall("Investments should be 1 or larger", msg.value);
     }
-    // require(
-    // !_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers),
-    // "The investor ceiling is not reached."
-    // );
     if (_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
       revert ReceivedInvestmentButCeilingReached(
         "Cannot receive investment, investment ceiling is reached.",
@@ -393,19 +371,12 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
   */
   function receiveAcceptedOffer(address payable offerInvestor) public payable override {
-    // require(offerInvestor != address(this), "Cannot accept offer from this contract.");
     if (offerInvestor == address(this)) {
       revert ContractCannotAcceptOfferFromItself("Contract may not offer to itself.", address(this), offerInvestor);
     }
-    // require(msg.value > 0, "The amount invested was not larger than 0.");
     if (msg.value < 1) {
       revert AcceptedInvestmentOfferSmallerThanOne("Accepted investment offer payment below 1.", msg.value);
     }
-
-    // require(
-    // msg.sender == address(_RECEIVE_COUNTER_OFFER),
-    // "The contract calling this function was not counterOfferContract."
-    // );
     if (msg.sender != address(_RECEIVE_COUNTER_OFFER)) {
       revert OfferMadeByDifferentAddressThanCounterOfferContract(
         "The contract calling this function was not counterOfferContract.",
@@ -413,8 +384,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
         address(_RECEIVE_COUNTER_OFFER)
       );
     }
-
-    // require(!_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers), "The investor ceiling is reached.");
     if (_HELPER.hasReachedInvestmentCeiling(_cumReceivedInvestments, _tiers)) {
       revert InvestmentCeilingReachedForAcceptedOffer(
         "Cannot receive accepted investment, investment ceiling is reached.",
@@ -450,7 +419,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     }
 
     Tier currentTier = _HELPER.computeCurrentInvestmentTier(_cumReceivedInvestments, _tiers);
-    // require(newMultiple > currentTier.getMultiple(), "The new multiple was not larger than the old multiple.");
     if (newMultiple <= currentTier.getMultiple()) {
       revert CanOnlyIncreaseMultiple(
         "New multiple not larger than old multiple.",
@@ -478,12 +446,9 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
     // funds in this contract are those coming from investments. Saaspayments are
     // automatically transfured into the CustomPaymentSplitter and retrieved from
     // there.
-    // require(msg.sender == _PROJECT_LEAD, "Withdraw attempted by someone other than project lead.");
     if (msg.sender != _PROJECT_LEAD) {
       revert OnlyProjectLeadCanWithdraw("Only projectLead can withdraw.", msg.sender, _PROJECT_LEAD);
     }
-    // Check if contract has sufficient balance
-    // require(address(this).balance >= amount, "Insufficient contract balance");
     if (address(this).balance < amount) {
       revert InsufficientContractBalanceForWithdraw(
         "Insufficient contract balance for withdrawal.",
@@ -491,7 +456,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
         amount
       );
     }
-    // require(_cumReceivedInvestments >= _INVESTMENT_TARGET, "Investment target is not yet reached.");
     if (_cumReceivedInvestments < _INVESTMENT_TARGET) {
       revert InvestmentTargetIsNotYetReached(
         "Cannot withdraw, investment target is not yet reached.",
@@ -522,7 +486,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
 
   */
   function triggerReturnAll() public override onlyAfterDelayAndUnderTarget {
-    // require(msg.sender == _PROJECT_LEAD, "Someone other than projectLead tried to return all investments.");
     if (msg.sender != _PROJECT_LEAD) {
       revert OnlyProjectLeadCanTriggerReturnAll(
         "Only projectLead can trigger return all investments.",
@@ -535,7 +498,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
       // Transfer the amount to the PaymentSplitter contract
       payable(_tierInvestments[i].getInvestor()).transfer(_tierInvestments[i].getNewInvestmentAmount());
     }
-    // require(address(this).balance == 0, "After returning investments, there is still money in the contract.");
   }
 
   /**
@@ -687,7 +649,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   @param investorWallet The address of the investor's wallet.
   */
   function _allocateInvestment(uint256 investmentAmount, address payable investorWallet) internal {
-    // require(investmentAmount > 0, "The amount invested was not larger than 0.");
     if (investmentAmount < 1) {
       revert InvestmentAmountTooLow("Investment needs to be at least 1.", investmentAmount);
     }
@@ -709,10 +670,6 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
           newInvestmentAmount: allocatedInvestments[i].amount
         });
 
-        // require(
-        // tierInvestment.getOwner() == address(_SAAS_PAYMENT_PROCESSOR),
-        // "The TierInvestment was not created through this contract 0."
-        // );
         if (tierInvestment.getOwner() != address(_SAAS_PAYMENT_PROCESSOR)) {
           revert TierInvestmentObjectFromSomeoneElse(
             "TierInvestment not created through this contract.",
@@ -731,22 +688,16 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
         uint256 overshoot = investmentAmount - acceptedInvestmentAmount;
 
         if (address(this).balance >= overshoot) {
-          // require(address(this) != investorWallet, "Can't send currency to self.");
           if (address(this) == investorWallet) {
             revert CannotSendCurrencyToSelf("Cannot send currency to self.", address(this), investorWallet);
           }
-
-          // require(investorWallet.send(overshoot), "Returning investor funds failed.");
           if (!investorWallet.send(overshoot)) {
             revert ReturningInvestmentFailed("Returning investor funds failed.", investorWallet, overshoot);
           }
         }
-
-        // revert("Investment ceiling reached after processing. Remaining funds are returned to investor.");
       }
     } else {
-      // TODO: make custom error.
-      revert("The investmentcontract is already full. Funds are returned to investor.");
+      revert InvestmentContractFull("Investment contract already full.", _cumReceivedInvestments, investmentAmount);
     }
   }
 
@@ -798,11 +749,9 @@ contract DecentralisedInvestmentManager is IDim, ReentrancyGuard {
   @param receivingWallet The address of the wallet that should receive the allocation.
   */
   function _performSaasRevenueAllocation(uint256 amount, address receivingWallet) internal {
-    // require(address(this).balance >= amount, "Error: Insufficient contract balance.");
     if (address(this).balance < amount) {
       revert NotEnoughBalanceToAllocateSaasRevenue("Insufficient contract balance.", address(this).balance, amount);
     }
-    // require(amount > 0, "The SAAS revenue allocation amount was not larger than 0.");
     if (amount <= 0) {
       revert CannotAllocateLessSAASThanOne("SAAS revenue allocation smaller than 1", amount);
     }
