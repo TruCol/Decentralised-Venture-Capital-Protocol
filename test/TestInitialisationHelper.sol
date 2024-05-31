@@ -4,7 +4,7 @@ pragma solidity >=0.8.25 <0.9.0;
 import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-
+import "@openzeppelin/contracts/utils/Strings.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { TestMathHelper } from "test/TestMathHelper.sol";
@@ -20,6 +20,16 @@ interface ITestInitialisationHelper {
     uint8[] memory multiples,
     uint32 raisePeriod
   ) external returns (bool canInitialiseDim);
+
+  function initialiseRandomDim(
+    address projectLead,
+    uint256 projectLeadFracNumerator,
+    uint256 projectLeadFracDenominator,
+    uint256 investmentTarget,
+    uint256[] memory ceilings,
+    uint8[] memory multiples,
+    uint32 raisePeriod
+  ) external returns (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim);
 
   function safelyInvest(
     DecentralisedInvestmentManager dim,
@@ -59,6 +69,15 @@ contract TestInitialisationHelper is ITestInitialisationHelper, PRBTest, StdChea
     uint8[] memory multiples,
     uint32 raisePeriod
   ) public override returns (bool canInitialiseDim) {
+    emit Log("projectLeadFracNumerator=");
+    emit Log(Strings.toString(projectLeadFracNumerator));
+    emit Log("projectLeadFracDenominator=");
+    emit Log(Strings.toString(projectLeadFracDenominator));
+    emit Log("investmentTarget=");
+    emit Log(Strings.toString(investmentTarget));
+    emit Log("raisePeriod=");
+    emit Log(Strings.toString(raisePeriod));
+
     try
       new InitialiseDim({
         ceilings: ceilings,
@@ -81,6 +100,104 @@ contract TestInitialisationHelper is ITestInitialisationHelper, PRBTest, StdChea
       //emit LogBytes(reason);
       return false;
     }
+  }
+
+  function initialiseRandomDim(
+    address projectLead,
+    uint256 projectLeadFracNumerator,
+    uint256 projectLeadFracDenominator,
+    uint256 investmentTarget,
+    uint256[] memory ceilings,
+    uint8[] memory multiples,
+    uint32 raisePeriod
+  ) public override returns (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) {
+    hasInitialisedRandomDim = true;
+    emit Log("started");
+    if (multiples.length != ceilings.length) {
+      emit Log("expect TierMultipleMismatch");
+      hasInitialisedRandomDim = false;
+      vm.expectRevert(
+        abi.encodeWithSignature(
+          "TierMultipleMismatch(string,uint256,uint256)",
+          "Number of tiers and multiples must be equal.",
+          ceilings.length,
+          multiples.length
+        )
+      );
+    } else if (multiples.length == 0) {
+      emit Log("expect ProvideAtLeastOneTier");
+      hasInitialisedRandomDim = false;
+      vm.expectRevert(
+        abi.encodeWithSignature("ProvideAtLeastOneTier(string,uint256)", "Provide at least one tier.", 0)
+      );
+    } else if (projectLead == address(0)) {
+      emit Log("expect ProjectLeadAddressIsZero");
+      hasInitialisedRandomDim = false;
+      vm.expectRevert(
+        abi.encodeWithSignature("InvalidProjectLeadAddress(string)", "Project lead address cannot be zero.")
+      );
+    } else if (projectLeadFracDenominator < 1) {
+      emit Log("expect ProjectLeadFracSmallerThanOne");
+      hasInitialisedRandomDim = false;
+      vm.expectRevert(
+        abi.encodeWithSignature(
+          "ProjectLeadFracSmallerThanOne(string,uint256)",
+          "projectLeadFracDenominator must be larger than 0.",
+          projectLeadFracDenominator
+        )
+      );
+    } else if (raisePeriod < 1) {
+      emit Log("expect RaisePeriodSmallerThanOne");
+      hasInitialisedRandomDim = false;
+      vm.expectRevert(
+        abi.encodeWithSignature(
+          "RaisePeriodSmallerThanOne(string,uint256)",
+          "raisePeriod must be larger than 0.",
+          raisePeriod
+        )
+      );
+    } else if (raisePeriod < 1) {
+      emit Log("expect InvestmentTargetSmallerThanOne");
+      hasInitialisedRandomDim = false;
+      vm.expectRevert(
+        abi.encodeWithSignature(
+          "InvestmentTargetSmallerThanOne(string,uint256)",
+          "investmentTarget must be larger than 0.",
+          investmentTarget
+        )
+      );
+    }
+
+    InitialiseDim initRandomDim = new InitialiseDim({
+      ceilings: ceilings,
+      multiples: multiples,
+      investmentTarget: investmentTarget,
+      projectLeadFracNumerator: projectLeadFracNumerator,
+      projectLeadFracDenominator: projectLeadFracDenominator,
+      projectLead: projectLead,
+      raisePeriod: raisePeriod
+    });
+
+    if (!hasInitialisedRandomDim) {
+      emit Log("not random dim");
+      // Generate a non-random dummy dim to satisfy return criteria.
+      InitialiseDim initDummyDim = new InitialiseDim({
+        ceilings: ceilings,
+        multiples: multiples,
+        investmentTarget: 1,
+        projectLeadFracNumerator: 2,
+        projectLeadFracDenominator: 7,
+        projectLead: address(1),
+        raisePeriod: 4 weeks
+      });
+      emit Log("got dummy dim");
+      someDim = initDummyDim.getDim();
+    } else {
+      emit Log("after random initialisation");
+      someDim = initRandomDim.getDim();
+    }
+    emit Log("returning");
+    return (hasInitialisedRandomDim, someDim);
   }
 
   /**

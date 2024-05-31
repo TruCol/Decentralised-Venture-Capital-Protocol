@@ -9,16 +9,16 @@ import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInv
 import { Helper } from "../../../../src/Helper.sol";
 
 import { TestInitialisationHelper } from "../../../TestInitialisationHelper.sol";
-import { InitialiseDim } from "test/InitialiseDim.sol";
+
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "test/TestConstants.sol";
 
-interface IFuzzTriggerReturnAll {
+interface IFuzzDebug {
   function setUp() external;
 
-  function testFuzzTriggerReturnAll(
+  function testFuzzDebug(
     address projectLead,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
@@ -40,7 +40,7 @@ TODO: test whether the investments are:
 - not returned if the investment target is not reached, before the raisePeriod has passed.
 - not returned if the investment target is reached, before the raisePeriod has passed.
 */
-contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
+contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
   Helper private _helper;
@@ -51,16 +51,16 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
   function setUp() public virtual override {
     _helper = new Helper();
     _testInitialisationHelper = new TestInitialisationHelper();
-    _validInitialisationCounter = 0;
-    _validInvestmentCounter = 0;
-    _testRunsCounter = 0;
+    // _testRunsCounter = 0;
+    // _validInitialisationCounter = 0;
+    // _validInvestmentCounter = 0;
   }
 
   /**
   @dev The investor has invested 0.5 eth, and the investment target is 0.6 eth after 12 weeks.
   So the investment target is not reached, so all the funds should be returned.
    */
-  function testFuzzTriggerReturnAll(
+  function testFuzzDebug(
     address projectLead,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
@@ -80,9 +80,6 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
       randNrOfInvestmentTiers: randNrOfInvestmentTiers
     });
     investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
-
-    projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-
     ++_testRunsCounter;
     (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) = _testInitialisationHelper
       .initialiseRandomDim({
@@ -96,6 +93,7 @@ contract FuzzTriggerReturnAll is PRBTest, StdCheats, IFuzzTriggerReturnAll {
       });
     if (hasInitialisedRandomDim) {
       ++_validInitialisationCounter;
+
       // Generate a non-random investor wallet address and make an investment.
       address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
       if (
