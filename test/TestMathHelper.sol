@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
+error InvalidSortedArrayWithDupes(string message, uint256 index, uint256 previousValue, uint256 currentValue);
 
 interface ITestMathHelper {
   function sumOfNrsThrowsOverFlow(uint256[] memory numbers) external pure returns (bool cumArrSumYieldsOverflow);
@@ -76,7 +77,15 @@ contract TestMathHelper is ITestMathHelper {
     sortedArrWithDupes = sortArrahLargeToSmall(sortedArrWithDupes);
     sortedArrWithDupes = reverseArray(sortedArrWithDupes);
     for (uint256 i = 1; i < nrOfUnsortedTiers; ++i) {
-      require(sortedArrWithDupes[i - 1] < sortedArrWithDupes[i], "Error, two elems were equal or not increasing.");
+      // require(sortedArrWithDupes[i - 1] < sortedArrWithDupes[i], "Error, two elems were equal or not increasing.");
+      if (sortedArrWithDupes[i - 1] >= sortedArrWithDupes[i]) {
+        revert InvalidSortedArrayWithDupes(
+          "Two elems were equal or not increasing.",
+          i,
+          sortedArrWithDupes[i - 1],
+          sortedArrWithDupes[i]
+        );
+      }
     }
     return sortedArrWithDupes;
   }
