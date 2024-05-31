@@ -1,27 +1,25 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IProjectLeadCanRetrieveInvestmentTest {
   function setUp() external;
 
   function testInvestorGetsSaasRevenue() external;
 }
 
-contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
+contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, IProjectLeadCanRetrieveInvestmentTest {
   address internal _projectLead;
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
+
   address payable private _investorWallet;
   address private _userWallet;
-  Tier[] private _tiers;
+
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.
@@ -97,7 +95,8 @@ contract ProjectLeadCanRetrieveInvestmentTest is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet);
+    vm.prank(_investorWallet);
+    paymentSplitter.release();
     assertEq(paymentSplitter.released(_investorWallet), 0.12 ether);
     assertEq(_investorWallet.balance, 3 ether - 0.5 ether + 0.12 ether);
   }

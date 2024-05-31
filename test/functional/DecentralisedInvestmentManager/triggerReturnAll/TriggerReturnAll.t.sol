@@ -1,21 +1,30 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
 
+import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
-import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
 interface IMultipleInvestmentTest {
   function setUp() external;
 
-  function testProjectLeadCantWithdrawBeforeTargetIsReached() external;
+  function testRaisePeriodReturnSingleInvestmentTriggerReturnAll() external;
 
   function testKeepInvestmentsForSuccesfullRaise() external;
 }
 
-contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
+/**
+Tests whether the _dim.triggerReturnAll() function ensures the investments are:
+- returned if the investment target is not reached, after the raisePeriod has passed.
+- not returned if the investment target is reached, after the raisePeriod has passed.
+TODO: test whether the investments are:
+- not returned if the investment target is not reached, before the raisePeriod has passed.
+- not returned if the investment target is reached, before the raisePeriod has passed.
+*/
+contract TriggerReturnAllTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
   address payable private _firstInvestorWallet;
   address payable private _secondInvestorWallet;
@@ -26,6 +35,7 @@ contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
   /// @dev A function invoked before each test case is run.
   function setUp() public virtual override {
+    // Instantiate the attribute for the contract-under-test.
     _projectLead = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     uint256[] memory ceilings = new uint256[](3);
     ceilings[0] = 4 ether;
@@ -50,6 +60,7 @@ contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     deal(_firstInvestorWallet, 3 ether);
     _secondInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("2"))))));
     deal(_secondInvestorWallet, 4 ether);
+
     _firstInvestmentAmount = 0.5 ether;
 
     // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
@@ -59,33 +70,44 @@ contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     assertEq(_dim.getTierInvestmentLength(), 1, "Error, the _tierInvestments.length was not as expected.");
   }
 
-  function testProjectLeadCantWithdrawBeforeTargetIsReached() public virtual override {
-    // Simulate 3 weeks passing by
-    // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 3 weeks);
-
-    vm.prank(_projectLead);
-    // vm.expectRevert(bytes("Investment target is not yet reached."));
-    vm.expectRevert(
-      abi.encodeWithSignature(
-        "InvestmentTargetIsNotYetReached(string,uint256,uint256)",
-        "Cannot withdraw, investment target is not yet reached.",
-        _firstInvestmentAmount,
-        0.6 ether
-      )
-    );
-    _dim.withdraw(_firstInvestmentAmount);
-    _dim.receiveInvestment{ value: 5 ether }();
-
-    vm.prank(_projectLead);
-    _dim.withdraw(5.5 ether);
-    assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether.");
-    assertEq(_projectLead.balance, 5.5 ether, "The _dim did not contain 0 ether.");
-  }
-
-  function testKeepInvestmentsForSuccesfullRaise() public virtual override {
+  /**
+  @dev The investor has invested 0.5 eth, and the investment target is 0.6 eth after 12 weeks.
+  So the investment target is not reached, so all the funds should be returned.
+   */
+  function testRaisePeriodReturnSingleInvestmentTriggerReturnAll() public virtual override {
     // Simulate 3 weeks passing by
     uint256 startTime = block.timestamp;
+    // solhint-disable-next-line not-rely-on-time
+    vm.warp(startTime + 3 weeks);
+
+    vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
+      abi.encodeWithSignature(
+        "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
+        "Fund raising period has not yet passed.",
+        startTime + 3 weeks,
+        startTime - 3 weeks,
+        12 weeks
+      )
+    );
+    _dim.triggerReturnAll();
+    assertEq(address(_dim).balance, 0.5 ether, "The _dim did not contain 0.5 ether.");
+
+    // solhint-disable-next-line not-rely-on-time
+    vm.warp(block.timestamp + 15 weeks);
+
+    vm.prank(_projectLead);
+    _dim.triggerReturnAll();
+    assertEq(address(_dim).balance, 0 ether, "The _dim did not contain 0 ether after returning all investments.");
+  }
+
+  /**
+  Tests whether two investments together that reach the investment target result prevents the
+  funds from being returned to the investors. (Because if the investment target is reached, the funds
+  should be allocated to development, instead of being returned.) */
+  function testKeepInvestmentsForSuccesfullRaise() public virtual override {
+    uint256 startTime = block.timestamp;
+    // Simulate 3 weeks passing by
     // solhint-disable-next-line not-rely-on-time
     vm.warp(startTime + 3 weeks);
 
@@ -110,7 +132,7 @@ contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     _dim.receiveInvestment{ value: secondInvestmentAmount }();
 
     // solhint-disable-next-line not-rely-on-time
-    vm.warp(block.timestamp + 15 weeks);
+    vm.warp(startTime + 15 weeks);
 
     // vm.expectRevert(bytes("Investment target reached!"));
     vm.expectRevert(
@@ -122,6 +144,6 @@ contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
       )
     );
     _dim.triggerReturnAll();
-    assertEq(address(_dim).balance, 3 ether, "The _dim did not contain 0 ether.");
+    assertEq(address(_dim).balance, 3 ether, "The _dim did not contain 3 ether.");
   }
 }

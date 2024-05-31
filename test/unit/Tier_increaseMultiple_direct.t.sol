@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
-
+pragma solidity >=0.8.25 <0.9.0;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
@@ -8,7 +7,7 @@ import { Tier } from "../../src/Tier.sol";
 
 error ReachedInvestmentCeiling(uint256 providedVal, string errorMessage);
 
-interface Interface {
+interface ITierTest {
   function setUp() external;
 
   function testTierDirectly() external;
@@ -20,7 +19,7 @@ interface Interface {
   function testTierDirectlySmallerMultiple() external;
 }
 
-contract TierTest is PRBTest, StdCheats, Interface {
+contract TierTest is PRBTest, StdCheats, ITierTest {
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
@@ -39,17 +38,28 @@ contract TierTest is PRBTest, StdCheats, Interface {
 
   function testTierDirectlyWithOtherAddress() public override {
     vm.prank(address(1));
-    vm.expectRevert(bytes("Increasing the Tier object multiple attempted by someone other than project lead."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "MultipleIncreaseByOtherThanOwner(string,address,address)",
+        "Only owner can increase ROI multiple.",
+        address(1),
+        address(this)
+      )
+    );
     _validTier.increaseMultiple(11);
   }
 
   function testTierDirectlyEqualMultiple() public override {
-    vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
+    vm.expectRevert(
+      abi.encodeWithSignature("DecreasingMultiple(string,uint256,uint256)", "Can only increase ROI multiple.", 10, 10)
+    );
     _validTier.increaseMultiple(10);
   }
 
   function testTierDirectlySmallerMultiple() public override {
-    vm.expectRevert(bytes("The new multiple was not larger than the old multiple."));
+    vm.expectRevert(
+      abi.encodeWithSignature("DecreasingMultiple(string,uint256,uint256)", "Can only increase ROI multiple.", 10, 4)
+    );
     _validTier.increaseMultiple(4);
   }
 }

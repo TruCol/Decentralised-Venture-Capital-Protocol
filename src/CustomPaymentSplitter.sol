@@ -1,10 +1,23 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
+error AccountIsNotNewPayee(string message, address account, uint256 accountBalance);
+error DifferentNrOfPayeesThanAmountsOwed(string message, uint256 nrOfPayees, uint256 nrOfAmountsOwed);
+error LessThanOnePayee(string message, uint256 nrOfPayees);
 
-interface Interface {
+error ZeroDaiSharesIncoming(string message, address account, uint256 dai);
+error ZeroDaiSharesReleasedForAccount(string message, address account, uint256 dai);
+error ZeroPaymentForAccount(string message, address account, uint256 dai);
+error ReleaseAccountIsContractAddress(string message, address account, address thisAddress);
+
+error ZeroDaiForAddingNewPayee(string message, address account, uint256 amountToAddToAccount);
+error NonEmptyAccountForNewPayee(string message, address account, uint256 accountBalance);
+
+error CustomPaymentSplitterOnlyOwner(string message, address owner, address msgSender);
+
+interface ICustomPaymentSplitter {
   function deposit() external payable;
 
-  function release(address payable account) external;
+  function release() external;
 
   function publicAddPayee(address account, uint256 dai_) external;
 
@@ -20,7 +33,7 @@ interface Interface {
  * @dev This contract can be used when payments need to be received by a group
  * of people and split proportionately to some number of dai they own.
  */
-contract CustomPaymentSplitter is Interface {
+contract CustomPaymentSplitter is ICustomPaymentSplitter {
   uint256 private _totalDai;
   uint256 private _totalReleased;
 
@@ -34,7 +47,7 @@ contract CustomPaymentSplitter is Interface {
 
   address[] private _payees;
   uint256[] private _amountsOwed;
-  address private _owner;
+  address private immutable _OWNER;
 
   event PayeeAdded(address indexed account, uint256 indexed dai);
   event PaymentReleased(address indexed to, uint256 indexed amount);
@@ -46,7 +59,9 @@ contract CustomPaymentSplitter is Interface {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "CustomPaymentSplitter: The sender of this message is not the owner.");
+    if (msg.sender != _OWNER) {
+      revert CustomPaymentSplitterOnlyOwner("Message sender is not owner.", _OWNER, msg.sender);
+    }
     _;
   }
 
@@ -81,17 +96,29 @@ contract CustomPaymentSplitter is Interface {
   allocated to each payee.
   */
   // solhint-disable-next-line comprehensive-interface
-  constructor(address[] memory payees, uint256[] memory amountsOwed) public payable {
-    require(payees.length == amountsOwed.length, "The nr of payees is not equal to the nr of amounts owed.");
-    require(payees.length > 0, "There are not more than 0 payees.");
+  constructor(address[] memory payees, uint256[] memory amountsOwed) payable {
+    if (payees.length != amountsOwed.length) {
+      revert DifferentNrOfPayeesThanAmountsOwed(
+        "Nr of payees not equal to nr of amounts owed.",
+        payees.length,
+        amountsOwed.length
+      );
+    }
 
-    _owner = msg.sender;
+    if (payees.length < 1) {
+      revert LessThanOnePayee("There are not more than 0 payees.", payees.length);
+    }
+
+    _OWNER = msg.sender;
     _amountsOwed = amountsOwed;
 
     uint256 nrOfPayees = payees.length;
+    uint256 totalDaiCounter = _totalDai; // Prevent updating state var in loop.
     for (uint256 i = 0; i < nrOfPayees; ++i) {
       _addPayee(payees[i], _amountsOwed[i]);
+      totalDaiCounter += _amountsOwed[i];
     }
+    _totalDai += totalDaiCounter;
   }
 
   /**
@@ -120,18 +147,21 @@ contract CustomPaymentSplitter is Interface {
   * Payees are responsible for calling this function to claim their outstanding
   balances.
 
-  @param account The address of the payee requesting a release.
-
-
   */
-  function release(address payable account) public override {
-    require(_dai[account] > 0, "The dai for account, was not larger than 0.");
+  function release() public override {
+    address payable account = payable(msg.sender);
+    if (_dai[account] < 1) {
+      revert ZeroDaiSharesReleasedForAccount("The dai for account, was not larger than 0.", account, _dai[account]);
+    }
 
     // The amount the payee may receive is equal to the amount of outstanding
     // DAI, subtracted by the amount that has been released to that account.
     uint256 payment = _dai[account] - _released[account];
 
-    require(payment > 0, "The amount to be paid was not larger than 0.");
+    if (payment < 1) {
+      revert ZeroPaymentForAccount("The amount to be paid was not larger than 0.", account, payment);
+    }
+
     // Track the amount of DAI the payee has received through the release
     // process.
     _released[account] = _released[account] + (payment);
@@ -143,8 +173,8 @@ contract CustomPaymentSplitter is Interface {
     // it computes how much that address is owed, and immediately pays it. If
     // this function is not called, one does not calculate how much an address
     // is owed.
-    account.transfer(payment);
     emit PaymentReleased(account, payment);
+    account.transfer(payment);
   }
 
   /**
@@ -152,9 +182,20 @@ contract CustomPaymentSplitter is Interface {
    *   funds after constructor initialisation.
    */
   function publicAddPayee(address account, uint256 dai_) public override onlyOwner {
-    require(account != address(this), "This account is equal to the address of this account.");
-    require(dai_ > 0, "The number of incoming dai is not larger than 0.");
-    require(_dai[account] == 0, "This account already has some currency.");
+    if (account == address(this)) {
+      revert ReleaseAccountIsContractAddress(
+        "This account is equal to the address of this account.",
+        account,
+        address(this)
+      );
+    }
+    if (dai_ < 1) {
+      revert ZeroDaiForAddingNewPayee("The number of incoming dai is not larger than 0.", account, dai_);
+    }
+
+    if (_dai[account] != 0) {
+      revert NonEmptyAccountForNewPayee("This account already has some currency.", account, _dai[account]);
+    }
 
     _payees.push(account);
     _dai[account] = dai_;
@@ -192,7 +233,9 @@ contract CustomPaymentSplitter is Interface {
 
   */
   function publicAddSharesToPayee(address account, uint256 dai) public override onlyOwner {
-    require(dai > 0, "There were 0 dai shares incoming.");
+    if (dai < 1) {
+      revert ZeroDaiSharesIncoming("There were 0 dai shares incoming.", account, dai);
+    }
 
     // One can not assert the account is already in _dai, because inherently in
     // Solidity, a mapping contains all possible options already. So it will
@@ -284,11 +327,12 @@ contract CustomPaymentSplitter is Interface {
 
   */
   function _addPayee(address account, uint256 dai_) private {
-    require(_dai[account] == 0, "This account already is owed some currency.");
+    if (_dai[account] != 0) {
+      revert AccountIsNotNewPayee("Account is not a new payee.", account, _dai[account]);
+    }
 
     _payees.push(account);
     _dai[account] = dai_;
-    _totalDai = _totalDai + dai_;
     emit PayeeAdded(account, dai_);
   }
 }

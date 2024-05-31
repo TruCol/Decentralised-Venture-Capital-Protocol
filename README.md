@@ -1,4 +1,4 @@
-# Decentralised SAAS Investment Protocol [![Github Actions][gha-badge]][gha] [![Branch coverage badge description][branch-coverage-badge-icon]][coverage_report_link_local] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+# Decentralised Venture Capital Protocol [![Github Actions][gha-badge]][gha] [![Branch coverage badge description][branch-coverage-badge-icon]][coverage_report_link_local] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
 <!-- [![Code coverage badge description]
 [code-coverage-badge-icon]][coverage_report_link_local] -->
@@ -20,7 +20,7 @@ Three investment tiers are supported, each with different ROI multiples, e.g.:
 - Tier 15: 4 to 30 ether, multiple ROI: 2x.
 
 *Note: Investing 5 Bitcoin with an ROI of 6 can lead to a maximum return of 30 Bitcoin
-yielding a maximum profit of 25 bitcoin.*
+yielding a maximum profit of 25 Bitcoin.*
 
 The idea is that in later stages of investment, the risk becomes lower as more
 data is available on whether the project will succeed or not, hence a lower ROI
@@ -35,18 +35,12 @@ are made whole, then the project lead receives all the SAAS payments.
 
 The project lead **alone** can get the investments out of the contract and
 distribute it to workers, or allow the workers to retrieve their own investment
-fraction.
+fraction as worker reward.
 
 ## Risks
 
 Primary risk is the project lead using a different SAAS payment address to gain
-its income. This requires trust in the project lead. Besides that, all
-transactions are automated. An ideal application of this protocol would
-include a method to verify the SAAS service is developed as expected, e.g. if
-a SAAS streaming service is developed, the protocol verifies the service
-provides access to all songs in spotify, through (randomized) file hashes, and
-makes the project lead automatically liable (through stake) for not living up
-to the promise. This verification is considered out of scope.
+its income. This requires trust in the project lead.
 
 Secondary risk is that this contract is hacked:
 
@@ -67,6 +61,15 @@ provide the investors with (their whole) ROI multiple.
   people) simultaneously, rather than going to all their websites, tailoring the
   pitchdecks to their demands, and spending time and resources in the
   negotiations.
+
+## Scope
+
+An ideal application of this protocol would include a method to verify the
+SAAS service is developed as expected, e.g. if
+a SAAS streaming service is developed, the protocol verifies the service
+provides access to all songs in spotify, through (randomized) file hashes, and
+makes the project lead automatically liable (through stake) for not living up
+to the promise. This verification is considered out of scope.
 
 ## Deployment Prerequisites
 
@@ -147,7 +150,7 @@ assertions, in the CLI. Otherwise it just says: "test failed".
 Get a test coverage report:
 
 ```sh
-clear && forge coverage --report lcov && genhtml -o report --branch-coverage lcov.info
+clear && forge coverage --report lcov --via-ir && genhtml -o report --branch-coverage lcov.info
 ```
 
 ## Gas Usage

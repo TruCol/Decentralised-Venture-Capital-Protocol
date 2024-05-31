@@ -173,6 +173,17 @@ forge test --vv
 
 to show check up to where the print statements were printed.
 
+## Logging
+
+In a test you can use:
+
+```sol
+import "@openzeppelin/contracts/utils/Strings.sol";
+emit Log("Made investment.");
+emit Log("In investment getCumReceivedInvestments=");
+emit Log(Strings.toString(dim.getCumReceivedInvestments()));
+```
+
 ## msg.sender
 
 - If function `foo` in contract `Hello` is called from a contract `Caller`,
@@ -188,3 +199,27 @@ nested/sequential calls in with the same `msg.sender` in the same contract, but
 as soon as one function is in another contract, the `msg.sender` is that of the
 contract that called that function (still the same if the first call of the
 chain was also in that first contract).
+
+## Vscode
+
+If you only install the Solidity  extension by Juan Blanco, the F12 jump to
+function works.
+
+## Expecting errors
+
+You cannot have any spaces in the types in the expected errors. Like in:
+
+```sol
+vm.expectRevert(
+      abi.encodeWithSignature(
+        "TierMaxBelowReceivedInvestments(string,uint256,uint256)",
+        "Tier's max below cumReceivedInvestments",
+        simulatedCumReceivedInvestment,
+        tierCeiling
+      )
+    );
+```
+
+The following would not work:
+`"TierMaxBelowReceivedInvestments(string, uint256,uint256)",`
+Because of the space after `string,`.

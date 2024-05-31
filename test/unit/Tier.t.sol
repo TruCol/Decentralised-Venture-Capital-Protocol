@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { Tier } from "../../src/Tier.sol";
 
-interface Interface {
+interface ITierTest {
   function setUp() external;
 
   function testAttributes() external;
@@ -18,7 +18,7 @@ interface Interface {
   function testThrowsOnOneMultiple() external;
 }
 
-contract TierTest is PRBTest, StdCheats, Interface {
+contract TierTest is PRBTest, StdCheats, ITierTest {
   Tier internal _validTier;
 
   /// @dev A function invoked before each test case is run.
@@ -51,45 +51,20 @@ contract TierTest is PRBTest, StdCheats, Interface {
    * Test the tier object throws an error if the maxValue is larger than the minValue.
    */
   function testThrowsOnMaxValLargerThanMinVal() public override {
-    // Act (call the function that might throw)
-    bool didThrow;
-    // Pass invalid maxVal 9 which is smaller than minVal (10)
-    try new Tier(10, 9, 11) {
-      // Reaching this statement means the constructor did not throw an error.
-      didThrow = false;
-    } catch Error(string memory reason) {
-      didThrow = true;
-      assertEq(reason, "The maximum amount should be larger than the minimum.");
-    } catch (bytes memory) {
-      // Catch unexpected exceptions.
-      didThrow = true;
-    }
-
-    // Assert (verify the expected outcome)
-    assert(didThrow);
+    vm.expectRevert(
+      abi.encodeWithSignature("TierMinNotBelowMax(string,uint256,uint256)", "Tier's min not below tier max.", 10, 9)
+    );
+    new Tier(10, 9, 11);
   }
 
   /**
    * Test the tier object throws an error if the multiple is 1 or smaller.
    */
   function testThrowsOnZeroMultiple() public override {
-    // Act (call the function that might throw)
-    bool didThrow;
-    // Pass invalid multiple (0)
-    try new Tier(2, 9, 0) {
-      // Reaching this statement means the constructor did not throw an error.
-      didThrow = false;
-    } catch Error(string memory reason) {
-      didThrow = true;
-      // You can use Forge's assertEq for string comparison.
-      assertEq(reason, "A ROI multiple should be at larger than 1.");
-    } catch (bytes memory) {
-      // Catch unexpected exceptions.
-      didThrow = true;
-    }
-
-    // Assert (verify the expected outcome)
-    assert(didThrow);
+    vm.expectRevert(
+      abi.encodeWithSignature("MultipleTooSmall(string,uint256)", "ROI multiple should be larger than 1.", 0)
+    );
+    new Tier(2, 9, 0);
   }
 
   /**
@@ -99,22 +74,9 @@ contract TierTest is PRBTest, StdCheats, Interface {
    * multiple is large enough.
    */
   function testThrowsOnOneMultiple() public override {
-    // Act (call the function that might throw)
-    bool didThrow;
-    // Pass invalid multiple (1)
-    try new Tier(2, 9, 1) {
-      // Reaching this statement means the constructor did not throw an error.
-      didThrow = false;
-    } catch Error(string memory reason) {
-      didThrow = true;
-      // You can use Forge's assertEq for string comparison.
-      assertEq(reason, "A ROI multiple should be at larger than 1.");
-    } catch (bytes memory) {
-      // Catch unexpected exceptions
-      didThrow = true;
-    }
-
-    // Assert (verify the expected outcome)
-    assert(didThrow);
+    vm.expectRevert(
+      abi.encodeWithSignature("MultipleTooSmall(string,uint256)", "ROI multiple should be larger than 1.", 1)
+    );
+    new Tier(2, 9, 1);
   }
 }

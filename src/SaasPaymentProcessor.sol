@@ -1,12 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
 import { Tier } from "../src/Tier.sol";
 import { TierInvestment } from "../src/TierInvestment.sol";
 import { Helper } from "../src/Helper.sol";
-import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-interface Interface {
+error SaasPaymentProcessorOnlyOwner(string message, address owner, address msgSender);
+error SaasRevenueForInvestorsSmallerThanOne(string message, uint256 saasRevenueForInvestors);
+error CumulativePayoutMismatch(string message, uint256 cumulativePayout, uint256 saasRevenueForInvestors);
+error NewInvestmentAmountOfZero(string message, uint256 newInvestmentAmount);
+error OverflowOccurred(string message, uint256 cumReceivedInvestments, uint256 newInvestmentAmount);
+error DenominatorSmallerThanOne(string message, uint256 denominator);
+
+interface ISaasPaymentProcessor {
   function computeInvestorReturns(
     Helper helper,
     TierInvestment[] memory tierInvestments,
@@ -30,14 +37,16 @@ interface Interface {
   ) external returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment);
 }
 
-contract SaasPaymentProcessor is Interface {
-  address private _owner;
+contract SaasPaymentProcessor is ISaasPaymentProcessor, ReentrancyGuard {
+  address private immutable _OWNER;
   /**
    * Used to ensure only the owner/creator of the constructor of this contract is
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    require(msg.sender == _owner, "SaasPaymentProcessor: The sender of this message is not the owner.");
+    if (msg.sender != _OWNER) {
+      revert SaasPaymentProcessorOnlyOwner("Message sender is not owner.", _OWNER, msg.sender);
+    }
     _;
   }
 
@@ -46,8 +55,8 @@ contract SaasPaymentProcessor is Interface {
   @dev This constructor sets the sender of the transaction as the owner of the contract.
   */
   // solhint-disable-next-line comprehensive-interface
-  constructor() public {
-    _owner = msg.sender;
+  constructor() {
+    _OWNER = msg.sender;
   }
 
   /**
@@ -72,7 +81,12 @@ contract SaasPaymentProcessor is Interface {
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn
   ) public override returns (TierInvestment[] memory returnTiers, uint256[] memory returnAmounts) {
-    require(saasRevenueForInvestors > 0, "saasRevenueForInvestors is not larger than 0.");
+    if (saasRevenueForInvestors < 1) {
+      revert SaasRevenueForInvestorsSmallerThanOne(
+        "saasRevenueForInvestors is not larger than 0.",
+        saasRevenueForInvestors
+      );
+    }
     uint256 nrOfTierInvestments = tierInvestments.length;
 
     returnAmounts = new uint256[](nrOfTierInvestments);
@@ -104,17 +118,13 @@ contract SaasPaymentProcessor is Interface {
       }
     }
 
-    require(
-      cumulativePayout == saasRevenueForInvestors || cumulativePayout + 1 == saasRevenueForInvestors,
-      // solhint-disable-next-line func-named-parameters
-      string.concat(
-        "The cumulativePayout (\n",
-        Strings.toString(cumulativePayout),
-        ") is not equal to the saasRevenueForInvestors (\n",
-        Strings.toString(saasRevenueForInvestors),
-        ")."
-      )
-    );
+    if (cumulativePayout != saasRevenueForInvestors && cumulativePayout + 1 != saasRevenueForInvestors) {
+      revert CumulativePayoutMismatch(
+        "cumulativePayout (~+1) not equal to saasRevenueForInvestors",
+        cumulativePayout,
+        saasRevenueForInvestors
+      );
+    }
     return (returnTiers, returnAmounts);
   }
 
@@ -140,8 +150,18 @@ contract SaasPaymentProcessor is Interface {
     uint256 newInvestmentAmount
   ) public override onlyOwner returns (uint256 updatedCumReceivedInvestments, TierInvestment newTierInvestment) {
     newTierInvestment = new TierInvestment(investorWallet, newInvestmentAmount, currentTier);
+
+    if (newInvestmentAmount < 1) {
+      revert NewInvestmentAmountOfZero("can't add investment of 0.", newInvestmentAmount);
+    }
+
     cumReceivedInvestments += newInvestmentAmount;
+
+    if (cumReceivedInvestments < newInvestmentAmount) {
+      revert OverflowOccurred("Overflow occurred.", cumReceivedInvestments, newInvestmentAmount);
+    }
     updatedCumReceivedInvestments = cumReceivedInvestments;
+
     return (updatedCumReceivedInvestments, newTierInvestment);
   }
 
@@ -190,10 +210,12 @@ contract SaasPaymentProcessor is Interface {
     uint256 saasRevenueForInvestors,
     uint256 cumRemainingInvestorReturn,
     bool incomingHasRoundedUp
-  ) public view override returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
+  ) public pure override returns (uint256 investmentReturn, bool returnedHasRoundedUp) {
     uint256 numerator = remainingReturn * saasRevenueForInvestors;
     uint256 denominator = cumRemainingInvestorReturn;
-    require(denominator > 0, "Denominator not larger than 0");
+    if (denominator < 1) {
+      revert DenominatorSmallerThanOne("Denominator not larger than 0", denominator);
+    }
 
     // Divide with round up.
     uint256 withRoundUp = numerator / denominator + (numerator % denominator == 0 ? 0 : 1);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -8,7 +8,7 @@ import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
 import { Tier } from "../../src/Tier.sol";
 import { Helper } from "../../src/Helper.sol";
 
-interface Interface {
+interface ISaasPaymentProcessorTest {
   function setUp() external;
 
   function testOnlyOwnerTriggered() external;
@@ -18,7 +18,7 @@ interface Interface {
   function testZeroInvestorReturn() external;
 }
 
-contract SaasPaymentProcessorTest is PRBTest, StdCheats, Interface {
+contract SaasPaymentProcessorTest is PRBTest, StdCheats, ISaasPaymentProcessorTest {
   SaasPaymentProcessor private _saasPaymentProcessor;
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
@@ -31,8 +31,16 @@ contract SaasPaymentProcessorTest is PRBTest, StdCheats, Interface {
 
   function testOnlyOwnerTriggered() public virtual override {
     Tier someTier = new Tier(0, 8, 55);
-    vm.prank(address(address(0))); // Simulating setting the investment from another address.
-    vm.expectRevert(bytes("SaasPaymentProcessor: The sender of this message is not the owner."));
+    address unauthorisedAddress = address(0);
+    vm.prank(unauthorisedAddress); // Simulating setting the investment from another address.
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "SaasPaymentProcessorOnlyOwner(string,address,address)",
+        "Message sender is not owner.",
+        address(this),
+        unauthorisedAddress
+      )
+    );
     _saasPaymentProcessor.addInvestmentToCurrentTier(10, address(2), someTier, 50);
   }
 
@@ -51,11 +59,17 @@ contract SaasPaymentProcessorTest is PRBTest, StdCheats, Interface {
 
     _tierInvestments.push(tierInvestment);
 
-    vm.expectRevert(bytes("saasRevenueForInvestors is not larger than 0."));
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "SaasRevenueForInvestorsSmallerThanOne(string,uint256)",
+        "saasRevenueForInvestors is not larger than 0.",
+        0
+      )
+    );
     _saasPaymentProcessor.computeInvestorReturns(_helper, _tierInvestments, 0, 0);
-    // Retry with valid input.
-
-    vm.expectRevert(bytes("Denominator not larger than 0"));
+    vm.expectRevert(
+      abi.encodeWithSignature("DenominatorSmallerThanOne(string,uint256)", "Denominator not larger than 0", 0)
+    );
     _saasPaymentProcessor.computeInvestorReturns(_helper, _tierInvestments, 1, 0);
 
     // Add two tiers

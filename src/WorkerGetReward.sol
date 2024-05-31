@@ -1,7 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23; // Specifies the Solidity compiler version.
+pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
+error InvalidProjectLeadAddress(string message);
+error ZeroRewardContribution(string message);
+error InvalidRetrievalDuration(string message, uint256 requestedDuration, uint256 minDuration);
+error InvalidRewardTransfer(string message, uint256 amount);
 
-interface Interface {
+error InsufficientWorkerReward(string message, address worker, uint256 requestedAmount, uint256 availableReward);
+error InsufficientContractBalance(string message, uint256 requestedAmount, uint256 availableBalance);
+
+error UnauthorizedRewardRecovery(string message, address sender);
+error InvalidRecoveryAmount(string message, uint256 requestedAmount);
+error InsufficientFundsForTransfer(string message, uint256 requestedAmount, uint256 availableBalance);
+error InvalidTimeManipulation(string message, uint256 attemptedRecoveryTime, uint256 allowedRecoveryTime);
+
+interface IWorkerGetReward {
   function addWorkerReward(address worker, uint256 retrievalDuration) external payable;
 
   function retreiveWorkerReward(uint256 amount) external;
@@ -11,10 +23,10 @@ interface Interface {
   function getProjectLeadCanRecoverFromTime() external returns (uint256 projectLeadCanRecoverFrom);
 }
 
-contract WorkerGetReward is Interface {
-  address private _projectLead;
+contract WorkerGetReward is IWorkerGetReward {
+  address private immutable _PROJECT_LEAD;
   uint256 private _projectLeadCanRecoverFrom;
-  uint256 private _minRetrievalDuration;
+  uint256 private immutable _MIN_RETRIEVAL_DURATION;
   // solhint-disable-next-line named-parameters-mapping
   mapping(address => uint256) private _rewards;
 
@@ -30,12 +42,16 @@ contract WorkerGetReward is Interface {
   */
   // solhint-disable-next-line comprehensive-interface
   // solhint-disable-next-line comprehensive-interface
-  constructor(address projectLead, uint256 minRetrievalDuration) public {
-    _projectLead = projectLead;
-    _minRetrievalDuration = minRetrievalDuration;
+  constructor(address projectLead, uint256 minRetrievalDuration) {
+    if (projectLead == address(0)) {
+      revert InvalidProjectLeadAddress("Project lead address cannot be zero.");
+    }
+
+    _PROJECT_LEAD = projectLead;
+    _MIN_RETRIEVAL_DURATION = minRetrievalDuration;
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
-    _projectLeadCanRecoverFrom = block.timestamp + _minRetrievalDuration;
+    _projectLeadCanRecoverFrom = block.timestamp + _MIN_RETRIEVAL_DURATION;
     // Create mapping of worker rewards.
   }
 
@@ -55,8 +71,18 @@ contract WorkerGetReward is Interface {
   @param retrievalDuration The amount of time (in seconds) the worker must wait before claiming their reward.
   */
   function addWorkerReward(address worker, uint256 retrievalDuration) public payable override {
-    require(msg.value > 0, "Tried to add 0 value to worker reward.");
-    require(retrievalDuration >= _minRetrievalDuration, "Tried to set retrievalDuration below min.");
+    if (msg.value <= 0) {
+      revert ZeroRewardContribution("Cannot contribute zero wei to worker reward.");
+    }
+
+    if (retrievalDuration < _MIN_RETRIEVAL_DURATION) {
+      revert InvalidRetrievalDuration(
+        "Retrieval duration must be greater than or equal to minimum duration.",
+        retrievalDuration,
+        _MIN_RETRIEVAL_DURATION
+      );
+    }
+
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
     if (block.timestamp + retrievalDuration > _projectLeadCanRecoverFrom) {
@@ -76,9 +102,17 @@ contract WorkerGetReward is Interface {
   @param amount The amount of Wei the worker wishes to claim.
   */
   function retreiveWorkerReward(uint256 amount) public override {
-    require(amount > 0, "Amount not larger than 0.");
-    require(_rewards[msg.sender] >= amount, "Asked more reward than worker can get.");
-    require(address(this).balance >= amount, "Tried to payout more than the contract contains.");
+    if (amount <= 0) {
+      revert InvalidRewardTransfer("Reward amount must be greater than zero.", amount);
+    }
+
+    if (_rewards[msg.sender] < amount) {
+      revert InsufficientWorkerReward("Insufficient worker reward balance.", msg.sender, amount, _rewards[msg.sender]);
+    }
+
+    if (address(this).balance < amount) {
+      revert InsufficientContractBalance("Insufficient contract balance for payout.", amount, address(this).balance);
+    }
 
     _rewards[msg.sender] -= amount;
     payable(msg.sender).transfer(amount);
@@ -96,16 +130,28 @@ contract WorkerGetReward is Interface {
   @param amount The amount of Wei the project lead wishes to recover.
   */
   function projectLeadRecoversRewards(uint256 amount) public override {
-    require(msg.sender == _projectLead, "Someone other than projectLead tried to recover rewards.");
-    require(amount > 0, "Tried to recover 0 wei.");
-    require(address(this).balance >= amount, "Tried to recover more than the contract contains.");
-    require(
-      // miners can manipulate time(stamps) seconds, not hours/days.
-      // solhint-disable-next-line not-rely-on-time
-      block.timestamp > _projectLeadCanRecoverFrom,
-      "ProjectLead tried to recover funds before workers got the chance."
-    );
-    payable(_projectLead).transfer(amount);
+    if (msg.sender != _PROJECT_LEAD) {
+      revert UnauthorizedRewardRecovery("Only project lead can recover rewards.", msg.sender);
+    }
+
+    if (amount <= 0) {
+      revert InvalidRecoveryAmount("Recovery amount must be greater than 0 wei.", amount);
+    }
+
+    if (address(this).balance < amount) {
+      revert InsufficientFundsForTransfer("Insufficient contract balance for transfer.", amount, address(this).balance);
+    }
+
+    // solhint-disable-next-line not-rely-on-time
+    if (block.timestamp <= _projectLeadCanRecoverFrom) {
+      revert InvalidTimeManipulation(
+        "Project lead attempted recovery before allowed time.",
+        block.timestamp,
+        _projectLeadCanRecoverFrom
+      );
+    }
+
+    payable(_PROJECT_LEAD).transfer(amount);
   }
 
   /**

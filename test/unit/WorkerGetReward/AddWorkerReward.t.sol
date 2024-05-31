@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -12,7 +12,7 @@ import { TierInvestment } from "../../../src/TierInvestment.sol";
 import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IAddWorkerRewardTest {
   function setUp() external;
 
   function testAddWorkerRewardOfZero() external;
@@ -28,7 +28,7 @@ interface Interface {
   function testSetRetrievalDurationBelowMin() external;
 }
 
-contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
+contract AddWorkerRewardTest is PRBTest, StdCheats, IAddWorkerRewardTest {
   address internal _projectLead;
   address private _userWallet;
   Tier[] private _tiers;
@@ -39,7 +39,7 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   Helper private _helper;
   TierInvestment[] private _tierInvestments;
   ExposedDecentralisedInvestmentManager private _exposedDim;
-  uint256 private _investmentAmount1;
+  uint256 private _secondInvestmentAmount;
 
   address[] private _withdrawers;
   uint256[] private _owedDai;
@@ -75,7 +75,11 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
   function testAddWorkerRewardOfZero() public virtual override {
     address workerAddress = address(0);
     // vm.deal(address(this),5 ether);
-    vm.expectRevert("Tried to add 0 value to worker reward.");
+    // vm.expectRevert("Tried to add 0 value to worker reward.");
+    vm.expectRevert(
+      abi.encodeWithSignature("ZeroRewardContribution(string)", "Cannot contribute zero wei to worker reward.")
+    );
+
     _workerGetReward.addWorkerReward{ value: 0 }(workerAddress, 5 weeks);
   }
 
@@ -116,7 +120,16 @@ contract WorkerGetRewardTest is PRBTest, StdCheats, Interface {
 
   function testSetRetrievalDurationBelowMin() public virtual override {
     address workerAddress = address(0);
-    vm.expectRevert("Tried to set retrievalDuration below min.");
+    // vm.expectRevert("Tried to set retrievalDuration below min.");
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvalidRetrievalDuration(string,uint256,uint256)",
+        "Retrieval duration must be greater than or equal to minimum duration.",
+        7 weeks,
+        8 weeks
+      )
+    );
+
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 7 weeks);
   }
 }

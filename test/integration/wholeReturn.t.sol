@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { Tier } from "../../src/Tier.sol";
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IWholeReturn {
   function setUp() external;
 
   function testInvestorMadeWhole() external;
@@ -17,13 +16,11 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract WholeReturn is PRBTest, StdCheats, Interface {
+contract WholeReturn is PRBTest, StdCheats, IWholeReturn {
   address internal _projectLead;
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
-  address payable private _investorWallet0;
+
+  address payable private _firstInvestorWallet;
   address private _userWallet;
-  Tier[] private _tiers;
   DecentralisedInvestmentManager private _dim;
 
   /// @dev A function invoked before each test case is run.
@@ -49,24 +46,24 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
     });
     _dim = initDim.getDim();
 
-    _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet0, 3 ether);
+    _firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
+    deal(_firstInvestorWallet, 3 ether);
     _userWallet = address(uint160(uint256(keccak256(bytes("2")))));
     deal(_userWallet, 100 ether);
   }
 
   /// @dev Test to simulate a larger balance using `deal`.
   function testInvestorMadeWhole() public override {
-    uint256 startBalance = _investorWallet0.balance;
+    uint256 startBalance = _firstInvestorWallet.balance;
     uint256 investmentAmount = 0.5 ether;
 
-    // Set the msg.sender address to that of the _investorWallet0 for the next call.
-    vm.prank(address(_investorWallet0));
+    // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
+    vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
     _dim.receiveInvestment{ value: investmentAmount }();
 
     // Assert that user balance decreased by the investment amount
-    uint256 endBalance = _investorWallet0.balance;
+    uint256 endBalance = _firstInvestorWallet.balance;
     assertEq(
       startBalance - endBalance,
       investmentAmount,
@@ -103,7 +100,7 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWallet0), "The _investorWallet0 is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_firstInvestorWallet), "The _firstInvestorWallet is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
       investmentAmount,
@@ -119,8 +116,13 @@ contract WholeReturn is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWallet0);
-    assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
-    assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
+    vm.prank(_firstInvestorWallet);
+    paymentSplitter.release();
+    assertEq(paymentSplitter.released(_firstInvestorWallet), 5 ether, "The amount released was unexpected.");
+    assertEq(
+      _firstInvestorWallet.balance,
+      3 ether - 0.5 ether + 5 ether,
+      "The balance of the investor was unexpected."
+    );
   }
 }

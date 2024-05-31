@@ -33,12 +33,12 @@ The amount of DAI that is still to be returned for this investment.
 uint256 private _remainingReturn;
 ```
 
-### collectivleReturn
+### collectiveReturn
 
 The amount of DAI that the investor can collect as ROI.
 
 ```solidity
-uint256 public collectivleReturn;
+uint256 public collectiveReturn;
 ```
 
 ### \_owner

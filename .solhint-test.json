@@ -5,18 +5,18 @@
   "plugins": [],
   "rules": {
     "foundry-test-functions": [
-      "off"
+      "warn"
     ],
-    "gas-custom-errors": [
-      "off"
+    "func-visibility": [
+      "error",
+      {
+        "ignoreConstructors": true
+      }
     ],
     "gas-small-strings": [
       "off"
     ],
-    "gas-strict-inequalities": [
-      "off"
-    ],
-    "reason-string": [
+    "not-rely-on-time": [
       "off"
     ]
   }

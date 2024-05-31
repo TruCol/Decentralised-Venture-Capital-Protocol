@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23;
+pragma solidity >=0.8.25;
 
 import { Tier } from "../../src/Tier.sol";
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 
-interface Interface {
-  function allocateInvestment(uint256 investmentAmount, address investorWallet) external;
+interface IEdim {
+  function allocateInvestment(uint256 investmentAmount, address payable investorWallet) external;
 
   function performSaasRevenueAllocation(uint256 amount, address receivingWallet) external;
 }
 
-contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager, Interface {
+contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager, IEdim {
   // solhint-disable-next-line comprehensive-interface
   constructor(
     Tier[] memory tiers,
@@ -20,7 +20,6 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
     uint32 raisePeriod,
     uint256 investmentTarget
   )
-    public
     DecentralisedInvestmentManager(
       tiers,
       projectLeadFracNumerator,
@@ -33,7 +32,7 @@ contract ExposedDecentralisedInvestmentManager is DecentralisedInvestmentManager
     // Additional logic for ExposedDecentralisedInvestmentManager if needed
   }
 
-  function allocateInvestment(uint256 investmentAmount, address investorWallet) public override {
+  function allocateInvestment(uint256 investmentAmount, address payable investorWallet) public override {
     return _allocateInvestment(investmentAmount, investorWallet);
   }
 

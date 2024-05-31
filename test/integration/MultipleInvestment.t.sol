@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { Tier } from "../../src/Tier.sol";
+
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
 
-interface Interface {
+interface IMultipleInvestmentTest {
   function setUp() external;
 
   function testMultipleInvestments() external;
@@ -23,17 +23,14 @@ interface Interface {
 
 /// @dev If this is your first time with Forge, read this tutorial in the Foundry Book:
 /// https://book.getfoundry.sh/forge/writing-tests
-contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
+contract MultipleInvestmentTest is PRBTest, StdCheats, IMultipleInvestmentTest {
   address internal _projectLead;
 
-  uint256 private _projectLeadFracNumerator;
-  uint256 private _projectLeadFracDenominator;
-  address payable private _investorWallet0;
-  address payable private _investorWalletA;
-  uint256 private _investmentAmount0;
-  uint256 private _investmentAmount1;
+  address payable private _firstInvestorWallet;
+  address payable private _secondInvestorWallet;
+  uint256 private _firstInvestmentAmount;
+  uint256 private _secondInvestmentAmount;
   address private _userWallet;
-  Tier[] private _tiers;
 
   DecentralisedInvestmentManager private _dim;
 
@@ -60,10 +57,10 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     });
     _dim = initDim.getDim();
 
-    _investorWallet0 = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-    deal(_investorWallet0, 3 ether);
-    _investorWalletA = payable(address(uint160(uint256(keccak256(bytes("2"))))));
-    deal(_investorWalletA, 4 ether);
+    _firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
+    deal(_firstInvestorWallet, 3 ether);
+    _secondInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("2"))))));
+    deal(_secondInvestorWallet, 4 ether);
 
     _userWallet = address(uint160(uint256(keccak256(bytes("3")))));
     deal(_userWallet, 100 ether);
@@ -73,31 +70,31 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
 
   /// @dev Test to simulate a larger balance using `deal`.
   function testMultipleInvestments() public virtual override {
-    uint256 startBalance = _investorWallet0.balance;
-    _investmentAmount0 = 0.5 ether;
+    uint256 startBalance = _firstInvestorWallet.balance;
+    _firstInvestmentAmount = 0.5 ether;
 
-    // Set the msg.sender address to that of the _investorWallet0 for the next call.
-    vm.prank(address(_investorWallet0));
+    // Set the msg.sender address to that of the _firstInvestorWallet for the next call.
+    vm.prank(address(_firstInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: _investmentAmount0 }();
+    _dim.receiveInvestment{ value: _firstInvestmentAmount }();
 
     // Assert that user balance decreased by the investment amount
-    uint256 endBalance = _investorWallet0.balance;
+    uint256 endBalance = _firstInvestorWallet.balance;
     assertEq(
       startBalance - endBalance,
-      _investmentAmount0,
-      "_investmentAmount0 not equal to difference in investorWalletBalance"
+      _firstInvestmentAmount,
+      "_firstInvestmentAmount not equal to difference in investorWalletBalance"
     );
 
     // TODO: assert the tierInvestment(s) are made as expected.
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0,
+      _firstInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // _investmentAmount0*10, // Tier 0 has a multiple of 10.
+      // _firstInvestmentAmount*10, // Tier 0 has a multiple of 10.
       10 * 0.5 ether,
       "Error, the cumRemainingInvestorReturn was not as expected directly after investment."
     );
@@ -119,10 +116,10 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWallet0), "The _investorWallet0 is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_firstInvestorWallet), "The _firstInvestorWallet is not recognised as payee.");
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0,
+      _firstInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -135,10 +132,14 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-
-    paymentSplitter.release(_investorWallet0);
-    assertEq(paymentSplitter.released(_investorWallet0), 5 ether, "The amount released was unexpected.");
-    assertEq(_investorWallet0.balance, 3 ether - 0.5 ether + 5 ether, "The balance of the investor was unexpected.");
+    vm.prank(_firstInvestorWallet);
+    paymentSplitter.release();
+    assertEq(paymentSplitter.released(_firstInvestorWallet), 5 ether, "The amount released was unexpected.");
+    assertEq(
+      _firstInvestorWallet.balance,
+      3 ether - 0.5 ether + 5 ether,
+      "The balance of the investor was unexpected."
+    );
 
     followUpSecondInvestment();
   }
@@ -146,20 +147,20 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
   function followUpSecondInvestment() public virtual override {
     assertEq(
       _dim.getCumRemainingInvestorReturn(),
-      // _investmentAmount0*10, // Tier 0 has a multiple of 10.
+      // _firstInvestmentAmount*10, // Tier 0 has a multiple of 10.
       0 ether,
       "Error, the cumRemainingInvestorReturn was not as expected before the second investment."
     );
 
-    _investmentAmount1 = 4 ether;
-    vm.prank(address(_investorWalletA));
+    _secondInvestmentAmount = 4 ether;
+    vm.prank(address(_secondInvestorWallet));
     // Send investment directly from the investor wallet into the receiveInvestment function.
-    _dim.receiveInvestment{ value: _investmentAmount1 }();
+    _dim.receiveInvestment{ value: _secondInvestmentAmount }();
 
     // TODO: assert the tierInvestment(s) are made as expected.
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0 + _investmentAmount1,
+      _firstInvestmentAmount + _secondInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -196,11 +197,11 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     // Get the payment splitter from the _dim contract.
     CustomPaymentSplitter paymentSplitter = _dim.getPaymentSplitter();
     // Assert the investor is added as a payee to the paymentSplitter.
-    assertTrue(paymentSplitter.isPayee(_investorWalletA), "The _investorWallet0 is not recognised as payee.");
+    assertTrue(paymentSplitter.isPayee(_secondInvestorWallet), "The _firstInvestorWallet is not recognised as payee.");
 
     assertEq(
       _dim.getCumReceivedInvestments(),
-      _investmentAmount0 + _investmentAmount1,
+      _firstInvestmentAmount + _secondInvestmentAmount,
       "Error, the _cumReceivedInvestments was not as expected after investment."
     );
     assertEq(
@@ -211,16 +212,17 @@ contract MultipleInvestmentTest is PRBTest, StdCheats, Interface {
     );
 
     // Assert investor can retrieve saas revenue fraction.
-    paymentSplitter.release(_investorWalletA);
+    vm.prank(_secondInvestorWallet);
+    paymentSplitter.release();
 
     assertEq(
-      paymentSplitter.released(_investorWalletA),
+      paymentSplitter.released(_secondInvestorWallet),
       0.6 ether,
       "The amount released was unexpected for investorWallet1."
     );
 
     assertEq(
-      _investorWalletA.balance,
+      _secondInvestorWallet.balance,
       4 ether - 4 ether + 0.6 ether,
       "The balance of the investorWallet1 was unexpected."
     );

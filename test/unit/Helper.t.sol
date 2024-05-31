@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.23 <0.9.0;
+pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -8,7 +8,7 @@ import { Helper } from "../../src/Helper.sol";
 import { TierInvestment } from "../../src/TierInvestment.sol";
 import { Tier } from "../../src/Tier.sol";
 
-interface Interface {
+interface IHelperTest {
   function setUp() external;
 
   function testExceedInvestmentCeiling() external;
@@ -32,13 +32,10 @@ interface Interface {
   function testHasReachedInvestmentCeiling() external;
 }
 
-contract HelperTest is PRBTest, StdCheats, Interface {
-  TierInvestment internal _validTierInvestment;
-
+contract HelperTest is PRBTest, StdCheats, IHelperTest {
   uint256 private _cumReceivedInvestments;
 
   Tier[] private _tiers;
-  Tier[] private _someTiers;
   Helper private _helper;
 
   /// @dev A function invoked before each test case is run.
@@ -71,11 +68,11 @@ contract HelperTest is PRBTest, StdCheats, Interface {
         "Investment ceiling is reached."
       )
     );
-    _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
+    Tier currentTier = _helper.computeCurrentInvestmentTier(30 ether + 1 wei, _tiers);
+    assertEq(address(currentTier), address(0));
   }
 
   function testNegativeInvestment() public override {
-    // vm.prank(address(_validTierInvestment));
     vm.expectRevert(
       bytes(
         string(
@@ -87,7 +84,8 @@ contract HelperTest is PRBTest, StdCheats, Interface {
         )
       )
     );
-    _helper.computeCurrentInvestmentTier(1 wei, _tiers);
+    Tier currentTier = _helper.computeCurrentInvestmentTier(1 wei, _tiers);
+    assertEq(address(currentTier), address(0));
   }
 
   function testCanInvestInNextTier() public override {
@@ -112,10 +110,13 @@ contract HelperTest is PRBTest, StdCheats, Interface {
     // assertEq(_helper.computeCurrentInvestmentTier(1 wei, _tiers).getMultiple(), 10);
 
     // Try empty tier.
-
-    vm.expectRevert(bytes("There were no investmentTiers received."));
-    _helper.computeCurrentInvestmentTier(2 wei, _someTiers);
-    // assertEq(_helper.computeCurrentInvestmentTier(2 wei, _someTiers).getMultiple(), 10);
+    // Tier[] memory emptyTiers;
+    Tier[] memory emptyTiers = new Tier[](0);
+    vm.expectRevert(
+      abi.encodeWithSignature("NoInvestmentTiersGiven(string,uint256)", "No investmentTiers received.", 0)
+    );
+    Tier currentTier = _helper.computeCurrentInvestmentTier(2 wei, emptyTiers);
+    assertEq(address(currentTier), address(0));
   }
 
   function testGetRemainingAmountInCurrentTier() public override {
@@ -123,29 +124,63 @@ contract HelperTest is PRBTest, StdCheats, Interface {
   }
 
   function testGetRemainingAmountInCurrentTierBelow() public override {
-    vm.expectRevert(bytes("Error: Tier's minimum value exceeds received investments."));
-    _helper.getRemainingAmountInCurrentTier(1 wei, _tiers[0]);
+    // vm.expectRevert(bytes("Error: Tier's minimum value exceeds received investments."));
+    uint256 simulatedCumReceivedInvestment = 1 wei;
+    uint256 tierFloor = _tiers[0].getMinVal();
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "TierMinAboveReceivedInvestments(string,uint256,uint256)",
+        "Tier's min exceeds cumReceivedInvestments",
+        simulatedCumReceivedInvestment,
+        tierFloor
+      )
+    );
+    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier(
+      simulatedCumReceivedInvestment,
+      _tiers[0]
+    );
+    assertEq(someRemainingAmountInTier, 0, "Got a return value.");
   }
 
   function testGetRemainingAmountInCurrentTierAbove() public override {
-    vm.expectRevert(bytes("Error: Tier's maximum value is not larger than received investments."));
-    _helper.getRemainingAmountInCurrentTier(4 ether + 1 wei, _tiers[0]);
+    // vm.expectRevert(bytes("Error: Tier's maximum value is not larger than received investments."));
+    uint256 simulatedCumReceivedInvestment = 4 ether + 1 wei;
+    uint256 tierCeiling = _tiers[0].getMaxVal();
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "TierMaxBelowReceivedInvestments(string,uint256,uint256)",
+        "Tier's max below cumReceivedInvestments",
+        simulatedCumReceivedInvestment,
+        tierCeiling
+      )
+    );
+    uint256 someRemainingAmountInTier = _helper.getRemainingAmountInCurrentTier({
+      cumReceivedInvestments: simulatedCumReceivedInvestment,
+      someTier: _tiers[0]
+    });
+    assertEq(someRemainingAmountInTier, 0, "Got a return value.");
   }
 
   function testComputeRemainingInvestorPayoutNegativeFraction() public override {
-    vm.expectRevert(bytes("investorFracNumerator is smaller than investorFracDenominator."));
-    _helper.computeRemainingInvestorPayout(0, 1, 0, 0);
+    vm.expectRevert(
+      abi.encodeWithSignature(
+        "InvalidInvestorFraction(string,uint256,uint256)",
+        "Numerator smaller than denominator",
+        0,
+        1
+      )
+    );
+    uint256 someCumRemainingInvestorReturn = _helper.computeRemainingInvestorPayout(0, 1, 0, 0);
+    assertEq(someCumRemainingInvestorReturn, 0, "Got a return value.");
   }
 
   function testGetInvestmentCeiling() public override {
-    // vm.prank(address(_validTierInvestment));
-
     assertEq(_helper.getInvestmentCeiling(_tiers), 30 ether);
   }
 
   function testComputeCumRemainingInvestorReturn() public override {
     // Assert 0 is returned for empty list.
-    TierInvestment[] memory emptyTierInvestments;
+    TierInvestment[] memory emptyTierInvestments = new TierInvestment[](0);
     assertEq(_helper.computeCumRemainingInvestorReturn(emptyTierInvestments), 0);
   }
 
