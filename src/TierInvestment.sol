@@ -38,7 +38,6 @@ contract TierInvestment is ITierInvestment {
    *   able to call/use functions that use this function (modifier).
    */
   modifier onlyOwner() {
-    // require(msg.sender == _OWNER, "The message is sent by someone other than the owner of this contract.");
     if (msg.sender != _OWNER) {
       revert UnauthorizedOwnerAction("Only the contract owner can perform this action.", msg.sender);
     }
@@ -57,14 +56,11 @@ contract TierInvestment is ITierInvestment {
   */
   // solhint-disable-next-line comprehensive-interface
   constructor(address someInvestor, uint256 newInvestmentAmount, Tier tier) {
-    // require(newInvestmentAmount >= 1, "A new investment amount should at least be 1.");
     if (newInvestmentAmount < 1) {
       revert InvalidInvestmentAmount("New investment amount must be at least 1 wei.", newInvestmentAmount);
     }
 
     _OWNER = msg.sender;
-
-    // require(someInvestor != address(0), "someInvestor address can't be 0.");
     if (someInvestor == address(0)) {
       revert InvalidInvestorAddress("The provided investor address cannot be zero.");
     }
@@ -86,8 +82,6 @@ contract TierInvestment is ITierInvestment {
   @param newlyReturnedAmount The amount newly returned by the investor.
   */
   function publicSetRemainingReturn(address someInvestor, uint256 newlyReturnedAmount) public override onlyOwner {
-    // require(_INVESTOR == someInvestor, "Error, the new return is being set for the wrong investor.");
-
     if (_INVESTOR != someInvestor) {
       revert IncorrectInvestorUpdate("Cannot set return for a different investor.", someInvestor);
     }

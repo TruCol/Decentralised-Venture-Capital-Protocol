@@ -7,7 +7,6 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 interface IMultipleInvestmentTest {
   function setUp() external;
@@ -82,6 +81,7 @@ contract TriggerReturnAllTest is PRBTest, StdCheats, IMultipleInvestmentTest {
     vm.warp(startTime + 3 weeks);
 
     vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
       abi.encodeWithSignature(
         "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
         "Fund raising period has not yet passed.",
@@ -113,6 +113,7 @@ contract TriggerReturnAllTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
     // vm.expectRevert(bytes("The fund raising period has not passed yet."));
     vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
       abi.encodeWithSignature(
         "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
         "Fund raising period has not yet passed.",

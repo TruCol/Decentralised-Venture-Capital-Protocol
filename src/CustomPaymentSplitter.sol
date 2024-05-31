@@ -13,7 +13,6 @@ error ZeroDaiForAddingNewPayee(string message, address account, uint256 amountTo
 error NonEmptyAccountForNewPayee(string message, address account, uint256 accountBalance);
 
 error CustomPaymentSplitterOnlyOwner(string message, address owner, address msgSender);
-import { console2 } from "forge-std/src/console2.sol";
 
 interface ICustomPaymentSplitter {
   function deposit() external payable;

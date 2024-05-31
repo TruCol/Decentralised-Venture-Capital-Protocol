@@ -203,17 +203,34 @@ repos:
            "-rn", # Only display messages
            "-sn", # Don't display the score
          ]
-     - id: solhint
-       name: SolHint Linter
+     - id: solhint on src
+       name: SolHint Linter on src files.
        entry: solhint
        language: node
        verbose: true
-       files: ^(contracts/|interfaces/|libraries/|src/|script/|test/)
+       files: ^(contracts/|interfaces/|libraries/|src/|script/)
        args:
          [
            "--fix", # Automatically fix those issues that can be auto-fixed.
            "--noPrompt", # Do not ask for backup before fix.
+           "--config",
+           ".solhint-src.json"
          ]
+
+     - id: solhint on tests
+       name: SolHint Linter on test files
+       entry: solhint
+       language: node
+       verbose: true
+       files: ^(test/)
+       args:
+         [
+           "--fix", # Automatically fix those issues that can be auto-fixed.
+           "--noPrompt", # Do not ask for backup before fix.
+           "--config",
+           ".solhint-test.json"
+         ]
+
      # Static code analyzer for solidity.
      - id: Slither on src
        language: system

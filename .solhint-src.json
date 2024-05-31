@@ -1,0 +1,17 @@
+{
+  "extends": [
+    "solhint:all"
+  ],
+  "plugins": [],
+  "rules": {
+    "foundry-test-functions": [
+      "off"
+    ],
+    "func-visibility": [
+      "error",
+      {
+        "ignoreConstructors": true
+      }
+    ]
+  }
+}

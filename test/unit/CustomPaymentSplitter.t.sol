@@ -5,7 +5,6 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
-import { console2 } from "forge-std/src/console2.sol";
 
 interface ICustomPaymentSplitterTest {
   function setUp() external;

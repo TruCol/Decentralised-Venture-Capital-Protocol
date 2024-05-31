@@ -91,6 +91,7 @@ contract RaisePeriodTest is PRBTest, StdCheats, IMultipleInvestmentTest {
 
     // vm.expectRevert(bytes("The fund raising period has not passed yet."));
     vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
       abi.encodeWithSignature(
         "FundRaisingPeriodNotPassed(string,uint256,uint256,uint256)",
         "Fund raising period has not yet passed.",

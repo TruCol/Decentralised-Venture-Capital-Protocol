@@ -58,6 +58,7 @@ contract RetrieveWorkerRewardTest is PRBTest, StdCheats, IRetrieveWorkerRewardTe
     // Retrieve 1 if worker can get 0.
     // vm.expectRevert("Asked more reward than worker can get.");
     vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
       abi.encodeWithSignature(
         "InsufficientWorkerReward(string,address,uint256,uint256)",
         "Insufficient worker reward balance.",
@@ -75,6 +76,7 @@ contract RetrieveWorkerRewardTest is PRBTest, StdCheats, IRetrieveWorkerRewardTe
     _workerGetReward.addWorkerReward{ value: 1 }(workerAddress, 8 weeks);
     // vm.expectRevert("Asked more reward than worker can get.");
     vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
       abi.encodeWithSignature(
         "InsufficientWorkerReward(string,address,uint256,uint256)",
         "Insufficient worker reward balance.",
@@ -100,6 +102,7 @@ contract RetrieveWorkerRewardTest is PRBTest, StdCheats, IRetrieveWorkerRewardTe
 
     // vm.expectRevert("Asked more reward than worker can get.");
     vm.expectRevert(
+      // solhint-disable-next-line func-named-parameters
       abi.encodeWithSignature(
         "InsufficientWorkerReward(string,address,uint256,uint256)",
         "Insufficient worker reward balance.",

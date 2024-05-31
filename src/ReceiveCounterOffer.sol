@@ -2,13 +2,6 @@
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
 import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-error InvalidProjectLeadAddress(string message);
-error UnauthorizedOfferAcceptance(string message, address sender);
-error OfferAlreadyDecided(string message, uint256 offerId);
-error ExpiredOffer(string message, uint256 offerId);
-error UnauthorizedOfferRetrieval(string message, uint256 offerId, address sender);
-error AlreadyAcceptedOffer(string message, uint256 offerId);
-error OfferNotExpiredYet(string message, uint256 offerId);
 
 struct Offer {
   address payable _offerInvestor;
@@ -19,6 +12,14 @@ struct Offer {
   uint256 _offerDuration; // Time in seconds for project lead to decide
   uint256 _offerStartTime;
 }
+
+error InvalidProjectLeadAddress(string message);
+error UnauthorizedOfferAcceptance(string message, address sender);
+error OfferAlreadyDecided(string message, uint256 offerId);
+error ExpiredOffer(string message, uint256 offerId);
+error UnauthorizedOfferRetrieval(string message, uint256 offerId, address sender);
+error AlreadyAcceptedOffer(string message, uint256 offerId);
+error OfferNotExpiredYet(string message, uint256 offerId);
 
 interface IReceiveCounterOffer {
   function makeOffer(uint16 multiplier, uint256 duration) external payable;
@@ -51,7 +52,6 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead) {
     _OWNER = payable(msg.sender);
-    // require(projectLead != address(0), "projectLead address can't be 0.");
     if (projectLead == address(0)) {
       revert InvalidProjectLeadAddress("Project lead address cannot be zero.");
     }
@@ -134,19 +134,16 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
   @param accept A boolean indicating the project lead's decision (true for accept, false for reject).
   **/
   function acceptOrRejectOffer(uint256 offerId, bool accept) public override {
-    // require(msg.sender == _PROJECT_LEAD, "Only project lead can accept offer");
     if (msg.sender != _PROJECT_LEAD) {
       revert UnauthorizedOfferAcceptance("Only project lead can accept offer.", msg.sender);
     }
 
-    // require(!_offers[offerId]._isDecided, "Offer already rejected or accepted.");
     if (_offers[offerId]._isDecided) {
       revert OfferAlreadyDecided("Offer has already been rejected or accepted.", offerId);
     }
 
     // miners can manipulate time(stamps) seconds, not hours/days.
     // solhint-disable-next-line not-rely-on-time
-    // require(block.timestamp <= _offers[offerId]._offerStartTime + _offers[offerId]._offerDuration, "Offer expired");
     if (block.timestamp > _offers[offerId]._offerStartTime + _offers[offerId]._offerDuration) {
       revert ExpiredOffer("Offer has expired.", offerId);
     }
@@ -188,20 +185,14 @@ contract ReceiveCounterOffer is IReceiveCounterOffer {
 
   */
   function pullbackOffer(uint256 offerId) public override {
-    // require(msg.sender == _offers[offerId]._offerInvestor, "Someone other than the investor tried to retrieve offer.");
     if (msg.sender != _offers[offerId]._offerInvestor) {
       revert UnauthorizedOfferRetrieval("Only the investor can retrieve the offer.", offerId, msg.sender);
     }
     if (_offers[offerId]._isDecided) {
-      // require(!_offers[offerId]._offerIsAccepted, "The offer has been accepted, so can't pull back.");
       if (_offers[offerId]._offerIsAccepted) {
         revert AlreadyAcceptedOffer("The offer has already been accepted.", offerId);
       }
     } else {
-      // require(
-      //   block.timestamp > _offers[offerId]._offerStartTime + _offers[offerId]._offerDuration,
-      //   "The offer duration has not yet expired."
-      // );
       // miners can manipulate time(stamps) seconds, not hours/days.
       // solhint-disable-next-line not-rely-on-time
       if (block.timestamp <= _offers[offerId]._offerStartTime + _offers[offerId]._offerDuration) {

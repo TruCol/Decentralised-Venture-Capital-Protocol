@@ -37,7 +37,6 @@ contract InitialiseDim is IInitialiseDim {
     uint32 raisePeriod
   ) {
     // Initialise the private attributes.
-    // require(projectLead != address(0), "projectLead address can't be 0.");
     if (projectLead == address(0)) {
       revert InvalidProjectLeadAddress("Project lead address cannot be zero.");
     }
@@ -47,7 +46,6 @@ contract InitialiseDim is IInitialiseDim {
     // Specify the investment tiers in ether.
     uint256 nrOfTiers = ceilings.length;
     uint256 nrOfMultiples = multiples.length;
-    // require(nrOfTiers == nrOfMultiples, "The nr of tiers is not equal to the nr of multiples.");
     if (nrOfTiers != nrOfMultiples) {
       revert TierMultipleMismatch("Number of tiers and multiples must be equal.", nrOfTiers, nrOfMultiples);
     }
@@ -89,14 +87,9 @@ contract InitialiseDim is IInitialiseDim {
 
   */
   function withdraw(uint256 amount) public override {
-    // require(msg.sender == _PROJECT_LEAD, "Withdraw attempted by someone other than project lead.");
     if (msg.sender != _PROJECT_LEAD) {
       revert UnauthorizedWithdrawal("Only project lead can withdraw funds.", msg.sender);
     }
-
-    // Check if contract has sufficient balance
-    // require(address(this).balance >= amount, "Insufficient contract balance");
-
     if (address(this).balance < amount) {
       revert InsufficientContractBalance(
         "Insufficient contract balance for withdrawal.",
@@ -104,10 +97,6 @@ contract InitialiseDim is IInitialiseDim {
         address(this).balance
       );
     }
-
-    // Transfer funds to user using call{value: } (safer approach).
-    // (bool success, ) = payable(msg.sender).call{ value: amount }("");
-    // require(success, "Investment withdraw by project lead failed");
     payable(msg.sender).transfer(amount);
   }
 

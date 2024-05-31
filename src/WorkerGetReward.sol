@@ -43,7 +43,6 @@ contract WorkerGetReward is IWorkerGetReward {
   // solhint-disable-next-line comprehensive-interface
   // solhint-disable-next-line comprehensive-interface
   constructor(address projectLead, uint256 minRetrievalDuration) {
-    // require(projectLead != address(0), "projectLead address can't be 0.");
     if (projectLead == address(0)) {
       revert InvalidProjectLeadAddress("Project lead address cannot be zero.");
     }
@@ -72,12 +71,10 @@ contract WorkerGetReward is IWorkerGetReward {
   @param retrievalDuration The amount of time (in seconds) the worker must wait before claiming their reward.
   */
   function addWorkerReward(address worker, uint256 retrievalDuration) public payable override {
-    // require(msg.value > 0, "Tried to add 0 value to worker reward.");
     if (msg.value <= 0) {
       revert ZeroRewardContribution("Cannot contribute zero wei to worker reward.");
     }
 
-    // require(retrievalDuration >= _MIN_RETRIEVAL_DURATION, "Tried to set retrievalDuration below min.");
     if (retrievalDuration < _MIN_RETRIEVAL_DURATION) {
       revert InvalidRetrievalDuration(
         "Retrieval duration must be greater than or equal to minimum duration.",
@@ -105,17 +102,14 @@ contract WorkerGetReward is IWorkerGetReward {
   @param amount The amount of Wei the worker wishes to claim.
   */
   function retreiveWorkerReward(uint256 amount) public override {
-    // require(amount > 0, "Amount not larger than 0.");
     if (amount <= 0) {
       revert InvalidRewardTransfer("Reward amount must be greater than zero.", amount);
     }
 
-    // require(_rewards[msg.sender] >= amount, "Asked more reward than worker can get.");
     if (_rewards[msg.sender] < amount) {
       revert InsufficientWorkerReward("Insufficient worker reward balance.", msg.sender, amount, _rewards[msg.sender]);
     }
 
-    // require(address(this).balance >= amount, "Tried to payout more than the contract contains.");
     if (address(this).balance < amount) {
       revert InsufficientContractBalance("Insufficient contract balance for payout.", amount, address(this).balance);
     }
@@ -136,25 +130,18 @@ contract WorkerGetReward is IWorkerGetReward {
   @param amount The amount of Wei the project lead wishes to recover.
   */
   function projectLeadRecoversRewards(uint256 amount) public override {
-    // require(msg.sender == _PROJECT_LEAD, "Someone other than projectLead tried to recover rewards.");
     if (msg.sender != _PROJECT_LEAD) {
       revert UnauthorizedRewardRecovery("Only project lead can recover rewards.", msg.sender);
     }
 
-    // require(amount > 0, "Tried to recover 0 wei.");
     if (amount <= 0) {
       revert InvalidRecoveryAmount("Recovery amount must be greater than 0 wei.", amount);
     }
 
-    // require(address(this).balance >= amount, "Tried to recover more than the contract contains.");
     if (address(this).balance < amount) {
       revert InsufficientFundsForTransfer("Insufficient contract balance for transfer.", amount, address(this).balance);
     }
 
-    // require(
-    // block.timestamp > _projectLeadCanRecoverFrom,
-    // "ProjectLead tried to recover funds before workers got the chance."
-    // );
     // solhint-disable-next-line not-rely-on-time
     if (block.timestamp <= _projectLeadCanRecoverFrom) {
       revert InvalidTimeManipulation(

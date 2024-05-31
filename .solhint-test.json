@@ -5,7 +5,7 @@
   "plugins": [],
   "rules": {
     "foundry-test-functions": [
-      "off"
+      "warn"
     ],
     "func-visibility": [
       "error",
@@ -13,16 +13,10 @@
         "ignoreConstructors": true
       }
     ],
-    "gas-custom-errors": [
-      "error"
-    ],
     "gas-small-strings": [
       "off"
     ],
-    "gas-strict-inequalities": [
-      "off"
-    ],
-    "reason-string": [
+    "not-rely-on-time": [
       "off"
     ]
   }
