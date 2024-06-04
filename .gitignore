@@ -19,3 +19,6 @@ yarn.lock
 !broadcast
 broadcast/*
 broadcast/*/31337/
+
+temp.txt
+test_logging/*

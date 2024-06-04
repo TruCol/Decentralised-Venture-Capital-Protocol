@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
+// import "../StdJson.sol";
+import { console2 } from "forge-std/src/console2.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
@@ -14,6 +16,16 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "test/TestConstants.sol";
+import { VmSafe } from "forge-std/src/Vm.sol";
+import { TestLogHelper } from "../../../TestLogHelper.sol";
+
+struct HitRatesReturnAll {
+  uint256 didNotreachInvestmentCeiling;
+  uint256 didReachInvestmentCeiling;
+  uint256 validInitialisations;
+  uint256 validInvestments;
+  uint256 invalidInitialisations;
+}
 
 interface IFuzzDebug {
   function setUp() external;
@@ -43,17 +55,42 @@ TODO: test whether the investments are:
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
+  TestLogHelper private _testLogHelper;
   Helper private _helper;
-  uint256 private _validInitialisationCounter;
-  uint256 private _validInvestmentCounter;
-  uint256 private _testRunsCounter;
+  HitRatesReturnAll private _hitRates;
+
+  bool private _initialisedHitRates = false;
+  string private _hitRateFilePath;
+
+  function structToString(HitRatesReturnAll memory hitRates) public returns (string memory serialisedTextString) {
+    string memory obj1 = "ThisValueDissapearsIntoTheVoid";
+    vm.serializeUint(obj1, "invalidInitialisations", hitRates.invalidInitialisations);
+    vm.serializeUint(obj1, "validInitialisations", hitRates.validInitialisations);
+    vm.serializeUint(obj1, "validInvestments", hitRates.validInvestments);
+    vm.serializeUint(obj1, "didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
+    serialisedTextString = vm.serializeUint(
+      obj1,
+      "didNotreachInvestmentCeiling",
+      hitRates.didNotreachInvestmentCeiling
+    );
+    // vm.writeJson(serialisedTextString, path);
+    return serialisedTextString;
+  }
+
+  function initialiseHitRates() public pure returns (HitRatesReturnAll memory hitRates) {
+    return
+      HitRatesReturnAll({
+        didNotreachInvestmentCeiling: 0,
+        didReachInvestmentCeiling: 0,
+        validInitialisations: 0,
+        validInvestments: 0,
+        invalidInitialisations: 0
+      });
+  }
 
   function setUp() public virtual override {
     _helper = new Helper();
     _testInitialisationHelper = new TestInitialisationHelper();
-    // _testRunsCounter = 0;
-    // _validInitialisationCounter = 0;
-    // _validInvestmentCounter = 0;
   }
 
   /**
@@ -74,13 +111,24 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   ) public virtual override {
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
+    emit Log("Start 0");
+    _hitRates = initialiseHitRates();
+    emit Log("Start fuzz");
+    (string memory hitRateFilePath, bytes memory data) = _testLogHelper.createLogFile({
+      fileName: "/DebugTest.txt",
+      serialisedTextString: structToString(_hitRates)
+    });
+    emit Log("Start a");
+    _hitRates = abi.decode(data, (HitRatesReturnAll));
+
+    emit Log("Read File");
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
       randomCeilings: randomCeilings,
       randomMultiples: randomMultiples,
       randNrOfInvestmentTiers: randNrOfInvestmentTiers
     });
     investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
-    ++_testRunsCounter;
+
     (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) = _testInitialisationHelper
       .initialiseRandomDim({
         projectLead: projectLead,
@@ -92,8 +140,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         multiples: multiples
       });
     if (hasInitialisedRandomDim) {
-      ++_validInitialisationCounter;
-
+      ++_hitRates.validInitialisations;
       // Generate a non-random investor wallet address and make an investment.
       address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
       if (
@@ -103,7 +150,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           someInvestorWallet: firstInvestorWallet
         })
       ) {
-        ++_validInvestmentCounter;
+        ++_hitRates.validInvestments;
         _followUpTriggerReturnAll({
           dim: someDim,
           projectLead: projectLead,
@@ -112,18 +159,16 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           additionalWaitPeriod: additionalWaitPeriod,
           raisePeriod: raisePeriod,
           maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1]
+          // _hitRates: _hitRates
         });
       }
+    } else {
+      ++_hitRates.invalidInitialisations;
     }
-
-    emit Log("_validInitialisationCounter=");
-    emit Log(Strings.toString(_validInitialisationCounter));
-
-    emit Log("_validInvestmentCounter=");
-    emit Log(Strings.toString(_validInvestmentCounter));
-
-    emit Log("_testRunsCounter=");
-    emit Log(Strings.toString(_testRunsCounter));
+    emit Log("Outputting File");
+    // overwriteFileContent(_hitRateFilePath, _hitRates);
+    vm.writeJson({ json: structToString(_hitRates), path: hitRateFilePath });
+    emit Log("Outputted File");
   }
 
   function _followUpTriggerReturnAll(
@@ -133,9 +178,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256 firstInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
-    uint256 maxTierCeiling
+    uint256 maxTierCeiling // HitRatesReturnAll memory _hitRates
   ) internal {
     if (firstInvestmentAmount >= investmentTarget) {
+      ++_hitRates.didReachInvestmentCeiling;
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
@@ -149,6 +195,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       );
       dim.triggerReturnAll();
     } else {
+      ++_hitRates.didNotreachInvestmentCeiling;
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
