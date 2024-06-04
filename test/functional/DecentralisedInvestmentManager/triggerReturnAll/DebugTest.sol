@@ -17,7 +17,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "test/TestConstants.sol";
 import { VmSafe } from "forge-std/src/Vm.sol";
-import { TestLogHelper } from "../../../TestLogHelper.sol";
 
 struct HitRatesReturnAll {
   uint256 didNotreachInvestmentCeiling;
@@ -55,12 +54,10 @@ TODO: test whether the investments are:
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
-  TestLogHelper private _testLogHelper;
   Helper private _helper;
   HitRatesReturnAll private _hitRates;
 
   bool private _initialisedHitRates = false;
-  string private _hitRateFilePath;
 
   function overwriteFileContent(string memory path, HitRatesReturnAll memory hitRates) public {
     string memory obj1 = "ThisValueDissapearsIntoTheVoid";
@@ -76,13 +73,13 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     vm.writeJson(serialisedTextString, path);
   }
 
-  function readHitRatesFromFile(string memory path) public returns (bytes memory data) {
+  function readHitRatesFromFile(string memory path) public view returns (bytes memory data) {
     string memory fileContent = vm.readFile(path);
     data = vm.parseJson(fileContent);
     return data;
   }
 
-  function initialiseHitRates() public returns (HitRatesReturnAll memory hitRates) {
+  function initialiseHitRates() public pure returns (HitRatesReturnAll memory hitRates) {
     return
       HitRatesReturnAll({
         didNotreachInvestmentCeiling: 0,
@@ -106,25 +103,25 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     return vm.fsMetadata(filePath).modified;
   }
 
-  function createLogFile() public {
+  function createLogFile() public returns (string memory hitRateFilePath) {
     // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
     string memory tempFilename = "temp.txt";
     uint256 timeStamp = createFileIfNotExists(tempFilename);
     string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
-    _hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
-    if (!vm.isFile(_hitRateFilePath)) {
+    hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
+    if (!vm.isFile(hitRateFilePath)) {
       _hitRates = initialiseHitRates();
 
       // Create logging structure
       vm.createDir(logDir, true);
-      overwriteFileContent(_hitRateFilePath, _hitRates);
+      overwriteFileContent(hitRateFilePath, _hitRates);
 
       // Assort logging file exists.
-      if (!vm.isFile(_hitRateFilePath)) {
+      if (!vm.isFile(hitRateFilePath)) {
         revert("LogFile not created.");
       }
     } else {
-      bytes memory data = readHitRatesFromFile(_hitRateFilePath);
+      bytes memory data = readHitRatesFromFile(hitRateFilePath);
       _hitRates = abi.decode(data, (HitRatesReturnAll));
     }
   }
@@ -153,7 +150,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
     emit Log("Start fuzz");
-    createLogFile();
+    string memory hitRateFilePath = createLogFile();
 
     emit Log("Read File");
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -200,7 +197,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       ++_hitRates.invalidInitialisations;
     }
     emit Log("Outputting File");
-    overwriteFileContent(_hitRateFilePath, _hitRates);
+    overwriteFileContent(hitRateFilePath, _hitRates);
     emit Log("Outputted File");
   }
 
