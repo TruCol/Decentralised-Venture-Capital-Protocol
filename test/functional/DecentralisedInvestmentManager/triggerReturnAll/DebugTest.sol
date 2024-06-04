@@ -11,6 +11,7 @@ import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInv
 import { Helper } from "../../../../src/Helper.sol";
 
 import { TestInitialisationHelper } from "../../../TestInitialisationHelper.sol";
+import { TestFileLogging } from "../../../TestFileLogging.sol";
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -54,6 +55,7 @@ TODO: test whether the investments are:
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
+  TestFileLogging private _testFileLogging;
   Helper private _helper;
   HitRatesReturnAll private _hitRates;
 
@@ -71,12 +73,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       hitRates.didNotreachInvestmentCeiling
     );
     vm.writeJson(serialisedTextString, path);
-  }
-
-  function readHitRatesFromFile(string memory path) public view returns (bytes memory data) {
-    string memory fileContent = vm.readFile(path);
-    data = vm.parseJson(fileContent);
-    return data;
   }
 
   function initialiseHitRates() public pure returns (HitRatesReturnAll memory hitRates) {
@@ -120,7 +116,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         revert("LogFile not created.");
       }
     } else {
-      bytes memory data = readHitRatesFromFile(hitRateFilePath);
+      bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
       _hitRates = abi.decode(data, (HitRatesReturnAll));
     }
   }
@@ -128,6 +124,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   function setUp() public virtual override {
     _helper = new Helper();
     _testInitialisationHelper = new TestInitialisationHelper();
+    _testFileLogging = new TestFileLogging();
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
       vm.removeFile(_LOG_TIME_CREATOR);
