@@ -59,20 +59,21 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   Helper private _helper;
   HitRatesReturnAll private _hitRates;
 
-  bool private _initialisedHitRates = false;
-
-  function overwriteFileContent(string memory path, HitRatesReturnAll memory hitRates) public {
+  function converthitRatesToString(
+    string memory path,
+    HitRatesReturnAll memory hitRates
+  ) public returns (string memory serialisedTextString) {
     string memory obj1 = "ThisValueDissapearsIntoTheVoid";
     vm.serializeUint(obj1, "invalidInitialisations", hitRates.invalidInitialisations);
     vm.serializeUint(obj1, "validInitialisations", hitRates.validInitialisations);
     vm.serializeUint(obj1, "validInvestments", hitRates.validInvestments);
     vm.serializeUint(obj1, "didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
-    string memory serialisedTextString = vm.serializeUint(
+    serialisedTextString = vm.serializeUint(
       obj1,
       "didNotreachInvestmentCeiling",
       hitRates.didNotreachInvestmentCeiling
     );
-    vm.writeJson(serialisedTextString, path);
+    return serialisedTextString;
   }
 
   function initialiseHitRates() public pure returns (HitRatesReturnAll memory hitRates) {
@@ -86,22 +87,13 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       });
   }
 
-  function createFileIfNotExists(string memory filePath) public returns (uint256 lastModified) {
-    if (!vm.isFile(filePath)) {
-      _hitRates = initialiseHitRates();
-      _initialisedHitRates = true;
-
-      overwriteFileContent(filePath, _hitRates);
-    }
-    if (!vm.isFile(filePath)) {
-      revert("File does not exist.");
-    }
-    return vm.fsMetadata(filePath).modified;
-  }
-
   function createLogFile(string memory tempFileName) public returns (string memory hitRateFilePath) {
     // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
-    uint256 timeStamp = createFileIfNotExists(tempFileName);
+    _hitRates = initialiseHitRates();
+    string memory serialisedTextString = converthitRatesToString(hitRateFilePath, _hitRates);
+    // TODO: convert hitRates to serialised String
+
+    uint256 timeStamp = _testFileLogging.createFileIfNotExists(serialisedTextString, tempFileName);
     string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
     hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
     if (!vm.isFile(hitRateFilePath)) {
@@ -109,7 +101,8 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 
       // Create logging structure
       vm.createDir(logDir, true);
-      overwriteFileContent(hitRateFilePath, _hitRates);
+      string memory serialisedTextString = converthitRatesToString(hitRateFilePath, _hitRates);
+      _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
 
       // Assort logging file exists.
       if (!vm.isFile(hitRateFilePath)) {
@@ -197,7 +190,8 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       ++_hitRates.invalidInitialisations;
     }
     emit Log("Outputting File");
-    overwriteFileContent(hitRateFilePath, _hitRates);
+    string memory serialisedTextString = converthitRatesToString(hitRateFilePath, _hitRates);
+    _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     emit Log("Outputted File");
   }
 

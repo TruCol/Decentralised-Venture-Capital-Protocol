@@ -9,4 +9,24 @@ contract TestFileLogging is PRBTest, StdCheats {
     data = vm.parseJson(fileContent);
     return data;
   }
+
+  function createFileIfNotExists(
+    string memory serialisedTextString,
+    string memory filePath
+  ) public returns (uint256 lastModified) {
+    if (!vm.isFile(filePath)) {
+      overwriteFileContent(serialisedTextString, filePath);
+    }
+    if (!vm.isFile(filePath)) {
+      revert("File does not exist.");
+    }
+    return vm.fsMetadata(filePath).modified;
+  }
+
+  function overwriteFileContent(string memory serialisedTextString, string memory filePath) public {
+    vm.writeJson(serialisedTextString, filePath);
+    if (!vm.isFile(filePath)) {
+      revert("File does not exist.");
+    }
+  }
 }
