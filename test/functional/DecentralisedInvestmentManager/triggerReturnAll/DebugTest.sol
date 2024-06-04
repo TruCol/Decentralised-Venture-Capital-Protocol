@@ -103,10 +103,9 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     return vm.fsMetadata(filePath).modified;
   }
 
-  function createLogFile() public returns (string memory hitRateFilePath) {
+  function createLogFile(string memory tempFileName) public returns (string memory hitRateFilePath) {
     // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
-    string memory tempFilename = "temp.txt";
-    uint256 timeStamp = createFileIfNotExists(tempFilename);
+    uint256 timeStamp = createFileIfNotExists(tempFileName);
     string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
     hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
     if (!vm.isFile(hitRateFilePath)) {
@@ -129,6 +128,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   function setUp() public virtual override {
     _helper = new Helper();
     _testInitialisationHelper = new TestInitialisationHelper();
+    // Delete the temp file.
+    if (vm.isFile(_LOG_TIME_CREATOR)) {
+      vm.removeFile(_LOG_TIME_CREATOR);
+    }
   }
 
   /**
@@ -150,7 +153,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
     emit Log("Start fuzz");
-    string memory hitRateFilePath = createLogFile();
+    string memory hitRateFilePath = createLogFile(_LOG_TIME_CREATOR);
 
     emit Log("Read File");
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
