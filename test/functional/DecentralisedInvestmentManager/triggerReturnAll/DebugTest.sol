@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
-// import "../StdJson.sol";
+
 import { console2 } from "forge-std/src/console2.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/src/Vm.sol" as vm;
@@ -44,20 +44,11 @@ interface IFuzzDebug {
   ) external;
 }
 
-/**
-Tests whether the dim.triggerReturnAll() function ensures the investments are:
-- returned if the investment target is not reached, after the raisePeriod has passed.
-- not returned if the investment target is reached, after the raisePeriod has passed.
-TODO: test whether the investments are:
-- not returned if the investment target is not reached, before the raisePeriod has passed.
-- not returned if the investment target is reached, before the raisePeriod has passed.
-*/
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
   TestFileLogging private _testFileLogging;
   Helper private _helper;
-  HitRatesReturnAll private _hitRates;
 
   function converthitRatesToString(
     HitRatesReturnAll memory hitRates
@@ -86,35 +77,16 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       });
   }
 
-  function createLogFile(
-    string memory tempFileName,
-    string memory serialisedTextString
-  ) public returns (string memory hitRateFilePath) {
-    // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
-    // _hitRates = initialiseHitRates();
+  function updateLogFile() public returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
+    hitRates = initialiseHitRates();
+    // Output hit rates to file if they do not exist yet.
+    string memory serialisedTextString = converthitRatesToString(hitRates);
+    hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
+    // Read the latest hitRates from file.
+    bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
+    hitRates = abi.decode(data, (HitRatesReturnAll));
 
-    // TODO: convert hitRates to serialised String
-
-    // Specify the logging directory and filepath.
-    uint256 timeStamp = _testFileLogging.createFileIfNotExists(serialisedTextString, tempFileName);
-    string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
-    hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
-
-    // If the log file does not yet exist, create it.
-    if (!vm.isFile(hitRateFilePath)) {
-      // _hitRates = initialiseHitRates();
-
-      // Create logging structure
-      vm.createDir(logDir, true);
-      // string memory serialisedTextString = converthitRatesToString( _hitRates);
-      _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
-
-      // Assort logging file exists.
-      if (!vm.isFile(hitRateFilePath)) {
-        revert("LogFile not created.");
-      }
-    }
-    return hitRateFilePath;
+    return (hitRateFilePath, hitRates);
   }
 
   function setUp() public virtual override {
@@ -146,14 +118,8 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
     emit Log("Start fuzz");
+    (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) = updateLogFile();
 
-    string memory serialisedTextString = converthitRatesToString(_hitRates);
-    string memory hitRateFilePath = createLogFile(_LOG_TIME_CREATOR, serialisedTextString);
-    // Read the hitRates from file.
-    bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
-    _hitRates = abi.decode(data, (HitRatesReturnAll));
-
-    emit Log("Read File");
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
       randomCeilings: randomCeilings,
       randomMultiples: randomMultiples,
@@ -172,7 +138,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         multiples: multiples
       });
     if (hasInitialisedRandomDim) {
-      ++_hitRates.validInitialisations;
+      ++hitRates.validInitialisations;
       // Generate a non-random investor wallet address and make an investment.
       address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
       if (
@@ -182,7 +148,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           someInvestorWallet: firstInvestorWallet
         })
       ) {
-        ++_hitRates.validInvestments;
+        ++hitRates.validInvestments;
         _followUpTriggerReturnAll({
           dim: someDim,
           projectLead: projectLead,
@@ -190,15 +156,15 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           investmentTarget: investmentTarget,
           additionalWaitPeriod: additionalWaitPeriod,
           raisePeriod: raisePeriod,
-          maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1]
-          // _hitRates: _hitRates
+          maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1],
+          hitRates: hitRates
         });
       }
     } else {
-      ++_hitRates.invalidInitialisations;
+      ++hitRates.invalidInitialisations;
     }
     emit Log("Outputting File");
-    serialisedTextString = converthitRatesToString(_hitRates);
+    string memory serialisedTextString = converthitRatesToString(hitRates);
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     emit Log("Outputted File");
   }
@@ -210,10 +176,11 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256 firstInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
-    uint256 maxTierCeiling // HitRatesReturnAll memory _hitRates
+    uint256 maxTierCeiling,
+    HitRatesReturnAll memory hitRates
   ) internal {
     if (firstInvestmentAmount >= investmentTarget) {
-      ++_hitRates.didReachInvestmentCeiling;
+      ++hitRates.didReachInvestmentCeiling;
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
@@ -227,7 +194,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       );
       dim.triggerReturnAll();
     } else {
-      ++_hitRates.didNotreachInvestmentCeiling;
+      ++hitRates.didNotreachInvestmentCeiling;
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);

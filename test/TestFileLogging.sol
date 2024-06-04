@@ -1,7 +1,10 @@
 pragma solidity >=0.8.25 <0.9.0;
+
 import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
+
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract TestFileLogging is PRBTest, StdCheats {
   function readDataFromFile(string memory path) public view returns (bytes memory data) {
@@ -28,5 +31,36 @@ contract TestFileLogging is PRBTest, StdCheats {
     if (!vm.isFile(filePath)) {
       revert("File does not exist.");
     }
+  }
+
+  function createLogFileIfItDoesNotExist(
+    string memory tempFileName,
+    string memory serialisedTextString
+  ) public returns (string memory hitRateFilePath) {
+    // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
+    // _hitRates = initialiseHitRates();
+
+    // TODO: convert hitRates to serialised String
+
+    // Specify the logging directory and filepath.
+    uint256 timeStamp = createFileIfNotExists(serialisedTextString, tempFileName);
+    string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
+    hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
+
+    // If the log file does not yet exist, create it.
+    if (!vm.isFile(hitRateFilePath)) {
+      // _hitRates = initialiseHitRates();
+
+      // Create logging structure
+      vm.createDir(logDir, true);
+      // string memory serialisedTextString = converthitRatesToString( _hitRates);
+      overwriteFileContent(serialisedTextString, hitRateFilePath);
+
+      // Assort logging file exists.
+      if (!vm.isFile(hitRateFilePath)) {
+        revert("LogFile not created.");
+      }
+    }
+    return hitRateFilePath;
   }
 }
