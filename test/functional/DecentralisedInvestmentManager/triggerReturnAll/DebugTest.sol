@@ -60,7 +60,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   HitRatesReturnAll private _hitRates;
 
   function converthitRatesToString(
-    string memory path,
     HitRatesReturnAll memory hitRates
   ) public returns (string memory serialisedTextString) {
     string memory obj1 = "ThisValueDissapearsIntoTheVoid";
@@ -87,31 +86,35 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       });
   }
 
-  function createLogFile(string memory tempFileName) public returns (string memory hitRateFilePath) {
+  function createLogFile(
+    string memory tempFileName,
+    string memory serialisedTextString
+  ) public returns (string memory hitRateFilePath) {
     // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
-    _hitRates = initialiseHitRates();
-    string memory serialisedTextString = converthitRatesToString(hitRateFilePath, _hitRates);
+    // _hitRates = initialiseHitRates();
+
     // TODO: convert hitRates to serialised String
 
+    // Specify the logging directory and filepath.
     uint256 timeStamp = _testFileLogging.createFileIfNotExists(serialisedTextString, tempFileName);
     string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
     hitRateFilePath = string(abi.encodePacked(logDir, "/DebugTest.txt"));
+
+    // If the log file does not yet exist, create it.
     if (!vm.isFile(hitRateFilePath)) {
-      _hitRates = initialiseHitRates();
+      // _hitRates = initialiseHitRates();
 
       // Create logging structure
       vm.createDir(logDir, true);
-      string memory serialisedTextString = converthitRatesToString(hitRateFilePath, _hitRates);
+      // string memory serialisedTextString = converthitRatesToString( _hitRates);
       _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
 
       // Assort logging file exists.
       if (!vm.isFile(hitRateFilePath)) {
         revert("LogFile not created.");
       }
-    } else {
-      bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
-      _hitRates = abi.decode(data, (HitRatesReturnAll));
     }
+    return hitRateFilePath;
   }
 
   function setUp() public virtual override {
@@ -143,7 +146,12 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
     emit Log("Start fuzz");
-    string memory hitRateFilePath = createLogFile(_LOG_TIME_CREATOR);
+
+    string memory serialisedTextString = converthitRatesToString(_hitRates);
+    string memory hitRateFilePath = createLogFile(_LOG_TIME_CREATOR, serialisedTextString);
+    // Read the hitRates from file.
+    bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
+    _hitRates = abi.decode(data, (HitRatesReturnAll));
 
     emit Log("Read File");
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -190,7 +198,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       ++_hitRates.invalidInitialisations;
     }
     emit Log("Outputting File");
-    string memory serialisedTextString = converthitRatesToString(hitRateFilePath, _hitRates);
+    serialisedTextString = converthitRatesToString(_hitRates);
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     emit Log("Outputted File");
   }
