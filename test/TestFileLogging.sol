@@ -37,11 +37,6 @@ contract TestFileLogging is PRBTest, StdCheats {
     string memory tempFileName,
     string memory serialisedTextString
   ) public returns (string memory hitRateFilePath) {
-    // TODO: initialise the _hitRate struct, if the file in which it will be stored, does not yet exist.
-    // _hitRates = initialiseHitRates();
-
-    // TODO: convert hitRates to serialised String
-
     // Specify the logging directory and filepath.
     uint256 timeStamp = createFileIfNotExists(serialisedTextString, tempFileName);
     string memory logDir = string(abi.encodePacked("test_logging/", Strings.toString(timeStamp)));
@@ -49,11 +44,8 @@ contract TestFileLogging is PRBTest, StdCheats {
 
     // If the log file does not yet exist, create it.
     if (!vm.isFile(hitRateFilePath)) {
-      // _hitRates = initialiseHitRates();
-
       // Create logging structure
       vm.createDir(logDir, true);
-      // string memory serialisedTextString = converthitRatesToString( _hitRates);
       overwriteFileContent(serialisedTextString, hitRateFilePath);
 
       // Assort logging file exists.

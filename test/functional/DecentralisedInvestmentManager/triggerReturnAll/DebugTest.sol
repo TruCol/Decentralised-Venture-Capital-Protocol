@@ -19,6 +19,8 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "test/TestConstants.sol";
 import { VmSafe } from "forge-std/src/Vm.sol";
 
+/**
+Stores the counters used to track how often the different branches of the tests are covered.*/
 struct HitRatesReturnAll {
   uint256 didNotreachInvestmentCeiling;
   uint256 didReachInvestmentCeiling;
@@ -50,6 +52,9 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   TestFileLogging private _testFileLogging;
   Helper private _helper;
 
+  /**
+  @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
+   */
   function converthitRatesToString(
     HitRatesReturnAll memory hitRates
   ) public returns (string memory serialisedTextString) {
@@ -66,6 +71,8 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     return serialisedTextString;
   }
 
+  /**
+@dev Creates an empty struct with the counters for each test case set to 0. */
   function initialiseHitRates() public pure returns (HitRatesReturnAll memory hitRates) {
     return
       HitRatesReturnAll({
@@ -77,6 +84,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       });
   }
 
+  /**
+@dev Ensures the struct with the log data for this test file is exported into a log file if it does not yet exist.
+Afterwards, it can load that new file.
+ */
   function updateLogFile() public returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
     hitRates = initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
@@ -115,18 +126,23 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256[_MAX_NR_OF_TIERS] memory randomCeilings,
     uint8[_MAX_NR_OF_TIERS] memory randomMultiples
   ) public virtual override {
+    // Declare variables used for initialisation of the dim contract.
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
-    emit Log("Start fuzz");
+
+    // Initialise the hit rate counter and accompanying logfile.
     (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) = updateLogFile();
 
+    // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
       randomCeilings: randomCeilings,
       randomMultiples: randomMultiples,
       randNrOfInvestmentTiers: randNrOfInvestmentTiers
     });
+    // Map the investment target to the range (0, maximum(Ceilings)) to ensure the investment target can be reached.
     investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
 
+    // Initialise the dim contract, if the random parameters are invalid, an non-random dim is initialised for typing.
     (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) = _testInitialisationHelper
       .initialiseRandomDim({
         projectLead: projectLead,
@@ -137,10 +153,16 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         ceilings: sameNrOfCeilings,
         multiples: multiples
       });
+
+    // Check if the initialised dim is random or non-random value.
     if (hasInitialisedRandomDim) {
       ++hitRates.validInitialisations;
-      // Generate a non-random investor wallet address and make an investment.
+
+      // TODO: Generate a non-random investor wallet address and make an investment.
       address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
+
+      // Check if one is able to safely make the investments.
+      // TODO: convert into random number of investments.
       if (
         _testInitialisationHelper.safelyInvest({
           dim: someDim,
@@ -148,7 +170,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           someInvestorWallet: firstInvestorWallet
         })
       ) {
+        // Store that this random run was for a valid investment, (track it to export it later).
         ++hitRates.validInvestments;
+
+        // Call the actual function that performs the test on the initialised dim contract.
         _followUpTriggerReturnAll({
           dim: someDim,
           projectLead: projectLead,
@@ -159,8 +184,9 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1],
           hitRates: hitRates
         });
-      }
+      } // TODO: else track invalid investment.
     } else {
+      // Store that this random run did not permit a valid dim initialisation.
       ++hitRates.invalidInitialisations;
     }
     emit Log("Outputting File");
@@ -169,6 +195,14 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     emit Log("Outputted File");
   }
 
+  /**
+  Tests whether the triggerReturnAll() function returns all funds from the dim contract if the investment ceiling is
+  reached. Otherwise it verifies the triggerReturnAll() function throws an error saying the investment target is
+  reached.
+
+  To ensure the funds can be returned, the vm automatically simulates a fast forward of the time to beyond the raise
+  period.
+  @dev This is the actual test that this file executes. */
   function _followUpTriggerReturnAll(
     DecentralisedInvestmentManager dim,
     address projectLead,
@@ -180,10 +214,18 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     HitRatesReturnAll memory hitRates
   ) internal {
     if (firstInvestmentAmount >= investmentTarget) {
+      // Track that the investment ceiling was reached.
       ++hitRates.didReachInvestmentCeiling;
+
+      // Only the projectLead can trigger the return of all funds.
       vm.prank(projectLead);
+
+      // For testing purposes, time is simulated to beyond the raise period. Another test will test calls before the raise period.
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
+
+      // If the investment target is reached, the funds should not be returnable, because the project lead should
+      // ensure the work is done to retrieve the funds.
       vm.expectRevert(
         abi.encodeWithSignature(
           "InvestmentTargetReached(string,uint256,uint256)",
@@ -194,12 +236,20 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       );
       dim.triggerReturnAll();
     } else {
+      // Track that the investment ceiling was not reached by the randnom values.
       ++hitRates.didNotreachInvestmentCeiling;
+
+      // TODO: Verify the dim contract contains the investment funds.
+
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);
       dim.triggerReturnAll();
+
+      // Verify the funds from the dim contract were not in the dim contract anymore.
       assertEq(address(dim).balance, 0 ether, "The dim did not contain 0 ether after returning all investments.");
+
+      // TODO: verify the investors have retrieved their investments.
     }
   }
 }
