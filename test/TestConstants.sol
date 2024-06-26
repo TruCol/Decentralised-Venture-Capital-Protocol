@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
 uint32 constant _MAX_NR_OF_TIERS = 100;
+uint32 constant _MAX_NR_OF_INVESTMENTS = 100000;
 
 /** @dev I am not able to change and store a (boolean) value over multiple fuzz runs in a single test contract.
 Since I keep track of the hits of each test branch of the fuzz test runs cumulatively, I count how often

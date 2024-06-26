@@ -9,7 +9,7 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { Helper } from "../../../../src/Helper.sol";
-
+import { TestMathHelper } from "test/TestMathHelper.sol";
 import { TestInitialisationHelper } from "../../../TestInitialisationHelper.sol";
 import { TestFileLogging } from "../../../TestFileLogging.sol";
 
@@ -32,7 +32,7 @@ struct HitRatesReturnAll {
 interface IFuzzDebug {
   function setUp() external;
 
-  function testFuzzDebug(
+  function testRandomNrOfInvestments(
     address projectLead,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
@@ -41,8 +41,10 @@ interface IFuzzDebug {
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
     uint8 randNrOfInvestmentTiers,
+    uint8 randNrOfInvestments,
     uint256[_MAX_NR_OF_TIERS] memory randomCeilings,
-    uint8[_MAX_NR_OF_TIERS] memory randomMultiples
+    uint8[_MAX_NR_OF_TIERS] memory randomMultiples,
+    uint256[_MAX_NR_OF_INVESTMENTS] memory randomInvestments
   ) external;
 }
 
@@ -51,6 +53,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   TestInitialisationHelper private _testInitialisationHelper;
   TestFileLogging private _testFileLogging;
   Helper private _helper;
+  TestMathHelper private _testMathHelper;
 
   /**
   @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
@@ -104,6 +107,8 @@ Afterwards, it can load that new file.
     _helper = new Helper();
     _testInitialisationHelper = new TestInitialisationHelper();
     _testFileLogging = new TestFileLogging();
+    _testMathHelper = new TestMathHelper();
+
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
       vm.removeFile(_LOG_TIME_CREATOR);
@@ -114,7 +119,7 @@ Afterwards, it can load that new file.
   @dev The investor has invested 0.5 eth, and the investment target is 0.6 eth after 12 weeks.
   So the investment target is not reached, so all the funds should be returned.
    */
-  function testFuzzDebug(
+  function testRandomNrOfInvestments(
     address projectLead,
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
@@ -123,12 +128,15 @@ Afterwards, it can load that new file.
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
     uint8 randNrOfInvestmentTiers,
+    uint8 randNrOfInvestments,
     uint256[_MAX_NR_OF_TIERS] memory randomCeilings,
-    uint8[_MAX_NR_OF_TIERS] memory randomMultiples
+    uint8[_MAX_NR_OF_TIERS] memory randomMultiples,
+    uint256[_MAX_NR_OF_INVESTMENTS] memory randomInvestments
   ) public virtual override {
     // Declare variables used for initialisation of the dim contract.
     uint8[] memory multiples;
     uint256[] memory sameNrOfCeilings;
+    uint256[] memory investmentAmounts;
 
     // Initialise the hit rate counter and accompanying logfile.
     (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) = updateLogFile();
@@ -138,6 +146,11 @@ Afterwards, it can load that new file.
       randomCeilings: randomCeilings,
       randomMultiples: randomMultiples,
       randNrOfInvestmentTiers: randNrOfInvestmentTiers
+    });
+
+    investmentAmounts = _testMathHelper.getShortenedArray({
+      someArray: randomInvestments,
+      nrOfDesiredElements: randNrOfInvestments
     });
     // Map the investment target to the range (0, maximum(Ceilings)) to ensure the investment target can be reached.
     investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;

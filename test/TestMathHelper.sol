@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
+import "test/TestConstants.sol";
 error InvalidSortedArrayWithDupes(string message, uint256 index, uint256 previousValue, uint256 currentValue);
+error CannotShortenArray(string message, uint256[_MAX_NR_OF_INVESTMENTS] someArray, uint256 nrOfDesiredElements);
 
 interface ITestMathHelper {
   function sumOfNrsThrowsOverFlow(uint256[] memory numbers) external pure returns (bool cumArrSumYieldsOverflow);
+
+  function canGetShortenedArray(
+    uint256[_MAX_NR_OF_INVESTMENTS] memory someArray,
+    uint256 nrOfDesiredElements
+  ) external pure returns (bool canShortenArray);
+
+  function getShortenedArray(
+    uint256[_MAX_NR_OF_INVESTMENTS] memory someArray,
+    uint256 nrOfDesiredElements
+  ) external pure returns (uint256[] memory shortenedArray);
 
   function yieldsOverflowAdd(uint256 a, uint256 b) external pure returns (bool yieldsOverflowInAddition);
 
@@ -42,6 +54,38 @@ contract TestMathHelper is ITestMathHelper {
     }
 
     return cumArrSumYieldsOverflow;
+  }
+
+  function canGetShortenedArray(
+    uint256[_MAX_NR_OF_INVESTMENTS] memory someArray,
+    uint256 nrOfDesiredElements
+  ) public pure override returns (bool canShortenArray) {
+    if (someArray.length >= nrOfDesiredElements) {
+      canShortenArray = true;
+    } else {
+      canShortenArray = false;
+    }
+    return canShortenArray;
+  }
+
+  function getShortenedArray(
+    uint256[_MAX_NR_OF_INVESTMENTS] memory someArray,
+    uint256 nrOfDesiredElements
+  ) public pure override returns (uint256[] memory shortenedArray) {
+    if (!canGetShortenedArray({ someArray: someArray, nrOfDesiredElements: nrOfDesiredElements })) {
+      revert CannotShortenArray(
+        "You wanted more elements than the array contains, for a shorten array function.",
+        someArray,
+        nrOfDesiredElements
+      );
+    }
+
+    shortenedArray = new uint256[](nrOfDesiredElements);
+    for (uint256 i = 0; i < nrOfDesiredElements; ++i) {
+      shortenedArray[i] = someArray[i];
+    }
+
+    return shortenedArray;
   }
 
   function yieldsOverflowAdd(uint256 a, uint256 b) public pure override returns (bool yieldsOverflowInAddition) {
