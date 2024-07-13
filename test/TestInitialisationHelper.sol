@@ -9,6 +9,7 @@ import { InitialiseDim } from "test/InitialiseDim.sol";
 import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
 import { TestMathHelper } from "test/TestMathHelper.sol";
 import "test/TestConstants.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 interface ITestInitialisationHelper {
   function canInitialiseRandomDim(
@@ -92,12 +93,11 @@ contract TestInitialisationHelper is ITestInitialisationHelper, PRBTest, StdChea
       // emit Log("Initialised");
       return true;
     } catch Error(string memory reason) {
-      // emit Log(reason);
+      emit Log(reason);
       return false;
     } catch (bytes memory reason) {
       // catch failing assert()
-
-      //emit LogBytes(reason);
+      emit LogBytes(reason);
       return false;
     }
   }
@@ -201,6 +201,44 @@ contract TestInitialisationHelper is ITestInitialisationHelper, PRBTest, StdChea
   }
 
   /**
+   * @notice Helper function to perform multiple random investments using safelyInvest.
+   * @param dim The DecentralisedInvestmentManager object to invest in.
+   * @param investmentAmounts The random investment amounts.
+   * @return successCount The number of successful investments.
+   * @return failureCount The number of failed investments.
+   */
+  function performRandomInvestments(
+    DecentralisedInvestmentManager dim,
+    uint256[] memory investmentAmounts
+  ) public returns (uint256 successCount, uint256 failureCount) {
+    successCount = 0;
+    failureCount = 0;
+    uint256 numberOfInvestments = investmentAmounts.length;
+    for (uint256 i = 0; i < numberOfInvestments; i++) {
+      // emit Log("i="+i+" amount= "+ investmentAmounts[i]);
+      // emit Log(i);
+      emit Log(Strings.toString(i));
+      emit Log(" amount= ");
+      emit Log(Strings.toString(investmentAmounts[i]));
+      // Generate a non-random investor wallet address and make an investment.
+      address payable randomInvestorWallet = payable(
+        address(uint160(uint256(keccak256(abi.encodePacked("investor", investmentAmounts[i])))))
+      );
+      // Check if a previous investment failed, exit early if so
+      if (!safelyInvest(dim, investmentAmounts[i], randomInvestorWallet)) {
+        failureCount++;
+        break;
+      }
+      successCount++;
+    }
+    emit Log("investmentAmounts.length= ");
+    emit Log(Strings.toString(investmentAmounts.length));
+    emit Log("investmentAmounts= ");
+
+    return (successCount, failureCount);
+  }
+
+  /**
    * @notice Attempts to safely invest a given amount from an investor's wallet into a DecentralisedInvestmentManager
    (DIM) object.
    * @dev This function first transfers the investment amount (`someInvestmentAmount`) from the provided
@@ -230,9 +268,11 @@ contract TestInitialisationHelper is ITestInitialisationHelper, PRBTest, StdChea
       return true;
     } catch Error(string memory reason) {
       emit Log(reason);
+      emit Log("The above error happened.");
       return false;
     } catch (bytes memory reason) {
       emit LogBytes(reason);
+      emit Log("The above unknown error occurred.");
       return false;
     }
   }

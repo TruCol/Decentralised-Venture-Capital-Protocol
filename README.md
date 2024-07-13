@@ -139,7 +139,7 @@ clear && forge test -vvv
 Or to run a single test (function):
 
 ```sh
-clear && forge test -vvv --match-test testInvestorGetsSaasRevenue
+clear && forge test -vvv --match-test testRandomNrOfInvestments --fail-fast
 ```
 
 The `-vvv` is necessary to display the error messages that you wrote with the
@@ -150,7 +150,8 @@ assertions, in the CLI. Otherwise it just says: "test failed".
 Get a test coverage report:
 
 ```sh
-clear && forge coverage --report lcov --via-ir && genhtml -o report --branch-coverage lcov.info
+clear && forge coverage --report lcov --via-ir \
+&& genhtml -o report --branch-coverage lcov.info
 ```
 
 ## Gas Usage

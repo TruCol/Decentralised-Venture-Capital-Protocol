@@ -57,7 +57,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   /**
   @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
    */
-  function converthitRatesToString(
+  function convertHitRatesToString(
     HitRatesReturnAll memory hitRates
   ) public returns (string memory serialisedTextString) {
     string memory obj1 = "ThisValueDissapearsIntoTheVoid";
@@ -93,7 +93,7 @@ Afterwards, it can load that new file.
   function updateLogFile() public returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
     hitRates = initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
-    string memory serialisedTextString = converthitRatesToString(hitRates);
+    string memory serialisedTextString = convertHitRatesToString(hitRates);
     hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
     // Read the latest hitRates from file.
     bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
@@ -194,7 +194,7 @@ Afterwards, it can load that new file.
       ++hitRates.invalidInitialisations;
     }
     emit Log("Outputting File");
-    string memory serialisedTextString = converthitRatesToString(hitRates);
+    string memory serialisedTextString = convertHitRatesToString(hitRates);
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     emit Log("Outputted File");
   }

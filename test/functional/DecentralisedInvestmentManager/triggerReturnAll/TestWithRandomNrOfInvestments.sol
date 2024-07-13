@@ -17,7 +17,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "test/TestConstants.sol";
-import { VmSafe } from "forge-std/src/Vm.sol";
 
 /**
 Stores the counters used to track how often the different branches of the tests are covered.*/
@@ -27,6 +26,8 @@ struct HitRatesReturnAll {
   uint256 validInitialisations;
   uint256 validInvestments;
   uint256 invalidInitialisations;
+  uint256 invalidInvestments;
+  uint256 investmentOverflow;
 }
 
 interface IFuzzDebug {
@@ -37,7 +38,6 @@ interface IFuzzDebug {
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     uint256 investmentTarget,
-    uint256 firstInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
     uint8 randNrOfInvestmentTiers,
@@ -46,6 +46,17 @@ interface IFuzzDebug {
     uint8[_MAX_NR_OF_TIERS] memory randomMultiples,
     uint256[_MAX_NR_OF_INVESTMENTS] memory randomInvestments
   ) external;
+
+  // solhint-disable-next-line foundry-test-functions
+  function convertHitRatesToString(
+    HitRatesReturnAll memory hitRates
+  ) external returns (string memory serialisedTextString);
+
+  // solhint-disable-next-line foundry-test-functions
+  function updateLogFile() external returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates);
+
+  // solhint-disable-next-line foundry-test-functions
+  function initialiseHitRates() external pure returns (HitRatesReturnAll memory hitRates);
 }
 
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
@@ -58,14 +69,17 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   /**
   @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
    */
-  function converthitRatesToString(
+  // solhint-disable-next-line foundry-test-functions
+  function convertHitRatesToString(
     HitRatesReturnAll memory hitRates
-  ) public returns (string memory serialisedTextString) {
+  ) public override returns (string memory serialisedTextString) {
     string memory obj1 = "ThisValueDissapearsIntoTheVoid";
     vm.serializeUint(obj1, "invalidInitialisations", hitRates.invalidInitialisations);
     vm.serializeUint(obj1, "validInitialisations", hitRates.validInitialisations);
     vm.serializeUint(obj1, "validInvestments", hitRates.validInvestments);
     vm.serializeUint(obj1, "didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
+    vm.serializeUint(obj1, "invalidInvestments", hitRates.invalidInvestments);
+    vm.serializeUint(obj1, "investmentOverflow", hitRates.investmentOverflow);
     serialisedTextString = vm.serializeUint(
       obj1,
       "didNotreachInvestmentCeiling",
@@ -75,26 +89,14 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   }
 
   /**
-@dev Creates an empty struct with the counters for each test case set to 0. */
-  function initialiseHitRates() public pure returns (HitRatesReturnAll memory hitRates) {
-    return
-      HitRatesReturnAll({
-        didNotreachInvestmentCeiling: 0,
-        didReachInvestmentCeiling: 0,
-        validInitialisations: 0,
-        validInvestments: 0,
-        invalidInitialisations: 0
-      });
-  }
-
-  /**
 @dev Ensures the struct with the log data for this test file is exported into a log file if it does not yet exist.
 Afterwards, it can load that new file.
  */
-  function updateLogFile() public returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
+  // solhint-disable-next-line foundry-test-functions
+  function updateLogFile() public override returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
     hitRates = initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
-    string memory serialisedTextString = converthitRatesToString(hitRates);
+    string memory serialisedTextString = convertHitRatesToString(hitRates);
     hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
     // Read the latest hitRates from file.
     bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
@@ -124,7 +126,6 @@ Afterwards, it can load that new file.
     uint256 projectLeadFracNumerator,
     uint256 projectLeadFracDenominator,
     uint256 investmentTarget,
-    uint256 firstInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
     uint8 randNrOfInvestmentTiers,
@@ -152,60 +153,80 @@ Afterwards, it can load that new file.
       someArray: randomInvestments,
       nrOfDesiredElements: randNrOfInvestments
     });
-    // Map the investment target to the range (0, maximum(Ceilings)) to ensure the investment target can be reached.
-    investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
+    if (!_testMathHelper.sumOfNrsThrowsOverFlow({ numbers: investmentAmounts })) {
+      // Map the investment target to the range (0, maximum(Ceilings)) to ensure the investment target can be reached.
+      investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
 
-    // Initialise the dim contract, if the random parameters are invalid, an non-random dim is initialised for typing.
-    (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) = _testInitialisationHelper
-      .initialiseRandomDim({
-        projectLead: projectLead,
-        projectLeadFracNumerator: projectLeadFracNumerator,
-        projectLeadFracDenominator: projectLeadFracDenominator,
-        raisePeriod: raisePeriod,
-        investmentTarget: investmentTarget,
-        ceilings: sameNrOfCeilings,
-        multiples: multiples
-      });
-
-    // Check if the initialised dim is random or non-random value.
-    if (hasInitialisedRandomDim) {
-      ++hitRates.validInitialisations;
-
-      // TODO: Generate a non-random investor wallet address and make an investment.
-      address payable firstInvestorWallet = payable(address(uint160(uint256(keccak256(bytes("1"))))));
-
-      // Check if one is able to safely make the investments.
-      // TODO: convert into random number of investments.
-      if (
-        _testInitialisationHelper.safelyInvest({
-          dim: someDim,
-          someInvestmentAmount: firstInvestmentAmount,
-          someInvestorWallet: firstInvestorWallet
-        })
-      ) {
-        // Store that this random run was for a valid investment, (track it to export it later).
-        ++hitRates.validInvestments;
-
-        // Call the actual function that performs the test on the initialised dim contract.
-        _followUpTriggerReturnAll({
-          dim: someDim,
+      // Initialise the dim contract, if the random parameters are invalid, an non-random dim is initialised for typing.
+      (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) = _testInitialisationHelper
+        .initialiseRandomDim({
           projectLead: projectLead,
-          firstInvestmentAmount: firstInvestmentAmount,
-          investmentTarget: investmentTarget,
-          additionalWaitPeriod: additionalWaitPeriod,
+          projectLeadFracNumerator: projectLeadFracNumerator,
+          projectLeadFracDenominator: projectLeadFracDenominator,
           raisePeriod: raisePeriod,
-          maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1],
-          hitRates: hitRates
+          investmentTarget: investmentTarget,
+          ceilings: sameNrOfCeilings,
+          multiples: multiples
         });
-      } // TODO: else track invalid investment.
+
+      // Check if the initialised dim is random or non-random value.
+      if (hasInitialisedRandomDim) {
+        ++hitRates.validInitialisations;
+
+        // Check if one is able to safely make the random number of investments safely.
+        (uint256 successCount, uint256 failureCount) = _testInitialisationHelper.performRandomInvestments({
+          dim: someDim,
+          investmentAmounts: investmentAmounts
+        });
+
+        if (failureCount == 0) {
+          // Compute cumulative investment.
+          uint256 cumInvestmentAmount = _testMathHelper.computeSumOfArray({ numbers: investmentAmounts });
+
+          // Store that this random run was for a valid investment, (track it to export it later).
+          ++hitRates.validInvestments;
+
+          // Call the actual function that performs the test on the initialised dim contract.
+          _followUpTriggerReturnAll({
+            dim: someDim,
+            projectLead: projectLead,
+            cumInvestmentAmount: cumInvestmentAmount,
+            investmentTarget: investmentTarget,
+            additionalWaitPeriod: additionalWaitPeriod,
+            raisePeriod: raisePeriod,
+            maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1],
+            hitRates: hitRates
+          });
+        } else {
+          ++hitRates.invalidInvestments;
+        }
+      } else {
+        // Store that this random run did not permit a valid dim initialisation.
+        ++hitRates.invalidInitialisations;
+      }
     } else {
-      // Store that this random run did not permit a valid dim initialisation.
-      ++hitRates.invalidInitialisations;
+      ++hitRates.investmentOverflow;
     }
     emit Log("Outputting File");
-    string memory serialisedTextString = converthitRatesToString(hitRates);
+    string memory serialisedTextString = convertHitRatesToString(hitRates);
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     emit Log("Outputted File");
+  }
+
+  /**
+@dev Creates an empty struct with the counters for each test case set to 0. */
+  // solhint-disable-next-line foundry-test-functions
+  function initialiseHitRates() public pure override returns (HitRatesReturnAll memory hitRates) {
+    return
+      HitRatesReturnAll({
+        didNotreachInvestmentCeiling: 0,
+        didReachInvestmentCeiling: 0,
+        validInitialisations: 0,
+        validInvestments: 0,
+        invalidInitialisations: 0,
+        invalidInvestments: 0,
+        investmentOverflow: 0
+      });
   }
 
   /**
@@ -216,17 +237,18 @@ Afterwards, it can load that new file.
   To ensure the funds can be returned, the vm automatically simulates a fast forward of the time to beyond the raise
   period.
   @dev This is the actual test that this file executes. */
+  // solhint-disable-next-line foundry-test-functions
   function _followUpTriggerReturnAll(
     DecentralisedInvestmentManager dim,
     address projectLead,
     uint256 investmentTarget,
-    uint256 firstInvestmentAmount,
+    uint256 cumInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
     uint256 maxTierCeiling,
     HitRatesReturnAll memory hitRates
   ) internal {
-    if (firstInvestmentAmount >= investmentTarget) {
+    if (cumInvestmentAmount >= investmentTarget) {
       // Track that the investment ceiling was reached.
       ++hitRates.didReachInvestmentCeiling;
 
@@ -243,7 +265,7 @@ Afterwards, it can load that new file.
         abi.encodeWithSignature(
           "InvestmentTargetReached(string,uint256,uint256)",
           "Investment target reached!",
-          _helper.minimum(maxTierCeiling, firstInvestmentAmount),
+          _helper.minimum(maxTierCeiling, cumInvestmentAmount),
           investmentTarget
         )
       );

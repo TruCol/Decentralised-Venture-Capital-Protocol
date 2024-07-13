@@ -3,9 +3,12 @@ pragma solidity >=0.8.25 <0.9.0;
 import "test/TestConstants.sol";
 error InvalidSortedArrayWithDupes(string message, uint256 index, uint256 previousValue, uint256 currentValue);
 error CannotShortenArray(string message, uint256[_MAX_NR_OF_INVESTMENTS] someArray, uint256 nrOfDesiredElements);
+error OverflowError(string message, uint256[] someNrs);
 
 interface ITestMathHelper {
   function sumOfNrsThrowsOverFlow(uint256[] memory numbers) external pure returns (bool cumArrSumYieldsOverflow);
+
+  function computeSumOfArray(uint256[] memory numbers) external pure returns (uint256 cumArrSumYieldsOverflow);
 
   function canGetShortenedArray(
     uint256[_MAX_NR_OF_INVESTMENTS] memory someArray,
@@ -49,11 +52,25 @@ contract TestMathHelper is ITestMathHelper {
       // Check for overflow with the current sum
       if (yieldsOverflowAdd(currentSum, numbers[i])) {
         cumArrSumYieldsOverflow = true; // Overflow detected, return true
+        return cumArrSumYieldsOverflow;
       }
       currentSum = currentSum + numbers[i]; // Update the current sum
     }
 
     return cumArrSumYieldsOverflow;
+  }
+
+  function computeSumOfArray(uint256[] memory numbers) public pure override returns (uint256 currentSum) {
+    if (sumOfNrsThrowsOverFlow({ numbers: numbers })) {
+      revert OverflowError("No stack, still overflow.", numbers);
+    } else {
+      currentSum = 0; // Initialize current sum to 0.
+      uint256 nrOfNumbers = numbers.length;
+      for (uint256 i = 0; i < nrOfNumbers; ++i) {
+        currentSum = currentSum + numbers[i];
+      }
+      return currentSum;
+    }
   }
 
   function canGetShortenedArray(
