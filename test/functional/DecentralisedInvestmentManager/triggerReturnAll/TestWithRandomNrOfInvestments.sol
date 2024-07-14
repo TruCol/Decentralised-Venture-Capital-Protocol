@@ -12,7 +12,7 @@ import { Helper } from "../../../../src/Helper.sol";
 import { TestMathHelper } from "test/TestMathHelper.sol";
 import { TestInitialisationHelper } from "../../../TestInitialisationHelper.sol";
 import { TestFileLogging } from "../../../TestFileLogging.sol";
-
+import { IterableMapping } from "../../../IterableMapping.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -60,11 +60,17 @@ interface IFuzzDebug {
 }
 
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
+  using IterableMapping for IterableMapping.Map;
+  IterableMapping.Map private _map;
+
+  // mapping(bytes32 => uint256) public loggingMap;
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
   TestFileLogging private _testFileLogging;
   Helper private _helper;
   TestMathHelper private _testMathHelper;
+
+  // IterableMapping private _iterableMapping;
 
   /**
   @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
@@ -97,6 +103,7 @@ Afterwards, it can load that new file.
     hitRates = initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
     string memory serialisedTextString = convertHitRatesToString(hitRates);
+    // string memory something = _testFileLogging.convertHitRatesToString(hitRates);
     hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
     // Read the latest hitRates from file.
     bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
@@ -110,6 +117,25 @@ Afterwards, it can load that new file.
     _testInitialisationHelper = new TestInitialisationHelper();
     _testFileLogging = new TestFileLogging();
     _testMathHelper = new TestMathHelper();
+
+    map.set(address(0), 0);
+    map.set(address(1), 100);
+    map.set(address(2), 200); // insert
+    map.set(address(2), 200); // update
+    map.set(address(3), 300);
+
+    for (uint256 i = 0; i < map.size(); i++) {
+      address key = map.getKeyAtIndex(i);
+      assert(map.get(key) == i * 100);
+    }
+
+    map.remove(address(1));
+
+    // keys = [address(0), address(3), address(2)]
+    assert(map.size() == 3);
+    assert(map.getKeyAtIndex(0) == address(0));
+    assert(map.getKeyAtIndex(1) == address(3));
+    assert(map.getKeyAtIndex(2) == address(2));
 
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
@@ -251,6 +277,8 @@ Afterwards, it can load that new file.
     if (cumInvestmentAmount >= investmentTarget) {
       // Track that the investment ceiling was reached.
       ++hitRates.didReachInvestmentCeiling;
+      // loggingMap["didReachInvestmentCeiling"] = hitRates.didReachInvestmentCeiling;
+      map.set(address(0), hitRates.didReachInvestmentCeiling);
 
       // Only the projectLead can trigger the return of all funds.
       vm.prank(projectLead);
@@ -273,6 +301,8 @@ Afterwards, it can load that new file.
     } else {
       // Track that the investment ceiling was not reached by the randnom values.
       ++hitRates.didNotreachInvestmentCeiling;
+      // loggingMap["didNotreachInvestmentCeiling"] = hitRates.didNotreachInvestmentCeiling;
+      map.set(address(1), hitRates.didNotreachInvestmentCeiling);
 
       // TODO: Verify the dim contract contains the investment funds.
 

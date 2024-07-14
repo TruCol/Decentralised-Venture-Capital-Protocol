@@ -5,8 +5,42 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import "@openzeppelin/contracts/utils/Strings.sol";
+import { IterableMapping } from "./IterableMapping.sol";
 
 contract TestFileLogging is PRBTest, StdCheats {
+  using IterableMapping for IterableMapping.Map;
+  struct Map {
+    address[] keys;
+    mapping(address => uint256) values;
+    mapping(address => uint256) indexOf;
+    mapping(address => bool) inserted;
+  }
+
+  //  /**
+  //  @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
+  //   */
+  //  // solhint-disable-next-line foundry-test-functions
+  //  function convertHitRatesToString(
+  //    // mapping(bytes32 => uint256) loggingMap
+  //    Map memory  map
+  //  ) public returns (string memory serialisedTextString) {
+  //    string memory obj1 = "ThisValueDissapearsIntoTheVoid";
+  //    address key;
+  //     for (uint256 i = 0; i < map.size() -1; i++) {
+  //        key = map.getKeyAtIndex(i);
+  //        vm.serializeUint(obj1, key, map.get(key));
+  //        }
+  //
+  //    // The last instance is different because it needs to be stored into a variable.
+  //    key = map.getKeyAtIndex(map.size()-1);
+  //    serialisedTextString = vm.serializeUint(
+  //      obj1,
+  //      key,
+  //      map.get(key)
+  //    );
+  //    return serialisedTextString;
+  //  }
+
   function readDataFromFile(string memory path) public view returns (bytes memory data) {
     string memory fileContent = vm.readFile(path);
     data = vm.parseJson(fileContent);
