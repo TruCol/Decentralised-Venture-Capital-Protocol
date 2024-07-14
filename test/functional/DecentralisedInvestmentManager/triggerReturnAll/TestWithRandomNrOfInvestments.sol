@@ -47,12 +47,11 @@ interface IFuzzDebug {
     uint256[_MAX_NR_OF_INVESTMENTS] memory randomInvestments
   ) external;
 
-  
   // solhint-disable-next-line foundry-test-functions
-  function updateLogFile() external returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates);
+  // function updateLogFile() external returns (string memory hitRateFilePath);
 
   // solhint-disable-next-line foundry-test-functions
-  function initialiseHitRates() external pure returns (HitRatesReturnAll memory hitRates);
+  function initialiseHitRates() external;
 }
 
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
@@ -71,16 +70,26 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 Afterwards, it can load that new file.
  */
   // solhint-disable-next-line foundry-test-functions
-  function updateLogFile() public override returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
-    hitRates = initialiseHitRates();
+  function updateLogFile() public returns (string memory hitRateFilePath, bytes memory data) {
+    initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
     string memory serialisedTextString = _testFileLogging.convertHitRatesToString(_map.getKeys(), _map.getValues());
     hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
     // Read the latest hitRates from file.
-    bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
-    hitRates = abi.decode(data, (HitRatesReturnAll));
+    // bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
+    // hitRates = abi.decode(data, (HitRatesReturnAll));
+    data = _testFileLogging.readDataFromFile(hitRateFilePath);
 
-    return (hitRateFilePath, hitRates);
+    // _map = abi.decode(data, (IterableMapping.Map));
+    // IterableMapping.Map  memory something = abi.decode(data, (IterableMapping.Map));
+    console2.log("data");
+    // IterableMapping.Map  storage something = abi.decode(data, (IterableMapping));
+
+    // hitRates = abi.decode(data, (string[]));
+    // console2.log("hitRates=");
+    // emit Log(hitRates);
+    // console2.log(hitRates);
+    return (hitRateFilePath, data);
   }
 
   function setUp() public virtual override {
@@ -89,15 +98,6 @@ Afterwards, it can load that new file.
     _testFileLogging = new TestFileLogging();
     _testMathHelper = new TestMathHelper();
 
-    _map.set("hello0", 0);
-    _map.set("invalidInitialisations", 0);
-    _map.set("validInitialisations", 0);
-    _map.set("validInvestments", 0);
-    _map.set("didReachInvestmentCeiling", 0);
-    _map.set("invalidInvestments", 0);
-    _map.set("investmentOverflow", 0);
-    _map.set("didNotreachInvestmentCeiling", 0);
-    
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
       vm.removeFile(_LOG_TIME_CREATOR);
@@ -127,7 +127,7 @@ Afterwards, it can load that new file.
     uint256[] memory investmentAmounts;
 
     // Initialise the hit rate counter and accompanying logfile.
-    (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) = updateLogFile();
+    (string memory hitRateFilePath, bytes memory data) = updateLogFile();
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -158,7 +158,6 @@ Afterwards, it can load that new file.
 
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
-        ++hitRates.validInitialisations;
         _map.set("validInitialisations", _map.get("validInitialisations") + 1);
 
         // Check if one is able to safely make the random number of investments safely.
@@ -172,7 +171,6 @@ Afterwards, it can load that new file.
           uint256 cumInvestmentAmount = _testMathHelper.computeSumOfArray({ numbers: investmentAmounts });
 
           // Store that this random run was for a valid investment, (track it to export it later).
-          ++hitRates.validInvestments;
           _map.set("validInvestments", _map.get("validInvestments") + 1);
 
           // Call the actual function that performs the test on the initialised dim contract.
@@ -183,20 +181,16 @@ Afterwards, it can load that new file.
             investmentTarget: investmentTarget,
             additionalWaitPeriod: additionalWaitPeriod,
             raisePeriod: raisePeriod,
-            maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1],
-            hitRates: hitRates
+            maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1]
           });
         } else {
-          ++hitRates.invalidInvestments;
           _map.set("invalidInvestments", _map.get("invalidInvestments") + 1);
         }
       } else {
         // Store that this random run did not permit a valid dim initialisation.
-        ++hitRates.invalidInitialisations;
         _map.set("invalidInitialisations", _map.get("invalidInitialisations") + 1);
       }
     } else {
-      ++hitRates.investmentOverflow;
       _map.set("investmentOverflow", _map.get("investmentOverflow") + 1);
     }
     emit Log("Outputting File");
@@ -208,17 +202,14 @@ Afterwards, it can load that new file.
   /**
 @dev Creates an empty struct with the counters for each test case set to 0. */
   // solhint-disable-next-line foundry-test-functions
-  function initialiseHitRates() public pure override returns (HitRatesReturnAll memory hitRates) {
-    return
-      HitRatesReturnAll({
-        didNotreachInvestmentCeiling: 0,
-        didReachInvestmentCeiling: 0,
-        validInitialisations: 0,
-        validInvestments: 0,
-        invalidInitialisations: 0,
-        invalidInvestments: 0,
-        investmentOverflow: 0
-      });
+  function initialiseHitRates() public override {
+    _map.set("invalidInitialisations", 0);
+    _map.set("validInitialisations", 0);
+    _map.set("validInvestments", 0);
+    _map.set("didReachInvestmentCeiling", 0);
+    _map.set("invalidInvestments", 0);
+    _map.set("investmentOverflow", 0);
+    _map.set("didNotreachInvestmentCeiling", 0);
   }
 
   /**
@@ -237,14 +228,12 @@ Afterwards, it can load that new file.
     uint256 cumInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
-    uint256 maxTierCeiling,
-    HitRatesReturnAll memory hitRates
-  ) internal {
+    uint256 maxTierCeiling
+  ) internal // HitRatesReturnAll memory hitRates
+  {
     if (cumInvestmentAmount >= investmentTarget) {
       // Track that the investment ceiling was reached.
-      ++hitRates.didReachInvestmentCeiling;
-      // loggingMap["didReachInvestmentCeiling"] = hitRates.didReachInvestmentCeiling;
-      _map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
+      _map.set("didReachInvestmentCeiling", _map.get("didReachInvestmentCeiling") + 1);
 
       // Only the projectLead can trigger the return of all funds.
       vm.prank(projectLead);
@@ -266,7 +255,6 @@ Afterwards, it can load that new file.
       dim.triggerReturnAll();
     } else {
       // Track that the investment ceiling was not reached by the randnom values.
-      ++hitRates.didNotreachInvestmentCeiling;
       _map.set("didNotreachInvestmentCeiling", _map.get("didNotreachInvestmentCeiling") + 1);
 
       // TODO: Verify the dim contract contains the investment funds.
