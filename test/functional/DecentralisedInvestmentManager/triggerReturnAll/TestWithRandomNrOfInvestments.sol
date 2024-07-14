@@ -46,50 +46,28 @@ interface IFuzzDebug {
     uint8[_MAX_NR_OF_TIERS] memory randomMultiples,
     uint256[_MAX_NR_OF_INVESTMENTS] memory randomInvestments
   ) external;
-
-  // solhint-disable-next-line foundry-test-functions
-  // function updateLogFile() external returns (string memory hitRateFilePath);
-
-  // solhint-disable-next-line foundry-test-functions
-  function initialiseHitRates() external;
 }
 
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   using IterableMapping for IterableMapping.Map;
   IterableMapping.Map private _map;
 
-  // mapping(bytes32 => uint256) public loggingMap;
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
   TestFileLogging private _testFileLogging;
   Helper private _helper;
   TestMathHelper private _testMathHelper;
 
-  /**
-@dev Ensures the struct with the log data for this test file is exported into a log file if it does not yet exist.
-Afterwards, it can load that new file.
- */
+  /** @dev Creates an empty struct with the counters for each test case set to 0. */
   // solhint-disable-next-line foundry-test-functions
-  function updateLogFile() public returns (string memory hitRateFilePath, bytes memory data) {
-    initialiseHitRates();
-    // Output hit rates to file if they do not exist yet.
-    string memory serialisedTextString = _testFileLogging.convertHitRatesToString(_map.getKeys(), _map.getValues());
-    hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
-    // Read the latest hitRates from file.
-    // bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
-    // hitRates = abi.decode(data, (HitRatesReturnAll));
-    data = _testFileLogging.readDataFromFile(hitRateFilePath);
-
-    // _map = abi.decode(data, (IterableMapping.Map));
-    // IterableMapping.Map  memory something = abi.decode(data, (IterableMapping.Map));
-    console2.log("data");
-    // IterableMapping.Map  storage something = abi.decode(data, (IterableMapping));
-
-    // hitRates = abi.decode(data, (string[]));
-    // console2.log("hitRates=");
-    // emit Log(hitRates);
-    // console2.log(hitRates);
-    return (hitRateFilePath, data);
+  function _updateHitRates(HitRatesReturnAll memory hitRates) internal {
+    _map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
+    _map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
+    _map.set("validInitialisations", hitRates.validInitialisations);
+    _map.set("validInvestments", hitRates.validInvestments);
+    _map.set("invalidInitialisations", hitRates.invalidInitialisations);
+    _map.set("invalidInvestments", hitRates.invalidInvestments);
+    _map.set("investmentOverflow", hitRates.investmentOverflow);
   }
 
   function setUp() public virtual override {
@@ -126,8 +104,27 @@ Afterwards, it can load that new file.
     uint256[] memory sameNrOfCeilings;
     uint256[] memory investmentAmounts;
 
-    // Initialise the hit rate counter and accompanying logfile.
-    (string memory hitRateFilePath, bytes memory data) = updateLogFile();
+    // Initialise map with using a HitRatesReturnAll struct with 0 as values.
+    _updateHitRates({
+      hitRates: HitRatesReturnAll({
+        didNotreachInvestmentCeiling: 0,
+        didReachInvestmentCeiling: 0,
+        validInitialisations: 0,
+        validInvestments: 0,
+        invalidInitialisations: 0,
+        invalidInvestments: 0,
+        investmentOverflow: 0
+      })
+    });
+    // Export/initialise the hitrates to file, if the file does not exist, then read out the file with the HitRates.
+    (string memory hitRateFilePath, bytes memory data) = _testFileLogging.updateLogFile(
+      _map.getKeys(),
+      _map.getValues()
+    );
+    // Unpack HitRate data from file into HitRatesReturnAll object.
+    HitRatesReturnAll memory updatedHitrates = abi.decode(data, (HitRatesReturnAll));
+    // Update the hit rate mapping using the HitRatesReturnAll object.
+    _updateHitRates({ hitRates: updatedHitrates });
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -200,19 +197,6 @@ Afterwards, it can load that new file.
   }
 
   /**
-@dev Creates an empty struct with the counters for each test case set to 0. */
-  // solhint-disable-next-line foundry-test-functions
-  function initialiseHitRates() public override {
-    _map.set("invalidInitialisations", 0);
-    _map.set("validInitialisations", 0);
-    _map.set("validInvestments", 0);
-    _map.set("didReachInvestmentCeiling", 0);
-    _map.set("invalidInvestments", 0);
-    _map.set("investmentOverflow", 0);
-    _map.set("didNotreachInvestmentCeiling", 0);
-  }
-
-  /**
   Tests whether the triggerReturnAll() function returns all funds from the dim contract if the investment ceiling is
   reached. Otherwise it verifies the triggerReturnAll() function throws an error saying the investment target is
   reached.
@@ -228,9 +212,8 @@ Afterwards, it can load that new file.
     uint256 cumInvestmentAmount,
     uint32 additionalWaitPeriod,
     uint32 raisePeriod,
-    uint256 maxTierCeiling
-  ) internal // HitRatesReturnAll memory hitRates
-  {
+    uint256 maxTierCeiling // HitRatesReturnAll memory hitRates
+  ) internal {
     if (cumInvestmentAmount >= investmentTarget) {
       // Track that the investment ceiling was reached.
       _map.set("didReachInvestmentCeiling", _map.get("didReachInvestmentCeiling") + 1);

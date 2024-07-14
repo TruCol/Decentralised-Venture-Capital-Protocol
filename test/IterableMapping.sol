@@ -1,5 +1,6 @@
 pragma solidity >=0.8.25 <0.9.0;
 import "test/TestConstants.sol";
+import { console2 } from "forge-std/src/console2.sol";
 
 library IterableMapping {
   // Iterable mapping from string[] to uint;
@@ -20,8 +21,11 @@ library IterableMapping {
 
   function getValues(Map storage map) public view returns (uint256[] memory) {
     uint256[] memory listOfValues = new uint256[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
-    for (uint256 i = 0; i < map.keys.length - 1; i++) {
-      listOfValues[i] = map.values[map.keys[i]];
+
+    if (map.keys.length > 1) {
+      for (uint256 i = 0; i < map.keys.length - 1; i++) {
+        listOfValues[i] = map.values[map.keys[i]];
+      }
     }
     return listOfValues;
   }

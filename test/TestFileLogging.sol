@@ -1,5 +1,5 @@
 pragma solidity >=0.8.25 <0.9.0;
-
+import { console2 } from "forge-std/src/console2.sol";
 import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -33,13 +33,20 @@ contract TestFileLogging is PRBTest, StdCheats {
     }
 
     string memory obj1 = "ThisValueDissapearsIntoTheVoid";
-    for (uint256 i = 0; i < keys.length - 1; i++) {
-      vm.serializeUint(obj1, keys[i], values[i]);
+    if (keys.length > 1) {
+      for (uint256 i = 0; i < keys.length - 1; i++) {
+        vm.serializeUint(obj1, keys[i], values[i]);
+      }
     }
 
     // The last instance is different because it needs to be stored into a variable.
-    uint256 lastKeyIndex = keys.length - 1;
-    serialisedTextString = vm.serializeUint(obj1, keys[lastKeyIndex], values[lastKeyIndex]);
+    if (keys.length > 0) {
+      uint256 lastKeyIndex = keys.length - 1;
+      serialisedTextString = vm.serializeUint(obj1, keys[lastKeyIndex], values[lastKeyIndex]);
+    } else {
+      serialisedTextString = vm.serializeUint(obj1, "NoKeysFound", values[0]);
+    }
+
     return serialisedTextString;
   }
 
@@ -90,5 +97,23 @@ contract TestFileLogging is PRBTest, StdCheats {
       }
     }
     return hitRateFilePath;
+  }
+
+  /**
+@dev Ensures the struct with the log data for this test file is exported into a log file if it does not yet exist.
+Afterwards, it can load that new file.
+ */
+  // solhint-disable-next-line foundry-test-functions
+  function updateLogFile(
+    string[] memory keys,
+    uint256[] memory values
+  ) public returns (string memory hitRateFilePath, bytes memory data) {
+    // initialiseHitRates();
+    // Output hit rates to file if they do not exist yet.
+    string memory serialisedTextString = convertHitRatesToString(keys, values);
+    hitRateFilePath = createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
+    // Read the latest hitRates from file.
+    data = readDataFromFile(hitRateFilePath);
+    return (hitRateFilePath, data);
   }
 }
