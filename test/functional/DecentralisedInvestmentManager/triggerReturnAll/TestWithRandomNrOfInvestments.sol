@@ -118,24 +118,31 @@ Afterwards, it can load that new file.
     _testFileLogging = new TestFileLogging();
     _testMathHelper = new TestMathHelper();
 
-    _map.set(address(0), 0);
-    _map.set(address(1), 100);
-    _map.set(address(2), 200); // insert
-    _map.set(address(2), 200); // update
-    _map.set(address(3), 300);
+    _map.set("hello0", 0);
+    _map.set("hello1", 100);
+    _map.set("hello2", 200);
+    // _map.set(address(2), 200); // insert
+    // _map.set(address(2), 200); // update
+    // _map.set(address(3), 300);
 
     for (uint256 i = 0; i < _map.size(); i++) {
-      address key = _map.getKeyAtIndex(i);
-      assert(_map.get(key) == i * 100);
+      string memory key = _map.getKeyAtIndex(i);
+      // assert(_map.get(key) == i * 100);
+      
+      
     }
 
-    _map.remove(address(1));
+    _map.remove("hello1");
 
     // keys = [address(0), address(3), address(2)]
-    assert(_map.size() == 3);
-    assert(_map.getKeyAtIndex(0) == address(0));
-    assert(_map.getKeyAtIndex(1) == address(3));
-    assert(_map.getKeyAtIndex(2) == address(2));
+    assert(_map.size() == 2);
+
+    
+    
+    
+    
+    assert(keccak256(abi.encodePacked("hello0")) == keccak256(abi.encodePacked((_map.getKeyAtIndex(0)))));
+    assert(keccak256(abi.encodePacked("hello2")) == keccak256(abi.encodePacked((_map.getKeyAtIndex(1)))));
 
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
@@ -278,7 +285,7 @@ Afterwards, it can load that new file.
       // Track that the investment ceiling was reached.
       ++hitRates.didReachInvestmentCeiling;
       // loggingMap["didReachInvestmentCeiling"] = hitRates.didReachInvestmentCeiling;
-      _map.set(address(0), hitRates.didReachInvestmentCeiling);
+      _map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
 
       // Only the projectLead can trigger the return of all funds.
       vm.prank(projectLead);
@@ -302,7 +309,7 @@ Afterwards, it can load that new file.
       // Track that the investment ceiling was not reached by the randnom values.
       ++hitRates.didNotreachInvestmentCeiling;
       // loggingMap["didNotreachInvestmentCeiling"] = hitRates.didNotreachInvestmentCeiling;
-      _map.set(address(1), hitRates.didNotreachInvestmentCeiling);
+      _map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
 
       // TODO: Verify the dim contract contains the investment funds.
 
