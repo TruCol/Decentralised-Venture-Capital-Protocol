@@ -6,40 +6,42 @@ import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 import { IterableMapping } from "./IterableMapping.sol";
+import "test/TestConstants.sol";
+error InvalidExportLogMapError(string message, string[] keys, uint256[] values, uint256);
 
 contract TestFileLogging is PRBTest, StdCheats {
   using IterableMapping for IterableMapping.Map;
-  struct Map {
-    address[] keys;
-    mapping(address => uint256) values;
-    mapping(address => uint256) indexOf;
-    mapping(address => bool) inserted;
-  }
 
-  //  /**
-  //  @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
-  //   */
-  //  // solhint-disable-next-line foundry-test-functions
-  //  function convertHitRatesToString(
-  //    // mapping(bytes32 => uint256) loggingMap
-  //    Map memory  map
-  //  ) public returns (string memory serialisedTextString) {
-  //    string memory obj1 = "ThisValueDissapearsIntoTheVoid";
-  //    address key;
-  //     for (uint256 i = 0; i < map.size() -1; i++) {
-  //        key = map.getKeyAtIndex(i);
-  //        vm.serializeUint(obj1, key, map.get(key));
-  //        }
-  //
-  //    // The last instance is different because it needs to be stored into a variable.
-  //    key = map.getKeyAtIndex(map.size()-1);
-  //    serialisedTextString = vm.serializeUint(
-  //      obj1,
-  //      key,
-  //      map.get(key)
-  //    );
-  //    return serialisedTextString;
-  //  }
+  // IterableMapping.Map private map;
+
+  /**
+    @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
+     */
+  // solhint-disable-next-line foundry-test-functions
+  function convertHitRatesToString(
+    // mapping(bytes32 => uint256) loggingMap
+    string[] memory keys,
+    uint256[] memory values
+  ) public returns (string memory serialisedTextString) {
+    if (keys.length > _MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE) {
+      revert InvalidExportLogMapError(
+        "More log keys than supported.",
+        keys,
+        values,
+        _MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE
+      );
+    }
+
+    string memory obj1 = "ThisValueDissapearsIntoTheVoid";
+    for (uint256 i = 0; i < keys.length - 1; i++) {
+      vm.serializeUint(obj1, keys[i], values[i]);
+    }
+
+    // The last instance is different because it needs to be stored into a variable.
+    uint256 lastKeyIndex = keys.length - 1;
+    serialisedTextString = vm.serializeUint(obj1, keys[lastKeyIndex], values[lastKeyIndex]);
+    return serialisedTextString;
+  }
 
   function readDataFromFile(string memory path) public view returns (bytes memory data) {
     string memory fileContent = vm.readFile(path);

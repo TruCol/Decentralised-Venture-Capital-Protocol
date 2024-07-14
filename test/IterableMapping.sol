@@ -1,4 +1,5 @@
 pragma solidity >=0.8.25 <0.9.0;
+import "test/TestConstants.sol";
 
 library IterableMapping {
   // Iterable mapping from string[] to uint;
@@ -11,6 +12,18 @@ library IterableMapping {
 
   function get(Map storage map, string memory key) public view returns (uint256) {
     return map.values[key];
+  }
+
+  function getKeys(Map storage map) public view returns (string[] memory) {
+    return map.keys;
+  }
+
+  function getValues(Map storage map) public view returns (uint256[] memory) {
+    uint256[] memory listOfValues = new uint256[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
+    for (uint256 i = 0; i < map.keys.length - 1; i++) {
+      listOfValues[i] = map.values[map.keys[i]];
+    }
+    return listOfValues;
   }
 
   function getKeyAtIndex(Map storage map, uint256 index) public view returns (string memory) {

@@ -3,6 +3,10 @@ pragma solidity >=0.8.25 <0.9.0;
 uint32 constant _MAX_NR_OF_TIERS = 100;
 uint32 constant _MAX_NR_OF_INVESTMENTS = 100000;
 
+/** @dev The arrays with the values of the parameters that are logged need to be a memory array, which means they need
+to have a predetermined length. This is that length.*/
+uint32 constant _MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE = 50;
+
 /** @dev I am not able to change and store a (boolean) value over multiple fuzz runs in a single test contract.
 Since I keep track of the hits of each test branch of the fuzz test runs cumulatively, I count how often
 each branch is hit. Since I cannot preserve values over multiple fuzz runs (they are reset to their initial value each

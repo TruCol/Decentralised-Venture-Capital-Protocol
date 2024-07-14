@@ -47,11 +47,7 @@ interface IFuzzDebug {
     uint256[_MAX_NR_OF_INVESTMENTS] memory randomInvestments
   ) external;
 
-  // solhint-disable-next-line foundry-test-functions
-  function convertHitRatesToString(
-    HitRatesReturnAll memory hitRates
-  ) external returns (string memory serialisedTextString);
-
+  
   // solhint-disable-next-line foundry-test-functions
   function updateLogFile() external returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates);
 
@@ -70,30 +66,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   Helper private _helper;
   TestMathHelper private _testMathHelper;
 
-  // IterableMapping private _iterableMapping;
-
-  /**
-  @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
-   */
-  // solhint-disable-next-line foundry-test-functions
-  function convertHitRatesToString(
-    HitRatesReturnAll memory hitRates
-  ) public override returns (string memory serialisedTextString) {
-    string memory obj1 = "ThisValueDissapearsIntoTheVoid";
-    vm.serializeUint(obj1, "invalidInitialisations", hitRates.invalidInitialisations);
-    vm.serializeUint(obj1, "validInitialisations", hitRates.validInitialisations);
-    vm.serializeUint(obj1, "validInvestments", hitRates.validInvestments);
-    vm.serializeUint(obj1, "didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
-    vm.serializeUint(obj1, "invalidInvestments", hitRates.invalidInvestments);
-    vm.serializeUint(obj1, "investmentOverflow", hitRates.investmentOverflow);
-    serialisedTextString = vm.serializeUint(
-      obj1,
-      "didNotreachInvestmentCeiling",
-      hitRates.didNotreachInvestmentCeiling
-    );
-    return serialisedTextString;
-  }
-
   /**
 @dev Ensures the struct with the log data for this test file is exported into a log file if it does not yet exist.
 Afterwards, it can load that new file.
@@ -102,8 +74,7 @@ Afterwards, it can load that new file.
   function updateLogFile() public override returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
     hitRates = initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
-    string memory serialisedTextString = convertHitRatesToString(hitRates);
-    // string memory something = _testFileLogging.convertHitRatesToString(hitRates);
+    string memory serialisedTextString = _testFileLogging.convertHitRatesToString(_map.getKeys(), _map.getValues());
     hitRateFilePath = _testFileLogging.createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
     // Read the latest hitRates from file.
     bytes memory data = _testFileLogging.readDataFromFile(hitRateFilePath);
@@ -119,31 +90,14 @@ Afterwards, it can load that new file.
     _testMathHelper = new TestMathHelper();
 
     _map.set("hello0", 0);
-    _map.set("hello1", 100);
-    _map.set("hello2", 200);
-    // _map.set(address(2), 200); // insert
-    // _map.set(address(2), 200); // update
-    // _map.set(address(3), 300);
-
-    for (uint256 i = 0; i < _map.size(); i++) {
-      string memory key = _map.getKeyAtIndex(i);
-      // assert(_map.get(key) == i * 100);
-      
-      
-    }
-
-    _map.remove("hello1");
-
-    // keys = [address(0), address(3), address(2)]
-    assert(_map.size() == 2);
-
+    _map.set("invalidInitialisations", 0);
+    _map.set("validInitialisations", 0);
+    _map.set("validInvestments", 0);
+    _map.set("didReachInvestmentCeiling", 0);
+    _map.set("invalidInvestments", 0);
+    _map.set("investmentOverflow", 0);
+    _map.set("didNotreachInvestmentCeiling", 0);
     
-    
-    
-    
-    assert(keccak256(abi.encodePacked("hello0")) == keccak256(abi.encodePacked((_map.getKeyAtIndex(0)))));
-    assert(keccak256(abi.encodePacked("hello2")) == keccak256(abi.encodePacked((_map.getKeyAtIndex(1)))));
-
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
       vm.removeFile(_LOG_TIME_CREATOR);
@@ -205,6 +159,7 @@ Afterwards, it can load that new file.
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
         ++hitRates.validInitialisations;
+        _map.set("validInitialisations", _map.get("validInitialisations") + 1);
 
         // Check if one is able to safely make the random number of investments safely.
         (uint256 successCount, uint256 failureCount) = _testInitialisationHelper.performRandomInvestments({
@@ -218,6 +173,7 @@ Afterwards, it can load that new file.
 
           // Store that this random run was for a valid investment, (track it to export it later).
           ++hitRates.validInvestments;
+          _map.set("validInvestments", _map.get("validInvestments") + 1);
 
           // Call the actual function that performs the test on the initialised dim contract.
           _followUpTriggerReturnAll({
@@ -232,16 +188,19 @@ Afterwards, it can load that new file.
           });
         } else {
           ++hitRates.invalidInvestments;
+          _map.set("invalidInvestments", _map.get("invalidInvestments") + 1);
         }
       } else {
         // Store that this random run did not permit a valid dim initialisation.
         ++hitRates.invalidInitialisations;
+        _map.set("invalidInitialisations", _map.get("invalidInitialisations") + 1);
       }
     } else {
       ++hitRates.investmentOverflow;
+      _map.set("investmentOverflow", _map.get("investmentOverflow") + 1);
     }
     emit Log("Outputting File");
-    string memory serialisedTextString = convertHitRatesToString(hitRates);
+    string memory serialisedTextString = _testFileLogging.convertHitRatesToString(_map.getKeys(), _map.getValues());
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     emit Log("Outputted File");
   }
@@ -308,8 +267,7 @@ Afterwards, it can load that new file.
     } else {
       // Track that the investment ceiling was not reached by the randnom values.
       ++hitRates.didNotreachInvestmentCeiling;
-      // loggingMap["didNotreachInvestmentCeiling"] = hitRates.didNotreachInvestmentCeiling;
-      _map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
+      _map.set("didNotreachInvestmentCeiling", _map.get("didNotreachInvestmentCeiling") + 1);
 
       // TODO: Verify the dim contract contains the investment funds.
 
