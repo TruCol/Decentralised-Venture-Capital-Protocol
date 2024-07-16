@@ -90,7 +90,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 @dev Ensures the struct with the log data for this test file is exported into a log file if it does not yet exist.
 Afterwards, it can load that new file.
  */
-  function updateLogFile() public returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) {
+  function createLogIfNotExistAndReadLogData()
+    public
+    returns (string memory hitRateFilePath, HitRatesReturnAll memory hitRates)
+  {
     hitRates = initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
     string memory serialisedTextString = convertHitRatesToString(hitRates);
@@ -135,7 +138,7 @@ Afterwards, it can load that new file.
     uint256[] memory sameNrOfCeilings;
 
     // Initialise the hit rate counter and accompanying logfile.
-    (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) = updateLogFile();
+    (string memory hitRateFilePath, HitRatesReturnAll memory hitRates) = createLogIfNotExistAndReadLogData();
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({

@@ -23,7 +23,7 @@ library IterableMapping {
     uint256[] memory listOfValues = new uint256[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
 
     if (map.keys.length > 1) {
-      for (uint256 i = 0; i < map.keys.length - 1; i++) {
+      for (uint256 i = 0; i < map.keys.length; i++) {
         listOfValues[i] = map.values[map.keys[i]];
       }
     }

@@ -58,7 +58,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   Helper private _helper;
   TestMathHelper private _testMathHelper;
 
-  /** @dev Creates an empty struct with the counters for each test case set to 0. */
   // solhint-disable-next-line foundry-test-functions
   function _updateHitRates(HitRatesReturnAll memory hitRates) internal {
     _map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
@@ -68,6 +67,20 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     _map.set("invalidInitialisations", hitRates.invalidInitialisations);
     _map.set("invalidInvestments", hitRates.invalidInvestments);
     _map.set("investmentOverflow", hitRates.investmentOverflow);
+  }
+
+  function _createHitRatesFileIfNotExistAndReadHitRates() internal returns (string memory) {
+    // Export and/or initialise the hitrates to file, if the file does not exist, then read out file with the HitRates.
+    (string memory hitRateFilePath, bytes memory data) = _testFileLogging.createLogIfNotExistAndReadLogData(
+      _map.getKeys(),
+      _map.getValues()
+    );
+    // Unpack HitRate data from file into HitRatesReturnAll object.
+    HitRatesReturnAll memory updatedHitrates = abi.decode(data, (HitRatesReturnAll));
+
+    // Update the hit rate mapping using the HitRatesReturnAll object.
+    _updateHitRates({ hitRates: updatedHitrates });
+    return hitRateFilePath;
   }
 
   function setUp() public virtual override {
@@ -116,15 +129,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         investmentOverflow: 0
       })
     });
-    // Export/initialise the hitrates to file, if the file does not exist, then read out the file with the HitRates.
-    (string memory hitRateFilePath, bytes memory data) = _testFileLogging.updateLogFile(
-      _map.getKeys(),
-      _map.getValues()
-    );
-    // Unpack HitRate data from file into HitRatesReturnAll object.
-    HitRatesReturnAll memory updatedHitrates = abi.decode(data, (HitRatesReturnAll));
-    // Update the hit rate mapping using the HitRatesReturnAll object.
-    _updateHitRates({ hitRates: updatedHitrates });
+
+    string memory hitRateFilePath = _createHitRatesFileIfNotExistAndReadHitRates();
+    // The map with hitrates has been exported to 0 if the test starts and the file did not yet exist. If the file did
+    // exist, its data is read in and stored into the map.
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -137,6 +145,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       someArray: randomInvestments,
       nrOfDesiredElements: randNrOfInvestments
     });
+
     if (!_testMathHelper.sumOfNrsThrowsOverFlow({ numbers: investmentAmounts })) {
       // Map the investment target to the range (0, maximum(Ceilings)) to ensure the investment target can be reached.
       investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
@@ -155,7 +164,11 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
+        emit Log("Before _map.get('validInitialisations')=");
+        emit Log(Strings.toString(_map.get("validInitialisations")));
         _map.set("validInitialisations", _map.get("validInitialisations") + 1);
+        emit Log("After _map.get('validInitialisations')=");
+        emit Log(Strings.toString(_map.get("validInitialisations")));
 
         // Check if one is able to safely make the random number of investments safely.
         (uint256 successCount, uint256 failureCount) = _testInitialisationHelper.performRandomInvestments({
@@ -168,7 +181,11 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           uint256 cumInvestmentAmount = _testMathHelper.computeSumOfArray({ numbers: investmentAmounts });
 
           // Store that this random run was for a valid investment, (track it to export it later).
+          emit Log("Before _map.get('validInvestments')=");
+          emit Log(Strings.toString(_map.get("validInvestments")));
           _map.set("validInvestments", _map.get("validInvestments") + 1);
+          emit Log("After _map.get('validInvestments')=");
+          emit Log(Strings.toString(_map.get("validInvestments")));
 
           // Call the actual function that performs the test on the initialised dim contract.
           _followUpTriggerReturnAll({
@@ -188,12 +205,18 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         _map.set("invalidInitialisations", _map.get("invalidInitialisations") + 1);
       }
     } else {
+      emit Log("FOUND OVERFLOW");
+      emit Log("BEFORE=");
+      emit Log(Strings.toString(_map.get("investmentOverflow")));
       _map.set("investmentOverflow", _map.get("investmentOverflow") + 1);
+      emit Log("AFTER=");
+      emit Log(Strings.toString(_map.get("investmentOverflow")));
     }
-    emit Log("Outputting File");
+
     string memory serialisedTextString = _testFileLogging.convertHitRatesToString(_map.getKeys(), _map.getValues());
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
-    emit Log("Outputted File");
+    emit Log("Outputting File: serialisedTextString");
+    emit Log(serialisedTextString);
   }
 
   /**
@@ -241,7 +264,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       _map.set("didNotreachInvestmentCeiling", _map.get("didNotreachInvestmentCeiling") + 1);
 
       // TODO: Verify the dim contract contains the investment funds.
-
       vm.prank(projectLead);
       // solhint-disable-next-line not-rely-on-time
       vm.warp(block.timestamp + raisePeriod + additionalWaitPeriod);

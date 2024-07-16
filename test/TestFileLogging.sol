@@ -42,6 +42,7 @@ contract TestFileLogging is PRBTest, StdCheats {
     // The last instance is different because it needs to be stored into a variable.
     if (keys.length > 0) {
       uint256 lastKeyIndex = keys.length - 1;
+
       serialisedTextString = vm.serializeUint(obj1, keys[lastKeyIndex], values[lastKeyIndex]);
     } else {
       serialisedTextString = vm.serializeUint(obj1, "NoKeysFound", values[0]);
@@ -104,7 +105,7 @@ contract TestFileLogging is PRBTest, StdCheats {
 Afterwards, it can load that new file.
  */
   // solhint-disable-next-line foundry-test-functions
-  function updateLogFile(
+  function createLogIfNotExistAndReadLogData(
     string[] memory keys,
     uint256[] memory values
   ) public returns (string memory hitRateFilePath, bytes memory data) {

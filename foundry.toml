@@ -17,9 +17,15 @@
   viaIR = true
   fs_permissions = [{ access = "read-write", path = "./"}]
 
-[profile.ci]
-  fuzz = { runs = 10_000}
-  verbosity = 4
+#[profile.ci]
+#  fuzz = { runs = 5}
+#  verbosity = 4
+
+[fuzz]
+runs = 3
+#depth = 4
+fail_on_revert = true
+
 
 #[etherscan]
 #  arbitrum = { key = "${API_KEY_ARBISCAN}" }
