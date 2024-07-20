@@ -2,6 +2,7 @@ pragma solidity >=0.8.25 <0.9.0;
 import { console2 } from "forge-std/src/console2.sol";
 import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
+
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -51,10 +52,26 @@ contract TestFileLogging is PRBTest, StdCheats {
     return serialisedTextString;
   }
 
-  function readDataFromFile(string memory path) public view returns (bytes memory data) {
+  function readDataFromFile(string memory path) public returns (bytes memory jsonData) {
     string memory fileContent = vm.readFile(path);
-    data = vm.parseJson(fileContent);
-    return data;
+    jsonData = vm.parseJson(fileContent);
+
+    string[] memory firstKeys = new string[](jsonData.length);
+    for (uint256 i = 0; i < firstKeys.length; i++) {
+      // This yields empty firstKeys[i] values like: ""
+      emit Log("firstKeysTHEKEY=");
+      emit Log(firstKeys[i]);
+    }
+
+    // I do not yet know what the key is if I want to get the list of keys.
+    // "hello" is not in that file, so this throws an error:
+    string[] memory secondKeys = vm.parseJsonKeys(fileContent, "hello");
+    for (uint256 i = 0; i < secondKeys.length; i++) {
+      emit Log("THEKEY=");
+      emit Log(secondKeys[i]);
+    }
+
+    return jsonData;
   }
 
   function createFileIfNotExists(

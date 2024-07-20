@@ -2,6 +2,37 @@ pragma solidity >=0.8.25 <0.9.0;
 import "test/TestConstants.sol";
 import { console2 } from "forge-std/src/console2.sol";
 
+/**
+Stores the counters used to track how often the different branches of the tests are covered.*/
+struct HitRatesReturnAll {
+  uint256 a;
+  uint256 b;
+  uint256 c;
+  uint256 d;
+  uint256 e;
+  uint256 f;
+  uint256 g;
+  uint256 h;
+  uint256 i;
+  uint256 j;
+  uint256 k;
+  uint256 l;
+  uint256 m;
+  uint256 n;
+  uint256 o;
+  uint256 p;
+  uint256 q;
+  uint256 r;
+  uint256 s;
+  uint256 t;
+  uint256 u;
+  uint256 v;
+  uint256 w;
+  uint256 x;
+  uint256 y;
+  uint256 z;
+}
+
 library IterableMapping {
   // Iterable mapping from string[] to uint;
   struct Map {
@@ -65,5 +96,11 @@ library IterableMapping {
 
     map.keys[index] = lastKey;
     map.keys.pop();
+  }
+
+  /** Converts the data that is read from the json into this mapping.
+  Use an export struct.*/
+  function dataToMapping(Map storage map) public view returns (string[] memory) {
+    return map.keys;
   }
 }

@@ -5,7 +5,7 @@ uint32 constant _MAX_NR_OF_INVESTMENTS = 100000;
 
 /** @dev The arrays with the values of the parameters that are logged need to be a memory array, which means they need
 to have a predetermined length. This is that length.*/
-uint32 constant _MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE = 50;
+uint32 constant _MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE = 26;
 
 /** @dev I am not able to change and store a (boolean) value over multiple fuzz runs in a single test contract.
 Since I keep track of the hits of each test branch of the fuzz test runs cumulatively, I count how often
