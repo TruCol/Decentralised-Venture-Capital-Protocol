@@ -1,10 +1,10 @@
 pragma solidity >=0.8.25 <0.9.0;
 import "test/TestConstants.sol";
 import { console2 } from "forge-std/src/console2.sol";
-
+import { TestFileLogging } from "./TestFileLogging.sol";
 /**
 Stores the counters used to track how often the different branches of the tests are covered.*/
-struct HitRatesReturnAll {
+struct LogParams {
   uint256 a;
   uint256 b;
   uint256 c;
@@ -41,6 +41,7 @@ library IterableMapping {
     mapping(string => uint256) indexOf;
     mapping(string => bool) inserted;
   }
+  TestFileLogging private _testFileLogging;
 
   function get(Map storage map, string memory key) public view returns (uint256) {
     return map.values[key];
@@ -99,8 +100,41 @@ library IterableMapping {
   }
 
   /** Converts the data that is read from the json into this mapping.
-  Use an export struct.*/
+  Use an export struct.
+
+  The come in unsorted. Then they are written to a file in a sorted fashion.
+  Then they are read from file, and they can be mapped to the struct a-z.
+  Then the struct values can be re-assigned to the sorted keys. So the mapping keys
+  need to be sorted first, and then you can enumerate over the keys with a counter i
+  that can be re-used to get the value out of the struct. This value can then be
+  used to overwrite the existing value.
+
+  - Sort an array of keys.
+  - Enumerate over the keys with a counter.
+  - Read the hitrate file from the library.
+  */
   function dataToMapping(Map storage map) public view returns (string[] memory) {
+    (string memory hitRateFilePath, bytes memory data) = _testFileLogging.createLogIfNotExistAndReadLogData(
+      map.getKeys(),
+      map.getValues()
+    );
+    // Unpack HitRate data from file into HitRatesReturnAll object.
+    LogParams memory updatedHitrates = abi.decode(data, (LogParams));
+
+    // Update the hit rate mapping using the HitRatesReturnAll object.
+    _updateHitRates({ hitRates: updatedHitrates });
+
     return map.keys;
+  }
+
+  // solhint-disable-next-line foundry-test-functions
+  function _updateHitRates(LogParams memory hitRates) internal {
+    map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
+    map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
+    map.set("validInitialisations", hitRates.validInitialisations);
+    map.set("validInvestments", hitRates.validInvestments);
+    map.set("invalidInitialisations", hitRates.invalidInitialisations);
+    map.set("invalidInvestments", hitRates.invalidInvestments);
+    map.set("investmentOverflow", hitRates.investmentOverflow);
   }
 }
