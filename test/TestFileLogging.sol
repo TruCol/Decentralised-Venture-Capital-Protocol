@@ -125,13 +125,21 @@ Afterwards, it can load that new file.
   function createLogIfNotExistAndReadLogData(
     string[] memory keys,
     uint256[] memory values
-  ) public returns (string memory hitRateFilePath, bytes memory data) {
+  ) public returns (string memory hitRateFilePath) {
     // initialiseHitRates();
     // Output hit rates to file if they do not exist yet.
     string memory serialisedTextString = convertHitRatesToString(keys, values);
     hitRateFilePath = createLogFileIfItDoesNotExist(_LOG_TIME_CREATOR, serialisedTextString);
+    return (hitRateFilePath);
+  }
+
+
+  // solhint-disable-next-line foundry-test-functions
+  function readLogData(
+    string memory hitRateFilePath
+  ) public returns ( bytes memory data) {
     // Read the latest hitRates from file.
     data = readDataFromFile(hitRateFilePath);
-    return (hitRateFilePath, data);
+    return data;
   }
 }

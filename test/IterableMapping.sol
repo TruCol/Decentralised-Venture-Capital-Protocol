@@ -42,6 +42,7 @@ library IterableMapping {
     mapping(string => bool) inserted;
   }
   TestFileLogging private _testFileLogging;
+   string private  _hitRateFilePath;
 
   function get(Map storage map, string memory key) public view returns (uint256) {
     return map.values[key];
@@ -99,10 +100,24 @@ library IterableMapping {
     map.keys.pop();
   }
 
+  function manageHitRateLogging(Map storage map) public view {
+
+  }
+
+  /**
+  Flow B.
+  0. Initialise the mapping at all 0 values, and export those to file and set them in the struct.
+  Loop:
+    1. The values from the log file are read from file and overwrite those in the mapping. 
+    2. The code is ran, the mapping values are updated.
+    3. The mapping values are logged to file.
+   */
+
   /** Converts the data that is read from the json into this mapping.
   Use an export struct.
 
-  The come in unsorted. Then they are written to a file in a sorted fashion.
+  The mapping key value pairs come in unsorted. Then they are written to a file
+  in a sorted fashion.
   Then they are read from file, and they can be mapped to the struct a-z.
   Then the struct values can be re-assigned to the sorted keys. So the mapping keys
   need to be sorted first, and then you can enumerate over the keys with a counter i
@@ -114,21 +129,55 @@ library IterableMapping {
   - Read the hitrate file from the library.
   */
   function dataToMapping(Map storage map) public view returns (string[] memory) {
-    (string memory hitRateFilePath, bytes memory data) = _testFileLogging.createLogIfNotExistAndReadLogData(
+
+    // Export the log/mapping as a struct json, if the log file does not yet 
+    // exist.
+    string memory hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(
       map.getKeys(),
       map.getValues()
     );
-    // Unpack HitRate data from file into HitRatesReturnAll object.
-    LogParams memory updatedHitrates = abi.decode(data, (LogParams));
 
-    // Update the hit rate mapping using the HitRatesReturnAll object.
-    _updateHitRates({ hitRates: updatedHitrates });
-
+    
     return map.keys;
   }
 
+  function readHitRatesFromLogFileAndSetToMap(Map storage map) {
+    
+    // This should just be to get the hitRateFilePath because the data should
+    // already exist.
+    string memory hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(
+      map.getKeys(),
+      map.getValues()
+    );
+
+    bytes memory data = _testFileLogging.readLogData(
+      hitRateFilePath
+    );
+    // Unpack sorted HitRate data from file into HitRatesReturnAll object.
+    LogParams memory readLogParams = abi.decode(data, (LogParams));
+
+    // Update the hit rate mapping using the HitRatesReturnAll object.
+    _updateHitRates({ hitRates: readLogParams });
+
+
+  }
+
   // solhint-disable-next-line foundry-test-functions
-  function _updateHitRates(LogParams memory hitRates) internal {
+  function _updateHitRates(LogParams memory logParams) internal {
+    string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
+
+    for (uint256 i = 0; i < structKeys.length; i++) {
+        emit Log("THEKEY=");
+        emit Log(structKeys[i]);
+        if (i == 0) {
+          map.set(structKeys[i], logParams.a);
+        } else if (i == 1) {
+          map.set(structKeys[i], logParams.b);
+        }
+        // console.log(secondKeys[i]);
+        
+    }
+
     map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
     map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
     map.set("validInitialisations", hitRates.validInitialisations);
