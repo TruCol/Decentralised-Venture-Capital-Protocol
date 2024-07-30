@@ -9,15 +9,15 @@ pragma solidity >=0.8.25 <0.9.0;
     3. The code is ran, the mapping values are updated.
     4. The mapping values are logged to file.
 
-  The mapping key value pairs exist in this map unstorted. Then they are 
+  The mapping key value pairs exist in this map unstorted. Then they are
   written to a file in a sorted fashion. They are sorted automatically.
   Then they are read from file in alphabetical order. Since they are read in
-  alphabetical order (automatically), they can stored into the alphabetical 
+  alphabetical order (automatically), they can stored into the alphabetical
   keys of the map using a switch case and enumeration (counts as indices).
-  
+
   TODO: verify the non-alphabetical keys of a mapping are exported to an
   alphabetical order.
-  TODO: verify the non-alphabetical keys of a file are exported and read into 
+  TODO: verify the non-alphabetical keys of a file are exported and read into
   alphabetical order.
   */
 
@@ -65,8 +65,7 @@ library IterableMapping {
   }
   TestFileLogging private _testFileLogging;
   string private _hitRateFilePath;
-  LogParans private _logParams;
-  string private _hitRateFilePath;
+  LogParams private _logParams;
 
   function get(Map storage map, string memory key) public view returns (uint256) {
     return map.values[key];
@@ -81,7 +80,7 @@ library IterableMapping {
 
     if (map.keys.length > 1) {
       for (uint256 i = 0; i < map.keys.length; i++) {
-        listOfValues[i] = map.values[map.keys[i]];*
+        listOfValues[i] = map.values[map.keys[i]];
       }
     }
     return listOfValues;
@@ -106,7 +105,7 @@ library IterableMapping {
     }
   }
 
-  /** Removes the key-value pair that belongings to the incoming key, from the 
+  /** Removes the key-value pair that belongings to the incoming key, from the
   map.
    */
   function remove(Map storage map, string memory key) public {
@@ -129,19 +128,19 @@ library IterableMapping {
 
   /** Exports the current map to the already existing log file. Throws an error
   if the log file does not yet exist.*/
-  function overwriteExistingMapLogFile(Map storage map, string memory hitRateFilePath) {
+  function overwriteExistingMapLogFile(Map storage map, string memory hitRateFilePath) public {
     // TODO: assert the file already exists, throw error if file does not yet exist.
     string memory serialisedTextString = _testFileLogging.convertHitRatesToString(map.keys, map.values);
-    overwriteFileContent(serialisedTextString, hitRateFilePath);
+    // overwriteFileContent(serialisedTextString, hitRateFilePath);
+    _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     // TODO: assert the log filecontent equals the current mapping values.
-
   }
 }
 
 /** Reads the log data (parameter name and value) from the file, converts it
 into a struct, and then converts that struct into this mapping.
  */
-function readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRateFilePath) {
+function _readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRateFilePath) {
   bytes memory data = _testFileLogging.readLogData(hitRateFilePath);
   // Unpack sorted HitRate data from file into HitRatesReturnAll object.
   LogParams memory readLogParams = abi.decode(data, (LogParams));
@@ -152,7 +151,7 @@ function readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRa
   // TODO: assert the data in the log file equals the data in this map.
 }
 
-function initialiseMapping(Map storage map) public view returns (string memory hitRateFilePath) {
+function _initialiseMapping(Map storage map) returns (string memory hitRateFilePath) {
   _logParams = new LogParams({
     a: 0,
     b: 0,
@@ -190,7 +189,7 @@ function initialiseMapping(Map storage map) public view returns (string memory h
 }
 
 // solhint-disable-next-line foundry-test-functions
-function _updateLogParamMapping(LogParams memory logParams) internal {
+function _updateLogParamMapping(LogParams memory logParams) {
   string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
 
   for (uint256 i = 0; i < structKeys.length; i++) {
