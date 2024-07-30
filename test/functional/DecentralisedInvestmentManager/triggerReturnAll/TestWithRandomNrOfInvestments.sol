@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
+/** The logging flow is described with:
+    1. Initialise the mapping at all 0 values, and export those to file and set them in the struct.
+  Loop:
+    2. The values from the log file are read from file and overwrite those in the mapping.
+    3. The code is ran, the mapping values are updated.
+    4. The mapping values are logged to file.
+*/
 
 import { console2 } from "forge-std/src/console2.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -17,18 +24,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "test/TestConstants.sol";
-
-/**
-Stores the counters used to track how often the different branches of the tests are covered.*/
-struct HitRatesReturnAll {
-  uint256 didNotreachInvestmentCeiling;
-  uint256 didReachInvestmentCeiling;
-  uint256 validInitialisations;
-  uint256 validInvestments;
-  uint256 invalidInitialisations;
-  uint256 invalidInvestments;
-  uint256 investmentOverflow;
-}
 
 interface IFuzzDebug {
   function setUp() external;
@@ -57,31 +52,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   TestFileLogging private _testFileLogging;
   Helper private _helper;
   TestMathHelper private _testMathHelper;
-
-  // solhint-disable-next-line foundry-test-functions
-  function _updateHitRates(HitRatesReturnAll memory hitRates) internal {
-    _map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
-    _map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
-    _map.set("validInitialisations", hitRates.validInitialisations);
-    _map.set("validInvestments", hitRates.validInvestments);
-    _map.set("invalidInitialisations", hitRates.invalidInitialisations);
-    _map.set("invalidInvestments", hitRates.invalidInvestments);
-    _map.set("investmentOverflow", hitRates.investmentOverflow);
-  }
-
-  function _createHitRatesFileIfNotExistAndReadHitRates() internal returns (string memory) {
-    // Export and/or initialise the hitrates to file, if the file does not exist, then read out file with the HitRates.
-    (string memory hitRateFilePath, bytes memory data) = _testFileLogging.createLogIfNotExistAndReadLogData(
-      _map.getKeys(),
-      _map.getValues()
-    );
-    // Unpack HitRate data from file into HitRatesReturnAll object.
-    HitRatesReturnAll memory updatedHitrates = abi.decode(data, (HitRatesReturnAll));
-
-    // Update the hit rate mapping using the HitRatesReturnAll object.
-    _updateHitRates({ hitRates: updatedHitrates });
-    return hitRateFilePath;
-  }
+  string private _hitRateFilePath;
 
   function setUp() public virtual override {
     _helper = new Helper();
@@ -93,6 +64,8 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     if (vm.isFile(_LOG_TIME_CREATOR)) {
       vm.removeFile(_LOG_TIME_CREATOR);
     }
+
+    _hitRateFilePath = initialiseMapping(_map);
   }
 
   /**
@@ -117,22 +90,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256[] memory sameNrOfCeilings;
     uint256[] memory investmentAmounts;
 
-    // Initialise map with using a HitRatesReturnAll struct with 0 as values.
-    _updateHitRates({
-      hitRates: HitRatesReturnAll({
-        didNotreachInvestmentCeiling: 0,
-        didReachInvestmentCeiling: 0,
-        validInitialisations: 0,
-        validInvestments: 0,
-        invalidInitialisations: 0,
-        invalidInvestments: 0,
-        investmentOverflow: 0
-      })
-    });
-
-    string memory hitRateFilePath = _createHitRatesFileIfNotExistAndReadHitRates();
-    // The map with hitrates has been exported to 0 if the test starts and the file did not yet exist. If the file did
-    // exist, its data is read in and stored into the map.
+    readHitRatesFromLogFileAndSetToMap(_map, _hitRateFilePath);
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -164,11 +122,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
-        emit Log("Before _map.get('validInitialisations')=");
-        emit Log(Strings.toString(_map.get("validInitialisations")));
         _map.set("validInitialisations", _map.get("validInitialisations") + 1);
-        emit Log("After _map.get('validInitialisations')=");
-        emit Log(Strings.toString(_map.get("validInitialisations")));
 
         // Check if one is able to safely make the random number of investments safely.
         (uint256 successCount, uint256 failureCount) = _testInitialisationHelper.performRandomInvestments({
@@ -181,11 +135,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           uint256 cumInvestmentAmount = _testMathHelper.computeSumOfArray({ numbers: investmentAmounts });
 
           // Store that this random run was for a valid investment, (track it to export it later).
-          emit Log("Before _map.get('validInvestments')=");
-          emit Log(Strings.toString(_map.get("validInvestments")));
           _map.set("validInvestments", _map.get("validInvestments") + 1);
-          emit Log("After _map.get('validInvestments')=");
-          emit Log(Strings.toString(_map.get("validInvestments")));
 
           // Call the actual function that performs the test on the initialised dim contract.
           _followUpTriggerReturnAll({
@@ -205,18 +155,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         _map.set("invalidInitialisations", _map.get("invalidInitialisations") + 1);
       }
     } else {
-      emit Log("FOUND OVERFLOW");
-      emit Log("BEFORE=");
-      emit Log(Strings.toString(_map.get("investmentOverflow")));
       _map.set("investmentOverflow", _map.get("investmentOverflow") + 1);
-      emit Log("AFTER=");
-      emit Log(Strings.toString(_map.get("investmentOverflow")));
     }
 
-    string memory serialisedTextString = _testFileLogging.convertHitRatesToString(_map.getKeys(), _map.getValues());
-    _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
-    emit Log("Outputting File: serialisedTextString");
-    emit Log(serialisedTextString);
+    overwriteExistingMapLogFile(_map, _hitRateFilePath);
   }
 
   /**

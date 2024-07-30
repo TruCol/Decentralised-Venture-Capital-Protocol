@@ -1,4 +1,26 @@
 pragma solidity >=0.8.25 <0.9.0;
+/**
+  The logging flow is described with:
+    1. Initialise the mapping at all 0 values, and export those to file and set them in the struct.
+    initialiseMapping(_map)
+  Loop:
+    2. The values from the log file are read from file and overwrite those in the mapping.
+    readHitRatesFromLogFileAndSetToMap()
+    3. The code is ran, the mapping values are updated.
+    4. The mapping values are logged to file.
+
+  The mapping key value pairs exist in this map unstorted. Then they are 
+  written to a file in a sorted fashion. They are sorted automatically.
+  Then they are read from file in alphabetical order. Since they are read in
+  alphabetical order (automatically), they can stored into the alphabetical 
+  keys of the map using a switch case and enumeration (counts as indices).
+  
+  TODO: verify the non-alphabetical keys of a mapping are exported to an
+  alphabetical order.
+  TODO: verify the non-alphabetical keys of a file are exported and read into 
+  alphabetical order.
+  */
+
 import "test/TestConstants.sol";
 import { console2 } from "forge-std/src/console2.sol";
 import { TestFileLogging } from "./TestFileLogging.sol";
@@ -42,7 +64,9 @@ library IterableMapping {
     mapping(string => bool) inserted;
   }
   TestFileLogging private _testFileLogging;
-   string private  _hitRateFilePath;
+  string private _hitRateFilePath;
+  LogParans private _logParams;
+  string private _hitRateFilePath;
 
   function get(Map storage map, string memory key) public view returns (uint256) {
     return map.values[key];
@@ -57,7 +81,7 @@ library IterableMapping {
 
     if (map.keys.length > 1) {
       for (uint256 i = 0; i < map.keys.length; i++) {
-        listOfValues[i] = map.values[map.keys[i]];
+        listOfValues[i] = map.values[map.keys[i]];*
       }
     }
     return listOfValues;
@@ -82,6 +106,9 @@ library IterableMapping {
     }
   }
 
+  /** Removes the key-value pair that belongings to the incoming key, from the 
+  map.
+   */
   function remove(Map storage map, string memory key) public {
     if (!map.inserted[key]) {
       return;
@@ -100,90 +127,127 @@ library IterableMapping {
     map.keys.pop();
   }
 
-  function manageHitRateLogging(Map storage map) public view {
+  /** Exports the current map to the already existing log file. Throws an error
+  if the log file does not yet exist.*/
+  function overwriteExistingMapLogFile(Map storage map, string memory hitRateFilePath) {
+    // TODO: assert the file already exists, throw error if file does not yet exist.
+    string memory serialisedTextString = _testFileLogging.convertHitRatesToString(map.keys, map.values);
+    overwriteFileContent(serialisedTextString, hitRateFilePath);
+    // TODO: assert the log filecontent equals the current mapping values.
 
   }
+}
 
-  /**
-  Flow B.
-  0. Initialise the mapping at all 0 values, and export those to file and set them in the struct.
-  Loop:
-    1. The values from the log file are read from file and overwrite those in the mapping. 
-    2. The code is ran, the mapping values are updated.
-    3. The mapping values are logged to file.
-   */
+/** Reads the log data (parameter name and value) from the file, converts it
+into a struct, and then converts that struct into this mapping.
+ */
+function readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRateFilePath) {
+  bytes memory data = _testFileLogging.readLogData(hitRateFilePath);
+  // Unpack sorted HitRate data from file into HitRatesReturnAll object.
+  LogParams memory readLogParams = abi.decode(data, (LogParams));
 
-  /** Converts the data that is read from the json into this mapping.
-  Use an export struct.
+  // Update the hit rate mapping using the HitRatesReturnAll object.
+  _updateLogParamMapping({ hitRates: readLogParams });
 
-  The mapping key value pairs come in unsorted. Then they are written to a file
-  in a sorted fashion.
-  Then they are read from file, and they can be mapped to the struct a-z.
-  Then the struct values can be re-assigned to the sorted keys. So the mapping keys
-  need to be sorted first, and then you can enumerate over the keys with a counter i
-  that can be re-used to get the value out of the struct. This value can then be
-  used to overwrite the existing value.
+  // TODO: assert the data in the log file equals the data in this map.
+}
 
-  - Sort an array of keys.
-  - Enumerate over the keys with a counter.
-  - Read the hitrate file from the library.
-  */
-  function dataToMapping(Map storage map) public view returns (string[] memory) {
+function initialiseMapping(Map storage map) public view returns (string memory hitRateFilePath) {
+  _logParams = new LogParams({
+    a: 0,
+    b: 0,
+    c: 0,
+    d: 0,
+    e: 0,
+    f: 0,
+    g: 0,
+    h: 0,
+    i: 0,
+    j: 0,
+    k: 0,
+    l: 0,
+    m: 0,
+    n: 0,
+    o: 0,
+    p: 0,
+    q: 0,
+    r: 0,
+    s: 0,
+    t: 0,
+    u: 0,
+    v: 0,
+    w: 0,
+    x: 0,
+    y: 0,
+    z: 0
+  });
+  _updateLogParamMapping(_logParams);
 
-    // Export the log/mapping as a struct json, if the log file does not yet 
-    // exist.
-    string memory hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(
-      map.getKeys(),
-      map.getValues()
-    );
+  // This should just be to get the hitRateFilePath because the data should
+  // already exist.
+  _hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(map.getKeys(), map.getValues());
+  return _hitRateFilePath;
+}
 
-    
-    return map.keys;
-  }
+// solhint-disable-next-line foundry-test-functions
+function _updateLogParamMapping(LogParams memory logParams) internal {
+  string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
 
-  function readHitRatesFromLogFileAndSetToMap(Map storage map) {
-    
-    // This should just be to get the hitRateFilePath because the data should
-    // already exist.
-    string memory hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(
-      map.getKeys(),
-      map.getValues()
-    );
-
-    bytes memory data = _testFileLogging.readLogData(
-      hitRateFilePath
-    );
-    // Unpack sorted HitRate data from file into HitRatesReturnAll object.
-    LogParams memory readLogParams = abi.decode(data, (LogParams));
-
-    // Update the hit rate mapping using the HitRatesReturnAll object.
-    _updateHitRates({ hitRates: readLogParams });
-
-
-  }
-
-  // solhint-disable-next-line foundry-test-functions
-  function _updateHitRates(LogParams memory logParams) internal {
-    string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
-
-    for (uint256 i = 0; i < structKeys.length; i++) {
-        emit Log("THEKEY=");
-        emit Log(structKeys[i]);
-        if (i == 0) {
-          map.set(structKeys[i], logParams.a);
-        } else if (i == 1) {
-          map.set(structKeys[i], logParams.b);
-        }
-        // console.log(secondKeys[i]);
-        
+  for (uint256 i = 0; i < structKeys.length; i++) {
+    if (i == 0) {
+      map.set(structKeys[i], logParams.a);
+    } else if (i == 1) {
+      map.set(structKeys[i], logParams.b);
+    } else if (i == 2) {
+      map.set(structKeys[i], logParams.c);
+    } else if (i == 3) {
+      map.set(structKeys[i], logParams.d);
+    } else if (i == 4) {
+      map.set(structKeys[i], logParams.e);
+    } else if (i == 5) {
+      map.set(structKeys[i], logParams.f);
+    } else if (i == 6) {
+      map.set(structKeys[i], logParams.g);
+    } else if (i == 7) {
+      map.set(structKeys[i], logParams.h);
+    } else if (i == 8) {
+      map.set(structKeys[i], logParams.i);
+    } else if (i == 9) {
+      map.set(structKeys[i], logParams.j);
+    } else if (i == 10) {
+      map.set(structKeys[i], logParams.k);
+    } else if (i == 11) {
+      map.set(structKeys[i], logParams.l);
+    } else if (i == 12) {
+      map.set(structKeys[i], logParams.m);
+    } else if (i == 13) {
+      map.set(structKeys[i], logParams.n);
+    } else if (i == 14) {
+      map.set(structKeys[i], logParams.o);
+    } else if (i == 15) {
+      map.set(structKeys[i], logParams.p);
+    } else if (i == 16) {
+      map.set(structKeys[i], logParams.q);
+    } else if (i == 17) {
+      map.set(structKeys[i], logParams.r);
+    } else if (i == 18) {
+      map.set(structKeys[i], logParams.s);
+    } else if (i == 19) {
+      map.set(structKeys[i], logParams.t);
+    } else if (i == 20) {
+      map.set(structKeys[i], logParams.u);
+    } else if (i == 21) {
+      map.set(structKeys[i], logParams.v);
+    } else if (i == 22) {
+      map.set(structKeys[i], logParams.w);
+    } else if (i == 23) {
+      map.set(structKeys[i], logParams.x);
+    } else if (i == 24) {
+      map.set(structKeys[i], logParams.y);
+    } else if (i == 25) {
+      map.set(structKeys[i], logParams.z);
     }
-
-    map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
-    map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
-    map.set("validInitialisations", hitRates.validInitialisations);
-    map.set("validInvestments", hitRates.validInvestments);
-    map.set("invalidInitialisations", hitRates.invalidInitialisations);
-    map.set("invalidInvestments", hitRates.invalidInvestments);
-    map.set("investmentOverflow", hitRates.investmentOverflow);
   }
+  // map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
+  // map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
 }

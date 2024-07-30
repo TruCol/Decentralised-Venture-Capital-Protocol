@@ -133,11 +133,8 @@ Afterwards, it can load that new file.
     return (hitRateFilePath);
   }
 
-
   // solhint-disable-next-line foundry-test-functions
-  function readLogData(
-    string memory hitRateFilePath
-  ) public returns ( bytes memory data) {
+  function readLogData(string memory hitRateFilePath) public returns (bytes memory data) {
     // Read the latest hitRates from file.
     data = readDataFromFile(hitRateFilePath);
     return data;
