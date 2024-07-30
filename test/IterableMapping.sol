@@ -135,12 +135,12 @@ library IterableMapping {
     _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
     // TODO: assert the log filecontent equals the current mapping values.
   }
-}
+
 
 /** Reads the log data (parameter name and value) from the file, converts it
 into a struct, and then converts that struct into this mapping.
  */
-function _readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRateFilePath) {
+function readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRateFilePath) public {
   bytes memory data = _testFileLogging.readLogData(hitRateFilePath);
   // Unpack sorted HitRate data from file into HitRatesReturnAll object.
   LogParams memory readLogParams = abi.decode(data, (LogParams));
@@ -249,4 +249,5 @@ function _updateLogParamMapping(LogParams memory logParams) {
   }
   // map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
   // map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
+}
 }
