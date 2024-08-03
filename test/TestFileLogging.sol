@@ -6,15 +6,11 @@ import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
 
 import "@openzeppelin/contracts/utils/Strings.sol";
-import { IterableMapping } from "./IterableMapping.sol";
+
 import "test/TestConstants.sol";
 error InvalidExportLogMapError(string message, string[] keys, uint256[] values, uint256);
 
 contract TestFileLogging is PRBTest, StdCheats {
-  using IterableMapping for IterableMapping.Map;
-
-  // IterableMapping.Map private map;
-
   /**
     @dev This is a function stores the log elements used to verify each test case in the fuzz test is reached.
      */

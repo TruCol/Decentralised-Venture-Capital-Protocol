@@ -23,7 +23,6 @@ pragma solidity >=0.8.25 <0.9.0;
 
 import "test/TestConstants.sol";
 import { console2 } from "forge-std/src/console2.sol";
-import { TestFileLogging } from "./TestFileLogging.sol";
 /**
 Stores the counters used to track how often the different branches of the tests are covered.*/
 struct LogParams {
@@ -63,9 +62,6 @@ library IterableMapping {
     mapping(string => uint256) indexOf;
     mapping(string => bool) inserted;
   }
-  TestFileLogging private _testFileLogging;
-  string private _hitRateFilePath;
-  LogParams private _logParams;
 
   function get(Map storage map, string memory key) public view returns (uint256) {
     return map.values[key];
@@ -73,11 +69,6 @@ library IterableMapping {
 
   function getKeys(Map storage map) public view returns (string[] memory) {
     return map.keys;
-  }
-
-  function getHitRateFilePath() public view returns (string memory) {
-    // TODO: if _hitRateFilePath == "": raise exception.
-    return _hitRateFilePath;
   }
 
   function getValues(Map storage map) public view returns (uint256[] memory) {
@@ -129,129 +120,5 @@ library IterableMapping {
 
     map.keys[index] = lastKey;
     map.keys.pop();
-  }
-
-  /** Exports the current map to the already existing log file. Throws an error
-  if the log file does not yet exist.*/
-  function overwriteExistingMapLogFile(Map storage map, string memory hitRateFilePath) public {
-    // TODO: assert the file already exists, throw error if file does not yet exist.
-    string memory serialisedTextString = _testFileLogging.convertHitRatesToString(map.keys, map.values);
-    // overwriteFileContent(serialisedTextString, hitRateFilePath);
-    _testFileLogging.overwriteFileContent(serialisedTextString, hitRateFilePath);
-    // TODO: assert the log filecontent equals the current mapping values.
-  }
-
-  /** Reads the log data (parameter name and value) from the file, converts it
-into a struct, and then converts that struct into this mapping.
- */
-  function readHitRatesFromLogFileAndSetToMap(Map storage map, string memory hitRateFilePath) public {
-    bytes memory data = _testFileLogging.readLogData(hitRateFilePath);
-    // Unpack sorted HitRate data from file into HitRatesReturnAll object.
-    LogParams memory readLogParams = abi.decode(data, (LogParams));
-
-    // Update the hit rate mapping using the HitRatesReturnAll object.
-    _updateLogParamMapping({ hitRates: readLogParams });
-
-    // TODO: assert the data in the log file equals the data in this map.
-  }
-
-  function _initialiseMapping(Map storage map) public returns (string memory hitRateFilePath) {
-    _logParams = new LogParams({
-      a: 0,
-      b: 0,
-      c: 0,
-      d: 0,
-      e: 0,
-      f: 0,
-      g: 0,
-      h: 0,
-      i: 0,
-      j: 0,
-      k: 0,
-      l: 0,
-      m: 0,
-      n: 0,
-      o: 0,
-      p: 0,
-      q: 0,
-      r: 0,
-      s: 0,
-      t: 0,
-      u: 0,
-      v: 0,
-      w: 0,
-      x: 0,
-      y: 0,
-      z: 0
-    });
-    _updateLogParamMapping(_logParams);
-
-    // This should just be to get the hitRateFilePath because the data should
-    // already exist.
-    _hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(map.getKeys(), map.getValues());
-    return _hitRateFilePath;
-  }
-
-  // solhint-disable-next-line foundry-test-functions
-  function _updateLogParamMapping(Map storage map, LogParams memory logParams) public {
-    // string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
-    string[] memory structKeys = ["hello", "another"];
-    for (uint256 i = 0; i < structKeys.length; i++) {
-      if (i == 0) {
-        map.set(structKeys[i], logParams.a);
-      } else if (i == 1) {
-        map.set(structKeys[i], logParams.b);
-      } else if (i == 2) {
-        map.set(structKeys[i], logParams.c);
-      } else if (i == 3) {
-        map.set(structKeys[i], logParams.d);
-      } else if (i == 4) {
-        map.set(structKeys[i], logParams.e);
-      } else if (i == 5) {
-        map.set(structKeys[i], logParams.f);
-      } else if (i == 6) {
-        map.set(structKeys[i], logParams.g);
-      } else if (i == 7) {
-        map.set(structKeys[i], logParams.h);
-      } else if (i == 8) {
-        map.set(structKeys[i], logParams.i);
-      } else if (i == 9) {
-        map.set(structKeys[i], logParams.j);
-      } else if (i == 10) {
-        map.set(structKeys[i], logParams.k);
-      } else if (i == 11) {
-        map.set(structKeys[i], logParams.l);
-      } else if (i == 12) {
-        map.set(structKeys[i], logParams.m);
-      } else if (i == 13) {
-        map.set(structKeys[i], logParams.n);
-      } else if (i == 14) {
-        map.set(structKeys[i], logParams.o);
-      } else if (i == 15) {
-        map.set(structKeys[i], logParams.p);
-      } else if (i == 16) {
-        map.set(structKeys[i], logParams.q);
-      } else if (i == 17) {
-        map.set(structKeys[i], logParams.r);
-      } else if (i == 18) {
-        map.set(structKeys[i], logParams.s);
-      } else if (i == 19) {
-        map.set(structKeys[i], logParams.t);
-      } else if (i == 20) {
-        map.set(structKeys[i], logParams.u);
-      } else if (i == 21) {
-        map.set(structKeys[i], logParams.v);
-      } else if (i == 22) {
-        map.set(structKeys[i], logParams.w);
-      } else if (i == 23) {
-        map.set(structKeys[i], logParams.x);
-      } else if (i == 24) {
-        map.set(structKeys[i], logParams.y);
-      } else if (i == 25) {
-        map.set(structKeys[i], logParams.z);
-      }
-    }
-    // map.set("didNotreachInvestmentCeiling", hitRates.didNotreachInvestmentCeiling);
-    // map.set("didReachInvestmentCeiling", hitRates.didReachInvestmentCeiling);
   }
 }

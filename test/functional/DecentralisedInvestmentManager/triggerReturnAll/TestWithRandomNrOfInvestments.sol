@@ -19,6 +19,7 @@ import { Helper } from "../../../../src/Helper.sol";
 import { TestMathHelper } from "test/TestMathHelper.sol";
 import { TestInitialisationHelper } from "../../../TestInitialisationHelper.sol";
 import { TestFileLogging } from "../../../TestFileLogging.sol";
+import { TestIterableMapping } from "../../../TestIterableMapping.sol";
 import { IterableMapping } from "../../../IterableMapping.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -44,8 +45,7 @@ interface IFuzzDebug {
 }
 
 contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
-  using IterableMapping for IterableMapping.Map;
-  IterableMapping.Map private _map;
+  TestIterableMapping private _testIterableMapping;
 
   address internal _projectLead;
   TestInitialisationHelper private _testInitialisationHelper;
@@ -65,7 +65,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       vm.removeFile(_LOG_TIME_CREATOR);
     }
 
-    _map.initialiseMapping(_map);
+    _testIterableMapping.initialiseMapping();
   }
 
   /**
@@ -90,7 +90,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256[] memory sameNrOfCeilings;
     uint256[] memory investmentAmounts;
 
-    _map.readHitRatesFromLogFileAndSetToMap(_map, _map.getHitRateFilePath());
+    _testIterableMapping.readHitRatesFromLogFileAndSetToMap(_testIterableMapping.getHitRateFilePath());
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -122,7 +122,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
-        _map.set("validInitialisations", _map.get("validInitialisations") + 1);
+        _testIterableMapping.set("validInitialisations", _testIterableMapping.get("validInitialisations") + 1);
 
         // Check if one is able to safely make the random number of investments safely.
         (uint256 successCount, uint256 failureCount) = _testInitialisationHelper.performRandomInvestments({
@@ -135,7 +135,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           uint256 cumInvestmentAmount = _testMathHelper.computeSumOfArray({ numbers: investmentAmounts });
 
           // Store that this random run was for a valid investment, (track it to export it later).
-          _map.set("validInvestments", _map.get("validInvestments") + 1);
+          _testIterableMapping.set("validInvestments", _testIterableMapping.get("validInvestments") + 1);
 
           // Call the actual function that performs the test on the initialised dim contract.
           _followUpTriggerReturnAll({
@@ -148,17 +148,17 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
             maxTierCeiling: sameNrOfCeilings[sameNrOfCeilings.length - 1]
           });
         } else {
-          _map.set("invalidInvestments", _map.get("invalidInvestments") + 1);
+          _testIterableMapping.set("invalidInvestments", _testIterableMapping.get("invalidInvestments") + 1);
         }
       } else {
         // Store that this random run did not permit a valid dim initialisation.
-        _map.set("invalidInitialisations", _map.get("invalidInitialisations") + 1);
+        _testIterableMapping.set("invalidInitialisations", _testIterableMapping.get("invalidInitialisations") + 1);
       }
     } else {
-      _map.set("investmentOverflow", _map.get("investmentOverflow") + 1);
+      _testIterableMapping.set("investmentOverflow", _testIterableMapping.get("investmentOverflow") + 1);
     }
 
-    _map.overwriteExistingMapLogFile(_map, _map.getHitRateFilePath());
+    _testIterableMapping.overwriteExistingMapLogFile(_testIterableMapping.getHitRateFilePath());
   }
 
   /**
@@ -181,7 +181,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
   ) internal {
     if (cumInvestmentAmount >= investmentTarget) {
       // Track that the investment ceiling was reached.
-      _map.set("didReachInvestmentCeiling", _map.get("didReachInvestmentCeiling") + 1);
+      _testIterableMapping.set("didReachInvestmentCeiling", _testIterableMapping.get("didReachInvestmentCeiling") + 1);
 
       // Only the projectLead can trigger the return of all funds.
       vm.prank(projectLead);
@@ -203,7 +203,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       dim.triggerReturnAll();
     } else {
       // Track that the investment ceiling was not reached by the randnom values.
-      _map.set("didNotreachInvestmentCeiling", _map.get("didNotreachInvestmentCeiling") + 1);
+      _testIterableMapping.set(
+        "didNotreachInvestmentCeiling",
+        _testIterableMapping.get("didNotreachInvestmentCeiling") + 1
+      );
 
       // TODO: Verify the dim contract contains the investment funds.
       vm.prank(projectLead);
