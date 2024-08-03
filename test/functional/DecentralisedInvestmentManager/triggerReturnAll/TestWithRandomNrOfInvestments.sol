@@ -65,7 +65,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       vm.removeFile(_LOG_TIME_CREATOR);
     }
 
-    _hitRateFilePath = initialiseMapping(_map);
+    _map.initialiseMapping(_map);
   }
 
   /**
@@ -90,7 +90,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256[] memory sameNrOfCeilings;
     uint256[] memory investmentAmounts;
 
-    readHitRatesFromLogFileAndSetToMap(_map, _hitRateFilePath);
+    _map.readHitRatesFromLogFileAndSetToMap(_map, _map.getHitRateFilePath());
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -158,7 +158,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       _map.set("investmentOverflow", _map.get("investmentOverflow") + 1);
     }
 
-    overwriteExistingMapLogFile(_map, _hitRateFilePath);
+    _map.overwriteExistingMapLogFile(_map, _map.getHitRateFilePath());
   }
 
   /**

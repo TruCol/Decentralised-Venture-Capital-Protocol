@@ -75,6 +75,11 @@ library IterableMapping {
     return map.keys;
   }
 
+  function getHitRateFilePath() public view returns (string memory) {
+    // TODO: if _hitRateFilePath == "": raise exception.
+    return _hitRateFilePath;
+  }
+
   function getValues(Map storage map) public view returns (uint256[] memory) {
     uint256[] memory listOfValues = new uint256[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
 
