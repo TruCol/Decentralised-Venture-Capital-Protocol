@@ -195,7 +195,7 @@ into a struct, and then converts that struct into this mapping.
   // solhint-disable-next-line foundry-test-functions
   function _updateLogParamMapping(Map storage map, LogParams memory logParams) public {
     // string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
-    string[] memory structKeys = ["hello","another"];
+    string[] memory structKeys = ["hello", "another"];
     for (uint256 i = 0; i < structKeys.length; i++) {
       if (i == 0) {
         map.set(structKeys[i], logParams.a);
