@@ -59,6 +59,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     _testInitialisationHelper = new TestInitialisationHelper();
     _testFileLogging = new TestFileLogging();
     _testMathHelper = new TestMathHelper();
+    _testIterableMapping = new TestIterableMapping();
 
     // Delete the temp file.
     if (vm.isFile(_LOG_TIME_CREATOR)) {
