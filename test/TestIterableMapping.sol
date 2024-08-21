@@ -63,20 +63,14 @@ struct LogParams {
 contract TestIterableMapping is PRBTest, StdCheats {
   using IterableMapping for IterableMapping.Map;
   IterableMapping.Map private _map;
-  // Iterable mapping from string[] to uint;
-  // struct Map {
-  //   string[] keys;
-  //   mapping(string => uint256) values;
-  //   mapping(string => uint256) indexOf;
-  //   mapping(string => bool) inserted;
-  // }
-  // Map private _map;
+  
   TestFileLogging private _testFileLogging;
   string private _hitRateFilePath;
   LogParams private _logParams;
 
   constructor() {
     _testFileLogging = new TestFileLogging();
+    _hitRateFilePath = initialiseMapping();
     }
 
   function get(string memory key) public view returns (uint256) {
@@ -167,7 +161,7 @@ into a struct, and then converts that struct into this _mapping.
     // TODO: assert the data in the log file equals the data in this _map.
   }
 
-  // TODO: move into constructor.
+  // TODO: make private.
   function initialiseMapping() public returns (string memory hitRateFilePath) {
     console2.log("Hi0");
     _logParams = LogParams({
@@ -203,9 +197,9 @@ into a struct, and then converts that struct into this _mapping.
     console2.log("Hi2");
     // This should just be to get the hitRateFilePath because the data should
     // already exist.
-    _hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(_map.getKeys(), _map.getValues());
+    hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(_map.getKeys(), _map.getValues());
     console2.log("Hi3");
-    return _hitRateFilePath;
+    return hitRateFilePath;
   }
 
   // solhint-disable-next-line foundry-test-functions
