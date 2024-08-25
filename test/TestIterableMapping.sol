@@ -63,7 +63,7 @@ struct LogParams {
 contract TestIterableMapping is PRBTest, StdCheats {
   using IterableMapping for IterableMapping.Map;
   IterableMapping.Map private _map;
-  
+
   TestFileLogging private _testFileLogging;
   string private _hitRateFilePath;
   LogParams private _logParams;
@@ -71,7 +71,7 @@ contract TestIterableMapping is PRBTest, StdCheats {
   constructor() {
     _testFileLogging = new TestFileLogging();
     _hitRateFilePath = initialiseMapping();
-    }
+  }
 
   function get(string memory key) public view returns (uint256) {
     return _map.values[key];
@@ -163,7 +163,6 @@ into a struct, and then converts that struct into this _mapping.
 
   // TODO: make private.
   function initialiseMapping() public returns (string memory hitRateFilePath) {
-    console2.log("Hi0");
     _logParams = LogParams({
       a: 0,
       b: 0,
@@ -192,13 +191,13 @@ into a struct, and then converts that struct into this _mapping.
       y: 0,
       z: 0
     });
-    console2.log("Hi1");
+
     updateLogParamMapping(_logParams);
-    console2.log("Hi2");
+
     // This should just be to get the hitRateFilePath because the data should
     // already exist.
     hitRateFilePath = _testFileLogging.createLogIfNotExistAndReadLogData(_map.getKeys(), _map.getValues());
-    console2.log("Hi3");
+
     return hitRateFilePath;
   }
 
@@ -206,11 +205,10 @@ into a struct, and then converts that struct into this _mapping.
   function updateLogParamMapping(LogParams memory logParams) public {
     // string[] memory structKeys = vm.parseJsonKeys(logParams, "$");
     // string[] memory structKeys = ["hello", "another"];
-    console2.log("A0");
+
     string[] memory structKeys;
-    console2.log("A1");
+
     for (uint256 i = 0; i < structKeys.length; i++) {
-      console2.log("A2");
       if (i == 0) {
         _map.set(structKeys[i], logParams.a);
       } else if (i == 1) {
