@@ -3,11 +3,9 @@ pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-
-import { DecentralisedInvestmentManager } from "../../../src/DecentralisedInvestmentManager.sol";
-
-import { WorkerGetReward } from "../../../src/WorkerGetReward.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { DecentralisedInvestmentManager } from "./../../../src/DecentralisedInvestmentManager.sol";
+import { WorkerGetReward } from "./../../../src/WorkerGetReward.sol";
 
 interface IWorkerGetRewardTest {
   function setUp() external;

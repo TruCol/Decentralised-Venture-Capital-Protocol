@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
-import { Tier } from "../src/Tier.sol";
-import { TierInvestment } from "../src/TierInvestment.sol";
-import { SaasPaymentProcessor } from "../src/SaasPaymentProcessor.sol";
-import { Helper } from "../src/Helper.sol";
-import { CustomPaymentSplitter } from "../src/CustomPaymentSplitter.sol";
-import { WorkerGetReward } from "../src/WorkerGetReward.sol";
-import { ReceiveCounterOffer } from "../src/ReceiveCounterOffer.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { CustomPaymentSplitter } from "./../src/CustomPaymentSplitter.sol";
+import { Helper } from "./../src/Helper.sol";
+import { ReceiveCounterOffer } from "./../src/ReceiveCounterOffer.sol";
+import { SaasPaymentProcessor } from "./../src/SaasPaymentProcessor.sol";
+import { Tier } from "./../src/Tier.sol";
+import { TierInvestment } from "./../src/TierInvestment.sol";
+import { WorkerGetReward } from "./../src/WorkerGetReward.sol";
 
 struct AllocatedInvestment {
   Tier tier;

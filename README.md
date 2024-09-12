@@ -140,6 +140,7 @@ Or to run a single test (function):
 
 ```sh
 clear && forge test -vvv --match-test testRandomNrOfInvestments --fail-fast --fuzz-run 3
+clear && forge test -vvvvvv --match-test testRandomNrOfInvestments --fail-fast --fuzz-runs 2
 ```
 
 The `-vvv` is necessary to display the error messages that you wrote with the

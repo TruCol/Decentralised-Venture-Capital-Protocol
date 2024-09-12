@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
+
 /** The logging flow is described with:
     1. Initialise the mapping at all 0 values, and export those to file and set them in the struct.
   Loop:
@@ -8,23 +9,21 @@ pragma solidity >=0.8.25 <0.9.0;
     4. The mapping values are logged to file.
 */
 
-import { console2 } from "forge-std/src/console2.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "forge-std/src/Vm.sol" as vm;
-import { PRBTest } from "@prb/test/src/PRBTest.sol";
-import { StdCheats } from "forge-std/src/StdCheats.sol";
-
-import { DecentralisedInvestmentManager } from "../../../../src/DecentralisedInvestmentManager.sol";
-import { Helper } from "../../../../src/Helper.sol";
-import { TestMathHelper } from "test/TestMathHelper.sol";
-import { TestInitialisationHelper } from "../../../TestInitialisationHelper.sol";
-import { TestFileLogging } from "../../../TestFileLogging.sol";
-import { TestIterableMapping } from "../../../TestIterableMapping.sol";
-import { IterableMapping } from "../../../IterableMapping.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { PRBTest } from "@prb/test/src/PRBTest.sol";
+import { console2 } from "forge-std/src/console2.sol";
+import { StdCheats } from "forge-std/src/StdCheats.sol";
+import "forge-std/src/Vm.sol";
 import "test/TestConstants.sol";
+import { TestMathHelper } from "test/TestMathHelper.sol";
+import { DecentralisedInvestmentManager } from "./../../../../src/DecentralisedInvestmentManager.sol";
+import { Helper } from "./../../../../src/Helper.sol";
+import { IterableMapping } from "./../../../IterableMapping.sol";
+import { TestFileLogging } from "./../../../TestFileLogging.sol";
+import { TestInitialisationHelper } from "./../../../TestInitialisationHelper.sol";
+import { TestIterableMapping } from "./../../../TestIterableMapping.sol";
 
 interface IFuzzDebug {
   function setUp() external;
@@ -89,7 +88,27 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     uint256[] memory sameNrOfCeilings;
     uint256[] memory investmentAmounts;
 
+    // This function is called to read the stuff from file.
     _testIterableMapping.readHitRatesFromLogFileAndSetToMap(_testIterableMapping.getHitRateFilePath());
+    /**
+    TODO: in a logging, right above this emit, it seemed to imply that:
+
+    \"validInvestments\": 1,\n
+
+    However, the emit itself printed:
+    ├─ emit Log(err: "_testIterableMapping.get('validInitialisations')=")
+    ├─ [3020] TestIterableMapping::get("validInitialisations") [staticcall]
+    │   └─ ← [Return] 0
+
+    So the return value of the function call is not stored into the _testIterableMapping object. That is at the end of
+    the testfunction, the values are exported as to keys validInitialisations, didNotreachInvestmentCeiling etc. and
+    not to keys  a,b,c...z etc. So when it reads the file and sets the iterable mapping key value pairs, it only sets
+    a-z because those are the keys that are in the LogParams object. and the _testIterableMapping is
+    reset/re-initialised at the setup() function before each run of the test. So they will be 0 evertime, and at most
+    incremented to 1`, at which point they may be exported again.
+     */
+    emit Log("_testIterableMapping.get('validInitialisations')=");
+    emit Log(Strings.toString(_testIterableMapping.get("validInitialisations")));
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -98,14 +117,38 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       randNrOfInvestmentTiers: randNrOfInvestmentTiers
     });
 
+    /**  The randomNrOfInvestments may be larger than the actual amount of elements in the randomInvestments. So lower it
+     if needed. */
+    uint8 allowedNrOfInvestments;
+    if (randNrOfInvestments > randomInvestments.length) {
+      /** If it is smaller, still the uint256 value of the length of the randomInvestments may be larger than the amount
+      permitted by the  nrOfDesiredElements argument in the getShortenedArray() function. So safely map the uint256
+      value of the randomInvestments.length to the allowedNrOfInvestments. */
+      if (randomInvestments.length > type(uint8).max) {
+        allowedNrOfInvestments = type(uint8).max;
+      } else {
+        allowedNrOfInvestments = uint8(randomInvestments.length);
+      }
+    } else {
+      allowedNrOfInvestments = randNrOfInvestments;
+    }
+    emit Log("allowedNrOfInvestments");
+    emit Log(Strings.toString(allowedNrOfInvestments));
+
+    // Reduce the random initialised array with investment amounts to the desired random  array length.
     investmentAmounts = _testMathHelper.getShortenedArray({
       someArray: randomInvestments,
-      nrOfDesiredElements: randNrOfInvestments
+      nrOfDesiredElements: allowedNrOfInvestments
     });
 
+    // If the total investment amounts yield an overthrow, stop.
     if (!_testMathHelper.sumOfNrsThrowsOverFlow({ numbers: investmentAmounts })) {
       // Map the investment target to the range (0, maximum(Ceilings)) to ensure the investment target can be reached.
+      /** TODO: verify that this allows for the selected sequence of investments to both undershoot, reach and
+      overshoot the selected investmentTarget. */
       investmentTarget = (investmentTarget % sameNrOfCeilings[sameNrOfCeilings.length - 1]) + 1;
+      emit Log("investmentTarget");
+      emit Log(Strings.toString(investmentTarget));
 
       // Initialise the dim contract, if the random parameters are invalid, an non-random dim is initialised for typing.
       (bool hasInitialisedRandomDim, DecentralisedInvestmentManager someDim) = _testInitialisationHelper
@@ -119,11 +162,13 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           multiples: multiples
         });
 
+      emit Log("hasInitialisedRandomDim");
+
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
         _testIterableMapping.set("validInitialisations", _testIterableMapping.get("validInitialisations") + 1);
 
-        // Check if one is able to safely make the random number of investments safely.
+        // Check if one is able to safely make the random number of investments.
         (uint256 successCount, uint256 failureCount) = _testInitialisationHelper.performRandomInvestments({
           dim: someDim,
           investmentAmounts: investmentAmounts
@@ -156,7 +201,8 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     } else {
       _testIterableMapping.set("investmentOverflow", _testIterableMapping.get("investmentOverflow") + 1);
     }
-
+    emit Log("Overwriting to:");
+    emit_log(_testIterableMapping.getHitRateFilePath());
     _testIterableMapping.overwriteExistingMapLogFile(_testIterableMapping.getHitRateFilePath());
   }
 
@@ -203,7 +249,9 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     } else {
       // Track that the investment ceiling was not reached by the randnom values.
       _testIterableMapping.set(
-        "didNotreachInvestmentCeiling",
+        "didNotreachInvestmentCeiling", // TODO: replace this with a mapping of the parameter names as keys, and a-z as
+        // values, at the top of the file, and then do someMapping("didNotreachInvestmentCeiling") instead. Also output
+        // that mapping in the same directory but a different filename.
         _testIterableMapping.get("didNotreachInvestmentCeiling") + 1
       );
 

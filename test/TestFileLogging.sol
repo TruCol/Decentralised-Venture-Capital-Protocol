@@ -1,12 +1,9 @@
 pragma solidity >=0.8.25 <0.9.0;
-import { console2 } from "forge-std/src/console2.sol";
-import "forge-std/src/Vm.sol" as vm;
-import { PRBTest } from "@prb/test/src/PRBTest.sol";
-
-import { StdCheats } from "forge-std/src/StdCheats.sol";
-
 import "@openzeppelin/contracts/utils/Strings.sol";
-
+import { PRBTest } from "@prb/test/src/PRBTest.sol";
+import { console2 } from "forge-std/src/console2.sol";
+import { StdCheats } from "forge-std/src/StdCheats.sol";
+import "forge-std/src/Vm.sol";
 import "test/TestConstants.sol";
 error InvalidExportLogMapError(string message, string[] keys, uint256[] values, uint256);
 
@@ -42,7 +39,32 @@ contract TestFileLogging is PRBTest, StdCheats {
 
       serialisedTextString = vm.serializeUint(obj1, keys[lastKeyIndex], values[lastKeyIndex]);
     } else {
-      serialisedTextString = vm.serializeUint(obj1, "NoKeysFound", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "a", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "b", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "c", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "d", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "e", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "f", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "g", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "h", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "i", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "j", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "k", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "l", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "m", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "n", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "o", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "p", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "q", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "r", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "s", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "t", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "u", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "v", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "w", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "x", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "y", values[0]);
+      serialisedTextString = vm.serializeUint(obj1, "z", values[0]);
     }
 
     return serialisedTextString;
@@ -50,22 +72,13 @@ contract TestFileLogging is PRBTest, StdCheats {
 
   function readDataFromFile(string memory path) public returns (bytes memory jsonData) {
     string memory fileContent = vm.readFile(path);
+    emit Log("fileContent");
+    emit Log(fileContent);
     jsonData = vm.parseJson(fileContent);
 
     string[] memory firstKeys = new string[](jsonData.length);
-    for (uint256 i = 0; i < firstKeys.length; i++) {
-      // This yields empty firstKeys[i] values like: ""
-      emit Log("firstKeysTHEKEY=");
-      emit Log(firstKeys[i]);
-    }
-
-    // I do not yet know what the key is if I want to get the list of keys.
-    // "hello" is not in that file, so this throws an error:
-    string[] memory secondKeys = vm.parseJsonKeys(fileContent, "hello");
-    for (uint256 i = 0; i < secondKeys.length; i++) {
-      emit Log("THEKEY=");
-      emit Log(secondKeys[i]);
-    }
+    emit Log("firstKeys.length");
+    emit Log(Strings.toString(firstKeys.length));
 
     return jsonData;
   }

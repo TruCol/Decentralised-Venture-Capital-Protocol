@@ -3,11 +3,10 @@ pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-
-import { Tier } from "../../src/Tier.sol";
-import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { CustomPaymentSplitter } from "../../src/CustomPaymentSplitter.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { CustomPaymentSplitter } from "./../../src/CustomPaymentSplitter.sol";
+import { DecentralisedInvestmentManager } from "./../../src/DecentralisedInvestmentManager.sol";
+import { Tier } from "./../../src/Tier.sol";
 
 interface IPartialReturnTest {
   function setUp() external;

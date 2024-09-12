@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
-uint32 constant _MAX_NR_OF_TIERS = 100;
-uint32 constant _MAX_NR_OF_INVESTMENTS = 100000;
+// uint32 constant _MAX_NR_OF_TIERS = 100;
+// uint32 constant _MAX_NR_OF_INVESTMENTS = 100000;
+
+uint32 constant _MAX_NR_OF_TIERS = 3;
+uint32 constant _MAX_NR_OF_INVESTMENTS = 100;
 
 /** @dev The arrays with the values of the parameters that are logged need to be a memory array, which means they need
 to have a predetermined length. This is that length.*/

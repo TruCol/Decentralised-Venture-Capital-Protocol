@@ -3,9 +3,8 @@ pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-
-import { TierInvestment } from "../../src/TierInvestment.sol";
-import { Tier } from "../../src/Tier.sol";
+import { Tier } from "./../../src/Tier.sol";
+import { TierInvestment } from "./../../src/TierInvestment.sol";
 
 interface ITierInvestmentTest {
   function setUp() external;

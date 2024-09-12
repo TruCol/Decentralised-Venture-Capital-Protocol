@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25; // Specifies the Solidity compiler version.
 
-import { Tier } from "../src/Tier.sol";
-import { TierInvestment } from "../src/TierInvestment.sol";
-import { Helper } from "../src/Helper.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Helper } from "./../src/Helper.sol";
+import { Tier } from "./../src/Tier.sol";
+import { TierInvestment } from "./../src/TierInvestment.sol";
 
 error SaasPaymentProcessorOnlyOwner(string message, address owner, address msgSender);
 error SaasRevenueForInvestorsSmallerThanOne(string message, uint256 saasRevenueForInvestors);

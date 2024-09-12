@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25 <0.9.0;
+import "@openzeppelin/contracts/utils/Strings.sol";
+import { console2 } from "forge-std/src/console2.sol";
 import "test/TestConstants.sol";
 error InvalidSortedArrayWithDupes(string message, uint256 index, uint256 previousValue, uint256 currentValue);
 error CannotShortenArray(string message, uint256[_MAX_NR_OF_INVESTMENTS] someArray, uint256 nrOfDesiredElements);

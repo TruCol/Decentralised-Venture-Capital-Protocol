@@ -21,13 +21,12 @@ pragma solidity >=0.8.25 <0.9.0;
   alphabetical order.
   */
 
-import "forge-std/src/Vm.sol" as vm;
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
-import { StdCheats } from "forge-std/src/StdCheats.sol";
-import { IterableMapping } from "./IterableMapping.sol";
-
-import "test/TestConstants.sol";
 import { console2 } from "forge-std/src/console2.sol";
+import { StdCheats } from "forge-std/src/StdCheats.sol";
+import "forge-std/src/Vm.sol";
+import "test/TestConstants.sol";
+import { IterableMapping } from "./IterableMapping.sol";
 import { TestFileLogging } from "./TestFileLogging.sol";
 /**
 Stores the counters used to track how often the different branches of the tests are covered.*/
@@ -152,12 +151,15 @@ into a struct, and then converts that struct into this _mapping.
  */
   function readHitRatesFromLogFileAndSetToMap(string memory hitRateFilePath) public {
     bytes memory data = _testFileLogging.readLogData(hitRateFilePath);
+    emit Log("GOT DATA");
+    abi.decode(data, (LogParams));
+    emit Log("Decoded without parsing it to LogParams");
     // Unpack sorted HitRate data from file into HitRatesReturnAll object.
     LogParams memory readLogParams = abi.decode(data, (LogParams));
-
+    emit Log("Parsed into to LogParams");
     // Update the hit rate _mapping using the HitRatesReturnAll object.
     updateLogParamMapping({ logParams: readLogParams });
-
+    emit Log("End of function.");
     // TODO: assert the data in the log file equals the data in this _map.
   }
 
@@ -208,6 +210,7 @@ into a struct, and then converts that struct into this _mapping.
 
     string[] memory structKeys;
 
+    // TODO: update the keys to represent the actual keys in the logParams object.
     for (uint256 i = 0; i < structKeys.length; i++) {
       if (i == 0) {
         _map.set(structKeys[i], logParams.a);

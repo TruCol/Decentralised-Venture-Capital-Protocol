@@ -21,8 +21,8 @@ pragma solidity >=0.8.25 <0.9.0;
   alphabetical order.
   */
 
-import "test/TestConstants.sol";
 import { console2 } from "forge-std/src/console2.sol";
+import "test/TestConstants.sol";
 /**
 Stores the counters used to track how often the different branches of the tests are covered.*/
 struct LogParams {

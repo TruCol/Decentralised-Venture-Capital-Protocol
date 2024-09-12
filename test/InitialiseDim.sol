@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25;
 
-import { Tier } from "../../src/Tier.sol";
-import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
 import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "./../../src/DecentralisedInvestmentManager.sol";
+import { Tier } from "./../../src/Tier.sol";
 error InvalidProjectLeadAddress(string message);
 
 error TierMultipleMismatch(string message, uint256 tierCount, uint256 multipleCount);

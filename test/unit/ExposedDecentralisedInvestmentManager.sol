@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.25;
 
-import { Tier } from "../../src/Tier.sol";
-import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "./../../src/DecentralisedInvestmentManager.sol";
+import { Tier } from "./../../src/Tier.sol";
 
 interface IEdim {
   function allocateInvestment(uint256 investmentAmount, address payable investorWallet) external;

@@ -3,15 +3,14 @@ pragma solidity >=0.8.25 <0.9.0;
 
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
-
-import { TierInvestment } from "../../src/TierInvestment.sol";
-import { Tier } from "../../src/Tier.sol";
-import { DecentralisedInvestmentManager } from "../../src/DecentralisedInvestmentManager.sol";
-import { SaasPaymentProcessor } from "../../src/SaasPaymentProcessor.sol";
-import { Helper } from "../../src/Helper.sol";
-import { ReceiveCounterOffer } from "../../src/ReceiveCounterOffer.sol";
-import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
 import { InitialiseDim } from "test/InitialiseDim.sol";
+import { ExposedDecentralisedInvestmentManager } from "test/unit/ExposedDecentralisedInvestmentManager.sol";
+import { DecentralisedInvestmentManager } from "./../../src/DecentralisedInvestmentManager.sol";
+import { Helper } from "./../../src/Helper.sol";
+import { ReceiveCounterOffer } from "./../../src/ReceiveCounterOffer.sol";
+import { SaasPaymentProcessor } from "./../../src/SaasPaymentProcessor.sol";
+import { Tier } from "./../../src/Tier.sol";
+import { TierInvestment } from "./../../src/TierInvestment.sol";
 
 interface ICounterOfferTest {
   function setUp() external;
