@@ -100,12 +100,25 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     ├─ [3020] TestIterableMapping::get("validInitialisations") [staticcall]
     │   └─ ← [Return] 0
 
-    So the return value of the function call is not stored into the _testIterableMapping object. That is at the end of
+    So the return value of the function call is not stored into the _testIterableMapping object. At the end of
     the testfunction, the values are exported as to keys validInitialisations, didNotreachInvestmentCeiling etc. and
     not to keys  a,b,c...z etc. So when it reads the file and sets the iterable mapping key value pairs, it only sets
     a-z because those are the keys that are in the LogParams object. and the _testIterableMapping is
     reset/re-initialised at the setup() function before each run of the test. So they will be 0 evertime, and at most
     incremented to 1`, at which point they may be exported again.
+
+    To resolve this issue, create a map named export_mapping within this test class that maps:
+    validInitialisations-a
+    didNotreachInvestmentCeiling-b
+    ...-c
+    Only give the map the keys of the variable names that are to be in this file.
+
+    Then instead of exporting  validInitialisations = x, you export:
+    export_mapping[validInitialisations], x
+    which comes down to (a,x) 
+
+    That ensures a is incremented and logged into file.
+    Then to populate the hitrate, you:
      */
     emit Log("_testIterableMapping.get('validInitialisations')=");
     emit Log(Strings.toString(_testIterableMapping.get("validInitialisations")));
@@ -202,7 +215,7 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       _testIterableMapping.set("investmentOverflow", _testIterableMapping.get("investmentOverflow") + 1);
     }
     emit Log("Overwriting to:");
-    emit_log(_testIterableMapping.getHitRateFilePath());
+    emit Log(_testIterableMapping.getHitRateFilePath());
     _testIterableMapping.overwriteExistingMapLogFile(_testIterableMapping.getHitRateFilePath());
   }
 
