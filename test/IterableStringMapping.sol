@@ -24,25 +24,26 @@ pragma solidity >=0.8.25 <0.9.0;
 import { console2 } from "forge-std/src/console2.sol";
 import "test/TestConstants.sol";
 
-library IterableMapping {
+library IterableStringMapping {
   // Iterable mapping from string[] to uint;
   struct Map {
     string[] keys;
-    mapping(string => uint256) values;
+    mapping(string => string) values;
     mapping(string => uint256) indexOf;
     mapping(string => bool) inserted;
   }
 
-  function get(Map storage map, string memory key) public view returns (uint256) {
-    return map.values[key];
+  function get(Map storage map, string memory key) public view returns (string memory someValue) {
+    someValue = map.values[key];
+    return someValue;
   }
 
   function getKeys(Map storage map) public view returns (string[] memory) {
     return map.keys;
   }
 
-  function getValues(Map storage map) public view returns (uint256[] memory) {
-    uint256[] memory listOfValues = new uint256[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
+  function getValues(Map storage map) public view returns (string[] memory) {
+    string[] memory listOfValues = new string[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
 
     if (map.keys.length > 1) {
       for (uint256 i = 0; i < map.keys.length; i++) {
@@ -60,7 +61,7 @@ library IterableMapping {
     return map.keys.length;
   }
 
-  function set(Map storage map, string memory key, uint256 val) public {
+  function set(Map storage map, string memory key, string memory val) public {
     if (map.inserted[key]) {
       map.values[key] = val;
     } else {
