@@ -8,8 +8,6 @@ pragma solidity >=0.8.25 <0.9.0;
     3. The code is ran, the mapping values are updated.
     4. The mapping values are logged to file.
 */
-
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
@@ -20,7 +18,6 @@ import "test/TestConstants.sol";
 import { TestMathHelper } from "test/TestMathHelper.sol";
 import { DecentralisedInvestmentManager } from "./../../../../src/DecentralisedInvestmentManager.sol";
 import { Helper } from "./../../../../src/Helper.sol";
-// import { IterableMapping } from "./../../../IterableMapping.sol";
 import { IterableStringMapping } from "./../../../IterableStringMapping.sol";
 
 import { TestFileLogging } from "./../../../TestFileLogging.sol";
@@ -134,6 +131,12 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 
     That ensures a is incremented and logged into file.
     Then to populate the hitrate, you:
+
+    TODO: fix: _map.getKeys(), _map.getValues()
+    They return:
+    (["i"], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    even though they should return:
+    (["a","b", .."z"] and [0,0,...,1,0,0])
      */
     emit Log("_testIterableMapping.get('validInitialisations')=");
     emit Log(Strings.toString(_testIterableMapping.get("validInitialisations")));
@@ -248,7 +251,10 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
         _variableNameMapping.get("investmentOverflow"),
         _testIterableMapping.get(_variableNameMapping.get("investmentOverflow")) + 1
       );
+      _testIterableMapping.getValues();
     }
+    emit Log("With i = :");
+    emit Log(Strings.toString(_testIterableMapping.get(_variableNameMapping.get("investmentOverflow"))));
     emit Log("Overwriting to:");
     emit Log(_testIterableMapping.getHitRateFilePath());
     _testIterableMapping.overwriteExistingMapLogFile(_testIterableMapping.getHitRateFilePath());

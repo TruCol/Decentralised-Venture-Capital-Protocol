@@ -20,7 +20,7 @@ pragma solidity >=0.8.25 <0.9.0;
   TODO: verify the non-alphabetical keys of a file are exported and read into
   alphabetical order.
   */
-
+import "@openzeppelin/contracts/utils/Strings.sol";
 import { PRBTest } from "@prb/test/src/PRBTest.sol";
 import { console2 } from "forge-std/src/console2.sol";
 import { StdCheats } from "forge-std/src/StdCheats.sol";
@@ -72,7 +72,11 @@ contract TestIterableMapping is PRBTest, StdCheats {
     _hitRateFilePath = initialiseMapping();
   }
 
-  function get(string memory key) public view returns (uint256) {
+  function get(string memory key) public returns (uint256) {
+    emit Log("Getting key:");
+    emit Log(key);
+    emit Log("Returning:");
+    emit Log(Strings.toString(_map.values[key]));
     return _map.values[key];
   }
 
@@ -85,12 +89,14 @@ contract TestIterableMapping is PRBTest, StdCheats {
     return _hitRateFilePath;
   }
 
-  function getValues() public view returns (uint256[] memory) {
+  function getValues() public returns (uint256[] memory) {
     uint256[] memory listOfValues = new uint256[](_MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE);
 
-    if (_map.keys.length > 1) {
+    if (_map.keys.length >= 1) {
       for (uint256 i = 0; i < _map.keys.length; i++) {
         listOfValues[i] = _map.values[_map.keys[i]];
+        emit Log("_map.values[_map.keys[i]]=");
+        emit Log(Strings.toString(_map.values[_map.keys[i]]));
       }
     }
     return listOfValues;
@@ -105,13 +111,23 @@ contract TestIterableMapping is PRBTest, StdCheats {
   }
 
   function set(string memory key, uint256 val) public {
+    emit Log("Setting key=");
+    emit Log(key);
+    emit Log("Setting val=");
+    emit Log(Strings.toString(val));
     if (_map.inserted[key]) {
       _map.values[key] = val;
+      emit Log("Already existed.");
     } else {
       _map.inserted[key] = true;
       _map.values[key] = val;
       _map.indexOf[key] = _map.keys.length;
       _map.keys.push(key);
+      emit Log("New key insterted at index:");
+      emit Log(Strings.toString(_map.indexOf[key]));
+      emit Log(getKeyAtIndex((_map.indexOf[key])));
+      emit Log(Strings.toString(_map.values[key]));
+      emit Log(Strings.toString(_map.get(key)));
     }
   }
 
