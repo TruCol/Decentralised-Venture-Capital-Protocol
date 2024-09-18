@@ -73,10 +73,6 @@ contract TestIterableMapping is PRBTest, StdCheats {
   }
 
   function get(string memory key) public returns (uint256) {
-    emit Log("Getting key:");
-    emit Log(key);
-    emit Log("Returning:");
-    emit Log(Strings.toString(_map.values[key]));
     return _map.values[key];
   }
 
@@ -95,8 +91,6 @@ contract TestIterableMapping is PRBTest, StdCheats {
     if (_map.keys.length >= 1) {
       for (uint256 i = 0; i < _map.keys.length; i++) {
         listOfValues[i] = _map.values[_map.keys[i]];
-        emit Log("_map.values[_map.keys[i]]=");
-        emit Log(Strings.toString(_map.values[_map.keys[i]]));
       }
     }
     return listOfValues;
@@ -111,23 +105,13 @@ contract TestIterableMapping is PRBTest, StdCheats {
   }
 
   function set(string memory key, uint256 val) public {
-    emit Log("Setting key=");
-    emit Log(key);
-    emit Log("Setting val=");
-    emit Log(Strings.toString(val));
     if (_map.inserted[key]) {
       _map.values[key] = val;
-      emit Log("Already existed.");
     } else {
       _map.inserted[key] = true;
       _map.values[key] = val;
       _map.indexOf[key] = _map.keys.length;
       _map.keys.push(key);
-      emit Log("New key insterted at index:");
-      emit Log(Strings.toString(_map.indexOf[key]));
-      emit Log(getKeyAtIndex((_map.indexOf[key])));
-      emit Log(Strings.toString(_map.values[key]));
-      emit Log(Strings.toString(_map.get(key)));
     }
   }
 
@@ -167,15 +151,12 @@ into a struct, and then converts that struct into this _mapping.
  */
   function readHitRatesFromLogFileAndSetToMap(string memory hitRateFilePath) public {
     bytes memory data = _testFileLogging.readLogData(hitRateFilePath);
-    emit Log("GOT DATA");
     abi.decode(data, (LogParams));
-    emit Log("Decoded without parsing it to LogParams");
     // Unpack sorted HitRate data from file into HitRatesReturnAll object.
     LogParams memory readLogParams = abi.decode(data, (LogParams));
-    emit Log("Parsed into to LogParams");
     // Update the hit rate _mapping using the HitRatesReturnAll object.
     updateLogParamMapping({ logParams: readLogParams });
-    emit Log("End of function.");
+
     // TODO: assert the data in the log file equals the data in this _map.
   }
 
@@ -227,62 +208,60 @@ into a struct, and then converts that struct into this _mapping.
     string[] memory structKeys;
 
     // TODO: update the keys to represent the actual keys in the logParams object.
-    for (uint256 i = 0; i < structKeys.length; i++) {
+    for (uint256 i = 0; i < _MAX_NR_OF_TEST_LOG_VALUES_PER_LOG_FILE; i++) {
       if (i == 0) {
-        _map.set(structKeys[i], logParams.a);
+        _map.set("a", logParams.a);
       } else if (i == 1) {
-        _map.set(structKeys[i], logParams.b);
+        _map.set("b", logParams.b);
       } else if (i == 2) {
-        _map.set(structKeys[i], logParams.c);
+        _map.set("c", logParams.c);
       } else if (i == 3) {
-        _map.set(structKeys[i], logParams.d);
+        _map.set("d", logParams.d);
       } else if (i == 4) {
-        _map.set(structKeys[i], logParams.e);
+        _map.set("e", logParams.e);
       } else if (i == 5) {
-        _map.set(structKeys[i], logParams.f);
+        _map.set("f", logParams.f);
       } else if (i == 6) {
-        _map.set(structKeys[i], logParams.g);
+        _map.set("g", logParams.g);
       } else if (i == 7) {
-        _map.set(structKeys[i], logParams.h);
+        _map.set("h", logParams.h);
       } else if (i == 8) {
-        _map.set(structKeys[i], logParams.i);
+        _map.set("i", logParams.i);
       } else if (i == 9) {
-        _map.set(structKeys[i], logParams.j);
+        _map.set("j", logParams.j);
       } else if (i == 10) {
-        _map.set(structKeys[i], logParams.k);
+        _map.set("k", logParams.k);
       } else if (i == 11) {
-        _map.set(structKeys[i], logParams.l);
+        _map.set("l", logParams.l);
       } else if (i == 12) {
-        _map.set(structKeys[i], logParams.m);
+        _map.set("m", logParams.m);
       } else if (i == 13) {
-        _map.set(structKeys[i], logParams.n);
+        _map.set("n", logParams.n);
       } else if (i == 14) {
-        _map.set(structKeys[i], logParams.o);
+        _map.set("o", logParams.o);
       } else if (i == 15) {
-        _map.set(structKeys[i], logParams.p);
+        _map.set("p", logParams.p);
       } else if (i == 16) {
-        _map.set(structKeys[i], logParams.q);
+        _map.set("q", logParams.q);
       } else if (i == 17) {
-        _map.set(structKeys[i], logParams.r);
+        _map.set("r", logParams.r);
       } else if (i == 18) {
-        _map.set(structKeys[i], logParams.s);
+        _map.set("s", logParams.s);
       } else if (i == 19) {
-        _map.set(structKeys[i], logParams.t);
+        _map.set("t", logParams.t);
       } else if (i == 20) {
-        _map.set(structKeys[i], logParams.u);
+        _map.set("u", logParams.u);
       } else if (i == 21) {
-        _map.set(structKeys[i], logParams.v);
+        _map.set("v", logParams.v);
       } else if (i == 22) {
-        _map.set(structKeys[i], logParams.w);
+        _map.set("w", logParams.w);
       } else if (i == 23) {
-        _map.set(structKeys[i], logParams.x);
+        _map.set("x", logParams.x);
       } else if (i == 24) {
-        _map.set(structKeys[i], logParams.y);
+        _map.set("y", logParams.y);
       } else if (i == 25) {
-        _map.set(structKeys[i], logParams.z);
+        _map.set("z", logParams.z);
       }
     }
-    // _map.set("didNotreachInvestmentCeiling", logParams.didNotreachInvestmentCeiling);
-    // _map.set("didReachInvestmentCeiling", logParams.didReachInvestmentCeiling);
   }
 }

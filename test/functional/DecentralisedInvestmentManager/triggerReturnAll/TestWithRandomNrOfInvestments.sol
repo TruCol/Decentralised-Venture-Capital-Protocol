@@ -102,44 +102,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
 
     // This function is called to read the stuff from file.
     _testIterableMapping.readHitRatesFromLogFileAndSetToMap(_testIterableMapping.getHitRateFilePath());
-    /**
-    TODO: in a logging, right above this emit, it seemed to imply that:
-
-    \"validInvestments\": 1,\n
-
-    However, the emit itself printed:
-    ├─ emit Log(err: "_testIterableMapping.get('validInitialisations')=")
-    ├─ [3020] TestIterableMapping::get("validInitialisations") [staticcall]
-    │   └─ ← [Return] 0
-
-    So the return value of the function call is not stored into the _testIterableMapping object. At the end of
-    the testfunction, the values are exported as to keys validInitialisations, didNotreachInvestmentCeiling etc. and
-    not to keys  a,b,c...z etc. So when it reads the file and sets the iterable mapping key value pairs, it only sets
-    a-z because those are the keys that are in the LogParams object. and the _testIterableMapping is
-    reset/re-initialised at the setup() function before each run of the test. So they will be 0 evertime, and at most
-    incremented to 1`, at which point they may be exported again.
-
-    To resolve this issue, create a map named export_mapping within this test class that maps:
-    validInitialisations-a
-    didNotreachInvestmentCeiling-b
-    ...-c
-    Only give the map the keys of the variable names that are to be in this file.
-
-    Then instead of exporting  validInitialisations = x, you export:
-    export_mapping[validInitialisations], x
-    which comes down to (a,x)
-
-    That ensures a is incremented and logged into file.
-    Then to populate the hitrate, you:
-
-    TODO: fix: _map.getKeys(), _map.getValues()
-    They return:
-    (["i"], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    even though they should return:
-    (["a","b", .."z"] and [0,0,...,1,0,0])
-     */
-    emit Log("_testIterableMapping.get('validInitialisations')=");
-    emit Log(Strings.toString(_testIterableMapping.get("validInitialisations")));
 
     // Get a random number of random multiples and random ceilings by cutting off the random arrays of fixed length.
     (multiples, sameNrOfCeilings) = _testInitialisationHelper.getRandomMultiplesAndCeilings({
@@ -163,8 +125,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
     } else {
       allowedNrOfInvestments = randNrOfInvestments;
     }
-    emit Log("allowedNrOfInvestments");
-    emit Log(Strings.toString(allowedNrOfInvestments));
 
     // Reduce the random initialised array with investment amounts to the desired random  array length.
     investmentAmounts = _testMathHelper.getShortenedArray({
@@ -192,8 +152,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
           ceilings: sameNrOfCeilings,
           multiples: multiples
         });
-
-      emit Log("hasInitialisedRandomDim");
 
       // Check if the initialised dim is random or non-random value.
       if (hasInitialisedRandomDim) {
@@ -253,10 +211,6 @@ contract FuzzDebug is PRBTest, StdCheats, IFuzzDebug {
       );
       _testIterableMapping.getValues();
     }
-    emit Log("With i = :");
-    emit Log(Strings.toString(_testIterableMapping.get(_variableNameMapping.get("investmentOverflow"))));
-    emit Log("Overwriting to:");
-    emit Log(_testIterableMapping.getHitRateFilePath());
     _testIterableMapping.overwriteExistingMapLogFile(_testIterableMapping.getHitRateFilePath());
   }
 
